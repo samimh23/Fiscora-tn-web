@@ -1,0 +1,134 @@
+:root {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { min-height: 100%; margin: 0; }
+body { min-width: 320px; }
+a { color: inherit; text-decoration: none; }
+
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(360px, 0.9fr) minmax(480px, 1.1fr);
+  background: #f6f3ea;
+}
+
+.auth-visual {
+  position: relative;
+  overflow: hidden;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: #f9f8f2;
+  background: #123f32;
+}
+
+.auth-visual::before,
+.auth-visual::after {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+}
+.auth-visual::before { width: 500px; height: 500px; right: -230px; top: -140px; }
+.auth-visual::after { width: 340px; height: 340px; left: -170px; bottom: -110px; }
+
+.auth-form-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 40px 24px;
+}
+
+[dir="rtl"] .auth-page,
+[dir="rtl"] .auth-form,
+[dir="rtl"] .MuiDialog-root,
+[dir="rtl"] .MuiMenu-root {
+  text-align: right;
+}
+
+.auth-form { width: min(440px, 100%); }
+
+.brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  color: #123f32;
+  background: #f2c56b;
+  font-family: Georgia, serif;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, .85fr);
+  gap: 20px;
+}
+
+.data-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(110px, .7fr) minmax(110px, .7fr) 110px;
+  gap: 16px;
+  align-items: center;
+}
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.dossier-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, .75fr);
+  gap: 20px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px 18px;
+}
+
+.task-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(260px, .7fr);
+  gap: 28px;
+}
+
+.documents-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, .65fr);
+  gap: 20px;
+}
+
+@media (max-width: 1050px) {
+  .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dossier-detail-grid { grid-template-columns: 1fr; }
+  .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .task-detail-grid, .documents-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+  .auth-page { grid-template-columns: 1fr; }
+  .auth-visual { min-height: 260px; padding: 28px; }
+  .auth-visual-copy { display: none; }
+  .metric-grid, .module-grid { grid-template-columns: 1fr; }
+  .info-grid { grid-template-columns: 1fr; }
+  .data-row { grid-template-columns: 1fr auto; }
+  .data-row > :nth-child(2), .data-row > :nth-child(3) { display: none; }
+}
