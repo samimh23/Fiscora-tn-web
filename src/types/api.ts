@@ -11,6 +11,7 @@ export interface CurrentUser {
   email: string;
   fullName: string;
   isActive?: boolean;
+  isPlatformAdmin: boolean;
 }
 
 export interface AuthResponse {
@@ -19,6 +20,179 @@ export interface AuthResponse {
   accessTokenExpiresAtUtc: string;
   user: CurrentUser;
   organizations: OrganizationSummary[];
+}
+
+export interface PlatformOverview {
+  generatedAtUtc: string;
+  totals: {
+    organizationsTotal: number;
+    organizationsActive: number;
+    usersTotal: number;
+    usersActive: number;
+    platformAdmins: number;
+    activeSessions: number;
+    dossiersActive: number;
+    documentsTotal: number;
+    storageBytes: number;
+    extractionsFailed: number;
+    invitationsFailed: number;
+    ttnFailed: number;
+    ttnProductionConnections: number;
+    subscriptionsPastDue: number;
+    subscriptionInvoicesOverdue: number;
+  };
+  alerts: Array<{
+    code: string;
+    label: string;
+    count: number;
+    severity: "info" | "warning" | "error";
+  }>;
+  services: Array<{
+    code: string;
+    label: string;
+    status: string;
+    detail: string;
+  }>;
+}
+
+export interface PlatformOrganization {
+  id: string;
+  name: string;
+  slug: string;
+  isActive: boolean;
+  suspendedAtUtc: string | null;
+  suspensionReason: string | null;
+  createdAtUtc: string;
+  membersCount: number;
+  dossiersCount: number;
+  documentsCount: number;
+  storageBytes: number;
+  lastActivityAtUtc: string | null;
+}
+
+export interface PlatformUser {
+  id: string;
+  fullName: string;
+  email: string;
+  isActive: boolean;
+  emailVerified: boolean;
+  isPlatformAdmin: boolean;
+  disabledAtUtc: string | null;
+  disabledReason: string | null;
+  lastLoginAtUtc: string | null;
+  createdAtUtc: string;
+  membershipsCount: number;
+  activeSessionsCount: number;
+}
+
+export interface PlatformJobsOverview {
+  generatedAtUtc: string;
+  pipelines: Array<{
+    code: "DOCUMENT_EXTRACTION" | "INVITATION_EMAIL" | "TTN_TRANSMISSION";
+    label: string;
+    pending: number;
+    processing: number;
+    failed: number;
+    status: "OK" | "EN_COURS" | "ERREUR";
+    lastFailureAtUtc: string | null;
+  }>;
+}
+
+export interface PlatformAuditLog {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  createdAtUtc: string;
+  actorUserId: string | null;
+  actorName: string | null;
+  organizationId: string | null;
+  organizationName: string | null;
+  reason: string | null;
+}
+
+export interface SaasPlan {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  monthlyPriceTnd: number;
+  annualPriceTnd: number;
+  maxCollaborators: number;
+  maxActiveDossiers: number;
+  maxStorageBytes: number;
+  maxStorageGb: number;
+  monthlyOcrDocuments: number;
+  monthlyTtnSubmissions: number;
+  features: Record<string, boolean>;
+  isActive: boolean;
+  isPublic: boolean;
+}
+
+export interface SaasUsageMetric {
+  used: number;
+  limit: number;
+  percentage: number;
+  exceeded: boolean;
+}
+
+export interface OrganizationSubscription {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  status: "ESSAI" | "ACTIF" | "IMPAYE" | "SUSPENDU" | "ANNULE";
+  billingCycle: "MENSUEL" | "ANNUEL";
+  trialEndsAtUtc: string | null;
+  currentPeriodStartUtc: string;
+  currentPeriodEndUtc: string;
+  graceEndsAtUtc: string | null;
+  cancelAtPeriodEnd: boolean;
+  plan: Pick<
+    SaasPlan,
+    "id" | "code" | "name" | "monthlyPriceTnd" | "annualPriceTnd"
+  >;
+  usage: {
+    collaborators: SaasUsageMetric;
+    activeDossiers: SaasUsageMetric;
+    storageBytes: SaasUsageMetric;
+    ocrDocuments: SaasUsageMetric;
+    ttnSubmissions: SaasUsageMetric;
+  };
+  invoices?: SaasSubscriptionInvoice[];
+}
+
+export interface SaasSubscriptionInvoice {
+  id: string;
+  number: string;
+  organizationId: string;
+  organizationName: string;
+  periodStartUtc: string;
+  periodEndUtc: string;
+  amountTnd: number;
+  dueAtUtc: string;
+  status: "BROUILLON" | "A_PAYER" | "PAYEE" | "ANNULEE";
+  paidAtUtc: string | null;
+  paymentReference: string | null;
+  createdAtUtc: string;
+}
+
+export interface SaasAnalytics {
+  generatedAtUtc: string;
+  subscriptions: {
+    trialing: number;
+    active: number;
+    pastDue: number;
+    suspended: number;
+    cancelled: number;
+  };
+  mrrTnd: number;
+  arrTnd: number;
+  averageRevenuePerActiveCabinetTnd: number;
+  trialConversionRate: number;
+  churnRate: number;
+  collectedThisMonthTnd: number;
+  overdueInvoices: number;
+  overdueAmountTnd: number;
 }
 
 export interface PagedResponse<T> {
@@ -172,6 +346,10 @@ export interface AccountingDocument {
   version: number;
   replacesDocumentId: string | null;
   createdAtUtc: string;
+  isClientVisible: boolean;
+  malwareScanStatus: "NON_ANALYSE" | "SAIN" | "INFECTE" | "ERREUR";
+  malwareSignature: string | null;
+  malwareScannedAtUtc: string | null;
 }
 
 export interface DocumentPreview {
@@ -278,6 +456,42 @@ export interface BusinessInvoiceLine {
   grossAmount?: string;
 }
 
+export interface CommercialDocumentLine {
+  id?: string;
+  accountId: string | null;
+  account?: LedgerAccount | null;
+  description: string;
+  quantity: string;
+  unitPrice: string;
+  discountRate: string;
+  vatCode: string | null;
+  vatRate: string;
+  netAmount: string;
+  vatAmount: string;
+  grossAmount: string;
+}
+
+export interface CommercialDocument {
+  id: string;
+  direction: "ACHAT" | "VENTE";
+  kind: "DEVIS" | "COMMANDE" | "BON_LIVRAISON" | "BON_RECEPTION";
+  status: "BROUILLON" | "CONFIRME" | "CONVERTI" | "ANNULE";
+  number: string;
+  issueDate: string;
+  validUntil: string | null;
+  thirdPartyId: string;
+  thirdParty: ThirdParty;
+  currencyCode: string;
+  netAmount: string;
+  vatAmount: string;
+  grossAmount: string;
+  sourceDocumentId: string | null;
+  convertedToDocumentId: string | null;
+  businessInvoiceId: string | null;
+  notes: string | null;
+  lines: CommercialDocumentLine[];
+}
+
 export interface BusinessInvoice {
   id: string;
   type: "ACHAT" | "VENTE";
@@ -311,6 +525,7 @@ export interface BusinessInvoice {
   settlementStatus: "NON_REGLEE" | "PARTIELLEMENT_REGLEE" | "REGLEE";
   status: "BROUILLON" | "VALIDEE" | "COMPTABILISEE" | "ANNULEE";
   sourceDocumentId: string | null;
+  sourceCommercialDocumentId: string | null;
   journalEntryId: string | null;
   notes: string | null;
   lines: BusinessInvoiceLine[];

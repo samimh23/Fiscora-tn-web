@@ -9,6 +9,7 @@ import { useAuth } from "./auth/AuthContext";
 import { AppShell } from "./components/AppShell";
 import { ClientPortalShell } from "./components/ClientPortalShell";
 import { LoadingScreen } from "./components/LoadingScreen";
+import { PlatformAdminShell } from "./components/PlatformAdminShell";
 
 const AuthPage = lazy(() =>
   import("./pages/AuthPage").then((module) => ({ default: module.AuthPage })),
@@ -95,8 +96,24 @@ const ClientPortalDashboardPage = lazy(() =>
 const ClientPortalDossierPage = lazy(() =>
   import("./pages/ClientPortalDossierPage").then((module) => ({ default: module.ClientPortalDossierPage })),
 );
+const ClientPortalDossiersPage = lazy(() =>
+  import("./pages/ClientPortalDossiersPage").then((module) => ({ default: module.ClientPortalDossiersPage })),
+);
+const ClientPortalSettingsPage = lazy(() =>
+  import("./pages/ClientPortalSettingsPage").then((module) => ({ default: module.ClientPortalSettingsPage })),
+);
 const ClientPortalNotificationsPage = lazy(() =>
   import("./pages/ClientPortalNotificationsPage").then((module) => ({ default: module.ClientPortalNotificationsPage })),
+);
+const PlatformAdminPage = lazy(() =>
+  import("./pages/PlatformAdminPage").then((module) => ({
+    default: module.PlatformAdminPage,
+  })),
+);
+const SubscriptionPage = lazy(() =>
+  import("./pages/SubscriptionPage").then((module) => ({
+    default: module.SubscriptionPage,
+  })),
 );
 
 const lazyPage = (page: ReactNode) => (
@@ -141,6 +158,15 @@ function ClientOnlyRoute() {
   return isClientRole(organization?.role) ? <Outlet /> : <Navigate to="/" replace />;
 }
 
+function PlatformAdminOnlyRoute() {
+  const { session } = useAuth();
+  return session?.user.isPlatformAdmin ? (
+    <Outlet />
+  ) : (
+    <Navigate to="/" replace />
+  );
+}
+
 const router = createBrowserRouter([
   { path: "/invitation/:token", element: lazyPage(<AcceptInvitationPage />) },
   {
@@ -153,6 +179,18 @@ const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
+      {
+        element: <PlatformAdminOnlyRoute />,
+        children: [
+          {
+            path: "/administration-plateforme",
+            element: <PlatformAdminShell />,
+            children: [
+              { index: true, element: lazyPage(<PlatformAdminPage />) },
+            ],
+          },
+        ],
+      },
       {
         element: <WorkspaceShell />,
         children: [
@@ -173,6 +211,7 @@ const router = createBrowserRouter([
           { path: "/temps", element: lazyPage(<TimeTrackingPage />) },
           { path: "/rentabilite", element: lazyPage(<ProfitabilityPage />) },
           { path: "/equipe", element: lazyPage(<TeamAdminPage />) },
+          { path: "/abonnement", element: lazyPage(<SubscriptionPage />) },
           { path: "/taches", element: lazyPage(<DossierWorkspacePage module="tasks" />) },
           { path: "/obligations", element: lazyPage(<DossierWorkspacePage module="obligations" />) },
           { path: "/documents", element: lazyPage(<DossierWorkspacePage module="documents" />) },
@@ -188,8 +227,10 @@ const router = createBrowserRouter([
             element: <ClientOnlyRoute />,
             children: [
               { path: "/portail", element: lazyPage(<ClientPortalDashboardPage />) },
+              { path: "/portail/dossiers", element: lazyPage(<ClientPortalDossiersPage />) },
               { path: "/portail/dossiers/:dossierId", element: lazyPage(<ClientPortalDossierPage />) },
               { path: "/portail/notifications", element: lazyPage(<ClientPortalNotificationsPage />) },
+              { path: "/portail/parametres", element: lazyPage(<ClientPortalSettingsPage />) },
             ],
           },
         ],

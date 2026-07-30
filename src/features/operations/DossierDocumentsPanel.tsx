@@ -46,6 +46,18 @@ const fileSize = (value: string) => {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
   return `${(bytes / 1024 / 1024).toFixed(1)} Mo`;
 };
+const malwareStatus = (document: AccountingDocument) => {
+  switch (document.malwareScanStatus) {
+    case "SAIN":
+      return { label: "Antivirus : sain", color: "success" as const };
+    case "INFECTE":
+      return { label: "Fichier bloqué", color: "error" as const };
+    case "ERREUR":
+      return { label: "Analyse indisponible", color: "warning" as const };
+    default:
+      return { label: "Analyse requise", color: "warning" as const };
+  }
+};
 
 export function DossierDocumentsPanel({
   organizationId,
@@ -110,10 +122,15 @@ export function DossierDocumentsPanel({
       dossierId,
       previewTarget?.id,
     ],
-    queryFn: () =>
-      api.get<DocumentPreview>(
+    queryFn: async () => {
+      const result = await api.get<DocumentPreview>(
         `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${previewTarget!.id}/preview`,
-      ),
+      );
+      void queryClient.invalidateQueries({
+        queryKey: ["dossier-documents", organizationId, dossierId],
+      });
+      return result;
+    },
     enabled: Boolean(previewTarget),
     retry: false,
   });
@@ -221,6 +238,9 @@ export function DossierDocumentsPanel({
       const response = await api.get<{ url: string }>(
         `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${document.id}/download`,
       );
+      void queryClient.invalidateQueries({
+        queryKey: ["dossier-documents", organizationId, dossierId],
+      });
       window.open(response.url, "_blank", "noopener,noreferrer");
     } catch (reason) {
       setError(
@@ -397,6 +417,20 @@ export function DossierDocumentsPanel({
                 size="small"
                 variant="outlined"
               />
+              <Tooltip
+                title={
+                  document.malwareScanStatus === "INFECTE"
+                    ? `Menace détectée : ${document.malwareSignature ?? "signature inconnue"}`
+                    : "Tous les documents doivent être analysés avant leur ouverture."
+                }
+              >
+                <Chip
+                  label={malwareStatus(document).label}
+                  color={malwareStatus(document).color}
+                  size="small"
+                  variant="outlined"
+                />
+              </Tooltip>
               {canUpload &&
                 !archived &&
                 document.processingStatus !== "TRAITE" && (
@@ -414,6 +448,7 @@ export function DossierDocumentsPanel({
               <Tooltip title="Aperçu">
                 <IconButton
                   color="primary"
+                  disabled={document.malwareScanStatus === "INFECTE"}
                   onClick={() => {
                     setPreviewSheet(0);
                     setPreviewTarget(document);
@@ -423,7 +458,10 @@ export function DossierDocumentsPanel({
                 </IconButton>
               </Tooltip>
               <Tooltip title="Télécharger">
-                <IconButton onClick={() => void download(document)}>
+                <IconButton
+                  disabled={document.malwareScanStatus === "INFECTE"}
+                  onClick={() => void download(document)}
+                >
                   <DownloadRounded />
                 </IconButton>
               </Tooltip>
@@ -821,7 +859,12 @@ export function DossierDocumentsPanel({
             </TextField>
           )}
           <FormControlLabel
-            control={<Switch checked={shareWithClient} onChange={(_, checked) => setShareWithClient(checked)} />}
+            control={
+              <Switch
+                checked={shareWithClient}
+                onChange={(_, checked) => setShareWithClient(checked)}
+              />
+            }
             label="Rendre ce document visible dans le portail client"
           />
           <Typography variant="caption" color="text.secondary">
