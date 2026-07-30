@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "audit:prod": "node scripts/audit-production.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -19,14 +20,18 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.82.0",
-    "react-router-dom": "^7.18.1",
+    "react-router-dom": "7.18.2",
     "zod": "^4.4.3"
+  },
+  "overrides": {
+    "brace-expansion": "$brace-expansion"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
+    "brace-expansion": "file:vendor/brace-expansion-compat",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
