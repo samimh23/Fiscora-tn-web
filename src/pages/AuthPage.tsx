@@ -88,6 +88,13 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
             {isRegister && <TextField label={t('Nom du cabinet')} autoComplete="organization" error={Boolean(errors.organizationName)} helperText={errors.organizationName?.message} {...register('organizationName')} />}
             <TextField label={t('Adresse e-mail')} type="email" autoComplete="email" error={Boolean(errors.email)} helperText={errors.email?.message} {...register('email')} />
             <TextField label={t('Mot de passe')} type="password" autoComplete={isRegister ? 'new-password' : 'current-password'} error={Boolean(errors.password)} helperText={errors.password?.message} {...register('password')} />
+            {!isRegister && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: -1 }}>
+                <RouterLink to="/mot-de-passe-oublie" style={{ color: '#145a46', fontWeight: 700, fontSize: 14 }}>
+                  {t('Mot de passe oublié ?')}
+                </RouterLink>
+              </Box>
+            )}
             <Button type="submit" variant="contained" size="large" disabled={isSubmitting} endIcon={<ArrowForwardRounded />}>
               {isSubmitting ? t('Connexion…') : isRegister ? t('Créer mon cabinet') : t('Se connecter')}
             </Button>

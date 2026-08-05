@@ -29,8 +29,9 @@ import {
   AddRounded,
   CalculateRounded,
   CheckRounded,
+  DownloadRounded,
 } from "@mui/icons-material";
-import { api } from "../api/client";
+import { api, downloadApiFile } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import {
   DossierSelector,
@@ -151,6 +152,20 @@ export function PayrollPage() {
     mutationFn: (id: string) => api.post(`${base}/payroll-runs/${id}/validate`),
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["payroll-runs"] }),
   });
+  const downloadCnss = () => {
+    if (!base) return;
+    void downloadApiFile(
+      `${base}/payroll/cnss/${year}/${quarter}/export`,
+      `cnss-${year}-T${quarter}.csv`,
+    );
+  };
+  const downloadPayslip = (runId: string, lineId: string) => {
+    if (!base) return;
+    void downloadApiFile(
+      `${base}/payroll-runs/${runId}/payslips/${lineId}.pdf`,
+      `bulletin-paie-${lineId}.pdf`,
+    );
+  };
   const error = saveEmployee.error ?? generate.error ?? validate.error;
   return (
     <>
@@ -319,6 +334,7 @@ export function PayrollPage() {
                             <TableCell align="right">Net</TableCell>
                             <TableCell align="right">CNSS employeur</TableCell>
                             <TableCell align="right">Prise en charge État</TableCell>
+                            <TableCell align="right">Bulletin</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -347,6 +363,15 @@ export function PayrollPage() {
                                     {(Number(line.employerSupportRate) * 100).toFixed(0)} %
                                   </Typography>
                                 )}
+                              </TableCell>
+                              <TableCell align="right">
+                                <Button
+                                  size="small"
+                                  startIcon={<DownloadRounded />}
+                                  onClick={() => downloadPayslip(run.id, line.id)}
+                                >
+                                  PDF
+                                </Button>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -381,6 +406,13 @@ export function PayrollPage() {
                     </MenuItem>
                   ))}
                 </TextField>
+                <Button
+                  startIcon={<DownloadRounded />}
+                  disabled={!base}
+                  onClick={downloadCnss}
+                >
+                  Export CNSS CSV
+                </Button>
               </Stack>
               <QueryState
                 loading={cnss.isLoading}

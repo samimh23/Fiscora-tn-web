@@ -124,12 +124,15 @@ export function ClientPortalDashboardPage() {
     const result: PortalAction[] = [];
     for (const item of workspace.data ?? []) {
       const root = `/portail/dossiers/${item.dossier.id}`;
-      for (const expectation of item.expectations.filter((x) => !x.receivedDocumentId)) {
+      for (const expectation of item.expectations.filter((x) =>
+        !["RECUE", "VALIDEE", "ANNULEE"].includes(x.status ?? "") &&
+        !x.receivedDocumentId,
+      )) {
         result.push({
           id: `doc-${expectation.id}`, dossierName: item.dossier.legalName,
-          kind: "documents", urgent: false, title: expectation.label,
+          kind: "documents", urgent: expectation.status === "REJETEE", title: expectation.label,
           detail: `Pièce demandée pour ${String(expectation.periodMonth).padStart(2, "0")}/${expectation.periodYear}`,
-          link: `${root}?tab=documents&category=${expectation.category}`,
+          link: `${root}?tab=documents&category=${expectation.category}&expectationId=${expectation.id}`,
         });
       }
       for (const obligation of item.obligations.filter((x) =>

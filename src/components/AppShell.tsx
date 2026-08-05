@@ -49,8 +49,10 @@ import {
   DescriptionOutlined,
   ExpandLessRounded,
   ExpandMoreRounded,
+  FactCheckOutlined,
   FolderOutlined,
   GroupsOutlined,
+  ImportExportOutlined,
   LanguageOutlined,
   MenuRounded,
   NotificationsNoneOutlined,
@@ -119,6 +121,12 @@ const navSections: Array<{
         permission: "accounting.view",
       },
       {
+        label: "Migration",
+        path: "/migration",
+        icon: ImportExportOutlined,
+        permission: "accounting.view",
+      },
+      {
         label: "Banque",
         path: "/banque",
         icon: AccountBalanceOutlined,
@@ -168,6 +176,12 @@ const navSections: Array<{
         permission: "declarations.view",
       },
       {
+        label: "Fiscal annuel",
+        path: "/fiscal-annuel",
+        icon: ReceiptLongOutlined,
+        permission: "declarations.view",
+      },
+      {
         label: "Paie",
         path: "/paie",
         icon: BadgeOutlined,
@@ -209,6 +223,12 @@ const navSections: Array<{
         path: "/rentabilite",
         icon: QueryStatsOutlined,
         permission: "profitability.view",
+      },
+      {
+        label: "Assurance qualité",
+        path: "/qualite",
+        icon: FactCheckOutlined,
+        permission: "quality_assurance.view",
       },
       {
         label: "Équipe & accès",

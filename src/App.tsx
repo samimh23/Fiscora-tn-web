@@ -10,13 +10,14 @@ import { AppShell } from "./components/AppShell";
 import { ClientPortalShell } from "./components/ClientPortalShell";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { PlatformAdminShell } from "./components/PlatformAdminShell";
+import { WorkSessionProvider } from "./time-tracking/WorkSessionContext";
 
 const AuthPage = lazy(() =>
   import("./pages/AuthPage").then((module) => ({ default: module.AuthPage })),
 );
-const DashboardPage = lazy(() =>
-  import("./pages/DashboardPage").then((module) => ({
-    default: module.DashboardPage,
+const AccountantCockpitPage = lazy(() =>
+  import("./pages/AccountantCockpitPage").then((module) => ({
+    default: module.AccountantCockpitPage,
   })),
 );
 const DossiersPage = lazy(() =>
@@ -31,6 +32,11 @@ const DossierDetailPage = lazy(() =>
 );
 const AccountingPage = lazy(() =>
   import("./pages/AccountingPage").then((module) => ({ default: module.AccountingPage })),
+);
+const MigrationAssistantPage = lazy(() =>
+  import("./pages/MigrationAssistantPage").then((module) => ({
+    default: module.MigrationAssistantPage,
+  })),
 );
 const DossierWorkspacePage = lazy(() =>
   import("./pages/DossierWorkspacePage").then((module) => ({ default: module.DossierWorkspacePage })),
@@ -55,6 +61,11 @@ const FiscalSettingsPage = lazy(() =>
     default: module.FiscalSettingsPage,
   })),
 );
+const AnnualTaxPage = lazy(() =>
+  import("./pages/AnnualTaxPage").then((module) => ({
+    default: module.AnnualTaxPage,
+  })),
+);
 const BillingPage = lazy(() =>
   import("./pages/BillingPage").then((module) => ({
     default: module.BillingPage,
@@ -68,6 +79,11 @@ const TimeTrackingPage = lazy(() =>
 const ProfitabilityPage = lazy(() =>
   import("./pages/ProfitabilityPage").then((module) => ({
     default: module.ProfitabilityPage,
+  })),
+);
+const QualityAssurancePage = lazy(() =>
+  import("./pages/QualityAssurancePage").then((module) => ({
+    default: module.QualityAssurancePage,
   })),
 );
 const TeamAdminPage = lazy(() =>
@@ -88,6 +104,16 @@ const ElectronicInvoicesPage = lazy(() =>
 const AcceptInvitationPage = lazy(() =>
   import("./pages/AcceptInvitationPage").then((module) => ({
     default: module.AcceptInvitationPage,
+  })),
+);
+const PasswordResetRequestPage = lazy(() =>
+  import("./pages/PasswordResetPage").then((module) => ({
+    default: module.PasswordResetRequestPage,
+  })),
+);
+const PasswordResetConfirmPage = lazy(() =>
+  import("./pages/PasswordResetPage").then((module) => ({
+    default: module.PasswordResetConfirmPage,
   })),
 );
 const ClientPortalDashboardPage = lazy(() =>
@@ -138,14 +164,20 @@ function isClientRole(role?: string) {
 
 function WorkspaceShell() {
   const { organization } = useAuth();
-  return isClientRole(organization?.role) ? <ClientPortalShell /> : <AppShell />;
+  return isClientRole(organization?.role) ? (
+    <ClientPortalShell />
+  ) : (
+    <WorkSessionProvider>
+      <AppShell />
+    </WorkSessionProvider>
+  );
 }
 
 function HomePage() {
   const { organization } = useAuth();
   return isClientRole(organization?.role)
     ? lazyPage(<ClientPortalDashboardPage />)
-    : lazyPage(<DashboardPage />);
+    : lazyPage(<AccountantCockpitPage />);
 }
 
 function CabinetOnlyRoute() {
@@ -174,6 +206,8 @@ const router = createBrowserRouter([
     children: [
       { path: "/connexion", element: lazyPage(<AuthPage mode="login" />) },
       { path: "/inscription", element: lazyPage(<AuthPage mode="register" />) },
+      { path: "/mot-de-passe-oublie", element: lazyPage(<PasswordResetRequestPage />) },
+      { path: "/reinitialiser-mot-de-passe/:token", element: lazyPage(<PasswordResetConfirmPage />) },
     ],
   },
   {
@@ -205,11 +239,13 @@ const router = createBrowserRouter([
             element: lazyPage(<FinancialStatementsPage />),
           },
           { path: "/paie", element: lazyPage(<PayrollPage />) },
+          { path: "/fiscal-annuel", element: lazyPage(<AnnualTaxPage />) },
           { path: "/immobilisations", element: lazyPage(<FixedAssetsPage />) },
           { path: "/fiscalite", element: lazyPage(<FiscalSettingsPage />) },
           { path: "/honoraires", element: lazyPage(<BillingPage />) },
           { path: "/temps", element: lazyPage(<TimeTrackingPage />) },
           { path: "/rentabilite", element: lazyPage(<ProfitabilityPage />) },
+          { path: "/qualite", element: lazyPage(<QualityAssurancePage />) },
           { path: "/equipe", element: lazyPage(<TeamAdminPage />) },
           { path: "/abonnement", element: lazyPage(<SubscriptionPage />) },
           { path: "/taches", element: lazyPage(<DossierWorkspacePage module="tasks" />) },
@@ -217,6 +253,7 @@ const router = createBrowserRouter([
           { path: "/documents", element: lazyPage(<DossierWorkspacePage module="documents" />) },
           { path: "/factures", element: lazyPage(<DossierWorkspacePage module="commercial" />) },
           { path: "/comptabilite", element: lazyPage(<AccountingPage />) },
+          { path: "/migration", element: lazyPage(<MigrationAssistantPage />) },
           { path: "/banque", element: lazyPage(<DossierWorkspacePage module="banking" />) },
           { path: "/commerce-exterieur", element: lazyPage(<ForeignTradePage />) },
           { path: "/facturation-electronique", element: lazyPage(<ElectronicInvoicesPage />) },

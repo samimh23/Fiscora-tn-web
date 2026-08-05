@@ -58,6 +58,33 @@ const malwareStatus = (document: AccountingDocument) => {
       return { label: "Analyse requise", color: "warning" as const };
   }
 };
+const requestStatus = (entry: MissingDocumentExpectation) => {
+  const status = entry.status ?? (entry.receivedDocumentId ? "RECUE" : "DEMANDEE");
+  const labels: Record<string, string> = {
+    DEMANDEE: "Demandée",
+    RECUE: "Reçue",
+    VALIDEE: "Validée",
+    REJETEE: "À corriger",
+    ANNULEE: "Annulée",
+  };
+  const colors: Record<string, "default" | "error" | "success" | "warning"> = {
+    DEMANDEE: "warning",
+    RECUE: "default",
+    VALIDEE: "success",
+    REJETEE: "error",
+    ANNULEE: "default",
+  };
+  return {
+    label: labels[status] ?? status,
+    color: colors[status] ?? "default",
+  };
+};
+const formatDate = (value?: string | null) =>
+  value
+    ? new Intl.DateTimeFormat("fr-TN", { dateStyle: "medium" }).format(
+        new Date(`${value.slice(0, 10)}T00:00:00`),
+      )
+    : "—";
 
 export function DossierDocumentsPanel({
   organizationId,
@@ -90,6 +117,11 @@ export function DossierDocumentsPanel({
   const [expectationLabel, setExpectationLabel] = useState("");
   const [expectationCategory, setExpectationCategory] =
     useState("BOITE_RECEPTION");
+  const [expectationDueOn, setExpectationDueOn] = useState("");
+  const [expectationMessage, setExpectationMessage] = useState("");
+  const [rejectTarget, setRejectTarget] =
+    useState<MissingDocumentExpectation | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
   const [receiveSelections, setReceiveSelections] = useState<
     Record<string, string>
   >({});
@@ -212,11 +244,26 @@ export function DossierDocumentsPanel({
             periodMonth: month,
             label: expectationLabel.trim(),
             category: expectationCategory,
+            dueOn: expectationDueOn || null,
+            message: expectationMessage.trim() || null,
           },
         );
       if (type === "receive" && id && documentId)
         return api.patch(
           `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/missing/${id}/receive/${documentId}`,
+        );
+      if (type === "validate" && id)
+        return api.patch(
+          `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/missing/${id}/validate`,
+        );
+      if (type === "reject" && id)
+        return api.patch(
+          `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/missing/${id}/reject`,
+          { reason: rejectReason.trim() },
+        );
+      if (type === "cancel" && id)
+        return api.patch(
+          `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/missing/${id}/cancel`,
         );
     },
     onSuccess: async (_, variables) => {
@@ -224,6 +271,12 @@ export function DossierDocumentsPanel({
       if (variables.type === "expectation") {
         setExpectationOpen(false);
         setExpectationLabel("");
+        setExpectationDueOn("");
+        setExpectationMessage("");
+      }
+      if (variables.type === "reject") {
+        setRejectTarget(null);
+        setRejectReason("");
       }
       setError("");
       await refresh();
@@ -251,7 +304,10 @@ export function DossierDocumentsPanel({
     }
   };
   const missing =
-    expectations.data?.filter((entry) => !entry.receivedDocumentId) ?? [];
+    expectations.data?.filter(
+      (entry) =>
+        !["VALIDEE", "ANNULEE"].includes(entry.status ?? "DEMANDEE"),
+    ) ?? [];
 
   return (
     <>
@@ -490,7 +546,7 @@ export function DossierDocumentsPanel({
           >
             <Box>
               <Typography variant="h3" sx={{ fontSize: 22 }}>
-                Documents attendus
+                Demandes de pièces
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {String(month).padStart(2, "0")}/{year}
@@ -516,7 +572,7 @@ export function DossierDocumentsPanel({
               color="text.secondary"
               sx={{ px: 2.5, pb: 3 }}
             >
-              Aucune pièce attendue définie.
+              Aucune demande de pièce définie.
             </Typography>
           )}
           {expectations.data?.map((entry) => (
@@ -536,7 +592,22 @@ export function DossierDocumentsPanel({
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {documentCategoryLabel(entry.category)}
+                    {entry.dueOn ? ` · Échéance ${formatDate(entry.dueOn)}` : ""}
                   </Typography>
+                  {entry.message && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: "block" }}
+                    >
+                      {entry.message}
+                    </Typography>
+                  )}
+                  {entry.rejectionReason && (
+                    <Typography variant="caption" color="error" sx={{ display: "block" }}>
+                      Correction demandée : {entry.rejectionReason}
+                    </Typography>
+                  )}
                 </Box>
                 <Chip
                   label={entry.receivedDocumentId ? "Reçu" : "Manquant"}
@@ -545,9 +616,54 @@ export function DossierDocumentsPanel({
                   variant="outlined"
                 />
               </Box>
+              <Box sx={{ display: "flex", gap: 1, mt: 1.2, flexWrap: "wrap" }}>
+                <Chip
+                  label={requestStatus(entry).label}
+                  size="small"
+                  color={requestStatus(entry).color}
+                  variant="outlined"
+                />
+                {canUpload &&
+                  !archived &&
+                  entry.receivedDocumentId &&
+                  !["VALIDEE", "ANNULEE"].includes(entry.status ?? "") && (
+                    <>
+                      <Button
+                        size="small"
+                        color="success"
+                        onClick={() =>
+                          action.mutate({ type: "validate", id: entry.id })
+                        }
+                      >
+                        Valider
+                      </Button>
+                      <Button
+                        size="small"
+                        color="warning"
+                        onClick={() => setRejectTarget(entry)}
+                      >
+                        Demander correction
+                      </Button>
+                    </>
+                  )}
+                {canUpload &&
+                  !archived &&
+                  !["VALIDEE", "ANNULEE"].includes(entry.status ?? "") && (
+                    <Button
+                      size="small"
+                      color="inherit"
+                      onClick={() =>
+                        action.mutate({ type: "cancel", id: entry.id })
+                      }
+                    >
+                      Annuler
+                    </Button>
+                  )}
+              </Box>
               {canUpload &&
               !archived &&
               !entry.receivedDocumentId &&
+              !["VALIDEE", "ANNULEE"].includes(entry.status ?? "") &&
               documents.data?.length ? (
                 <Box sx={{ display: "flex", gap: 1, mt: 1.2 }}>
                   <Select
@@ -886,9 +1002,9 @@ export function DossierDocumentsPanel({
         open={expectationOpen}
         onClose={() => setExpectationOpen(false)}
         fullWidth
-        maxWidth="xs"
+        maxWidth="sm"
       >
-        <DialogTitle>Ajouter un document attendu</DialogTitle>
+        <DialogTitle>Demander une pièce au client</DialogTitle>
         <DialogContent sx={{ display: "grid", gap: 2, pt: "12px !important" }}>
           <TextField
             label="Libellé"
@@ -908,6 +1024,21 @@ export function DossierDocumentsPanel({
               </MenuItem>
             ))}
           </TextField>
+          <TextField
+            type="date"
+            label="Échéance souhaitée"
+            value={expectationDueOn}
+            onChange={(event) => setExpectationDueOn(event.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+          <TextField
+            label="Message au client"
+            value={expectationMessage}
+            onChange={(event) => setExpectationMessage(event.target.value)}
+            placeholder="Ex. Merci de déposer le relevé complet avec toutes les pages."
+            multiline
+            minRows={3}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setExpectationOpen(false)}>Annuler</Button>
@@ -917,6 +1048,43 @@ export function DossierDocumentsPanel({
             onClick={() => action.mutate({ type: "expectation" })}
           >
             Ajouter
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={Boolean(rejectTarget)}
+        onClose={() => setRejectTarget(null)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Demander une correction</DialogTitle>
+        <DialogContent sx={{ pt: "12px !important" }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Le client verra la raison et pourra redÃ©poser la bonne piÃ¨ce.
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            multiline
+            minRows={3}
+            label="Raison de la correction"
+            value={rejectReason}
+            onChange={(event) => setRejectReason(event.target.value)}
+            placeholder="Ex. Le relevÃ© bancaire est incomplet, il manque la derniÃ¨re page."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRejectTarget(null)}>Annuler</Button>
+          <Button
+            color="warning"
+            variant="contained"
+            disabled={!rejectReason.trim() || action.isPending}
+            onClick={() =>
+              rejectTarget &&
+              action.mutate({ type: "reject", id: rejectTarget.id })
+            }
+          >
+            Demander correction
           </Button>
         </DialogActions>
       </Dialog>

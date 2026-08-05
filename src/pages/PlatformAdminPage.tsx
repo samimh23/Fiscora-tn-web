@@ -46,6 +46,7 @@ import {
 } from "@mui/material";
 import { api, readSession } from "../api/client";
 import { MetricCard } from "../components/MetricCard";
+import { PlatformEmailPanel } from "../features/platform-admin/PlatformEmailPanel";
 import { PlatformSaasAnalyticsPanel } from "../features/saas/PlatformSaasAnalyticsPanel";
 import { PlatformSubscriptionsPanel } from "../features/saas/PlatformSubscriptionsPanel";
 import type {
@@ -405,6 +406,7 @@ export function PlatformAdminPage() {
             <Tab label="Abonnements" />
             <Tab label="Analytics SaaS" />
             <Tab label="Traitements" />
+            <Tab label="E-mails" />
             <Tab label="Journal d’audit" />
           </Tabs>
           {(tab === 0 || tab === 1) && (
@@ -716,7 +718,9 @@ export function PlatformAdminPage() {
           </Box>
         )}
 
-        {tab === 5 && (
+        {tab === 5 && <PlatformEmailPanel />}
+
+        {tab === 6 && (
           <TableContainer>
             <Table>
               <TableHead>

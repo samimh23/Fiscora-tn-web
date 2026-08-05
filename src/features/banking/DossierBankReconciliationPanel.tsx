@@ -5,12 +5,14 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
+  FormControlLabel,
   IconButton,
   MenuItem,
   Skeleton,
@@ -41,6 +43,11 @@ import type {
   ThirdPartyPayment,
 } from "../../types/api";
 import { money, shortDate } from "../accounting/options";
+
+const validTunisianIbanOrRib = (value: string) => {
+  const normalized = value.replace(/[\s.\-_/]/g, "").toUpperCase();
+  return !normalized || /^TN\d{22}$/.test(normalized) || /^\d{20}$/.test(normalized);
+};
 
 const statementLabels: Record<string, string> = {
   IMPORTE: "Importé",
@@ -94,8 +101,14 @@ function BankAccountDialog({
   const [currency, setCurrency] = useState("TND");
   const [error, setError] = useState("");
   const mutation = useMutation({
-    mutationFn: () =>
-      api.post<BankAccount>(
+    mutationFn: () => {
+      if (!validTunisianIbanOrRib(iban)) {
+        throw new ApiError(
+          400,
+          "IBAN/RIB invalide : utilisez TN + 22 chiffres ou un RIB tunisien de 20 chiffres.",
+        );
+      }
+      return api.post<BankAccount>(
         `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/accounts`,
         {
           name: name.trim(),
@@ -105,7 +118,8 @@ function BankAccountDialog({
           journalId,
           currency,
         },
-      ),
+      );
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: ["bank-accounts", organizationId, dossierId],
@@ -156,6 +170,8 @@ function BankAccountDialog({
           label="IBAN / RIB"
           value={iban}
           onChange={(event) => setIban(event.target.value)}
+          error={Boolean(iban && !validTunisianIbanOrRib(iban))}
+          helperText="IBAN tunisien : TN + 22 chiffres, ou RIB tunisien : 20 chiffres."
           sx={{ gridColumn: "1 / -1" }}
         />
         <TextField
@@ -365,11 +381,11 @@ function ImportDialog({
             variant="outlined"
             startIcon={<CloudUploadOutlined />}
           >
-            {file ? file.name : "Choisir un fichier CSV ou XLSX"}
+            {file ? file.name : "Choisir un fichier CSV, XLSX ou OFX"}
             <input
               hidden
               type="file"
-              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              accept=".csv,.xlsx,.ofx,.qfx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/x-ofx"
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             />
           </Button>
@@ -378,8 +394,8 @@ function ImportDialog({
             color="text.secondary"
             sx={{ display: "block", mt: 1 }}
           >
-            Colonnes requises : Date, Libellé et Montant — ou Débit/Crédit.
-            Taille maximale 10 Mo.
+            CSV/XLSX : Date, Libellé et Montant — ou Débit/Crédit. OFX/QFX :
+            import automatique des opérations bancaires. Taille maximale 10 Mo.
           </Typography>
           <Button
             size="small"
@@ -438,9 +454,18 @@ function MatchDialog({
   accounts: LedgerAccount[];
 }) {
   const queryClient = useQueryClient();
-  const [selection, setSelection] = useState("");
+  const [selection, setSelection] = useState(
+    mode === "generate" ? transaction.ruleSuggestion?.accountId ?? "" : "",
+  );
   const [description, setDescription] = useState(transaction.description);
   const [reference, setReference] = useState(transaction.reference ?? "");
+  const [rememberRule, setRememberRule] = useState(false);
+  const [ruleLabel, setRuleLabel] = useState(
+    transaction.ruleSuggestion?.label ?? transaction.description.slice(0, 80),
+  );
+  const [rulePattern, setRulePattern] = useState(
+    transaction.description.slice(0, 140),
+  );
   const [error, setError] = useState("");
   const amount = Number(transaction.amount);
   const absolute = Math.abs(amount);
@@ -470,6 +495,9 @@ function MatchDialog({
       queryClient.invalidateQueries({
         queryKey: ["journal-entries", organizationId, dossierId],
       }),
+      queryClient.invalidateQueries({
+        queryKey: ["bank-rules", organizationId, dossierId],
+      }),
     ]);
     onClose();
   };
@@ -484,6 +512,9 @@ function MatchDialog({
         counterpartAccountId: selection,
         description: description.trim() || undefined,
         pieceReference: reference.trim() || undefined,
+        rememberRule,
+        ruleLabel: rememberRule ? ruleLabel.trim() : undefined,
+        rulePattern: rememberRule ? rulePattern.trim() : undefined,
       });
     },
     onSuccess: refresh,
@@ -563,6 +594,14 @@ function MatchDialog({
         )}
         {mode === "generate" && (
           <>
+            {transaction.ruleSuggestion && (
+              <Alert severity="success">
+                Suggestion mémorisée : {transaction.ruleSuggestion.label} →{" "}
+                {transaction.ruleSuggestion.accountCode}{" "}
+                {transaction.ruleSuggestion.accountName} (
+                {transaction.ruleSuggestion.confidence}%).
+              </Alert>
+            )}
             <TextField
               select
               label="Compte de contrepartie"
@@ -593,6 +632,36 @@ function MatchDialog({
               value={reference}
               onChange={(event) => setReference(event.target.value)}
             />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={rememberRule}
+                  onChange={(event) => setRememberRule(event.target.checked)}
+                />
+              }
+              label="Mémoriser cette règle pour les prochains relevés"
+            />
+            {rememberRule && (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                  gap: 2,
+                }}
+              >
+                <TextField
+                  label="Nom de la règle"
+                  value={ruleLabel}
+                  onChange={(event) => setRuleLabel(event.target.value)}
+                />
+                <TextField
+                  label="Texte à reconnaître"
+                  value={rulePattern}
+                  onChange={(event) => setRulePattern(event.target.value)}
+                  helperText="Exemple : STEG, SONEDE, TUNISIE TELECOM."
+                />
+              </Box>
+            )}
             <Alert severity="info">
               L’écriture sera créée en brouillon. Elle devra être comptabilisée
               avant le rapprochement définitif.
@@ -1148,12 +1217,23 @@ export function DossierBankReconciliationPanel({
                       >
                         {money(transaction.amount)}
                       </Typography>
-                      <Chip
-                        label={transactionLabels[transaction.status]}
-                        size="small"
-                        color={statusColor(transaction.status)}
-                        variant="outlined"
-                      />
+                      <Stack spacing={0.7}>
+                        <Chip
+                          label={transactionLabels[transaction.status]}
+                          size="small"
+                          color={statusColor(transaction.status)}
+                          variant="outlined"
+                        />
+                        {transaction.ruleSuggestion &&
+                          transaction.status === "NON_RAPPROCHEE" && (
+                            <Chip
+                              size="small"
+                              color="success"
+                              variant="outlined"
+                              label={`${transaction.ruleSuggestion.accountCode} — ${transaction.ruleSuggestion.accountName}`}
+                            />
+                          )}
+                      </Stack>
                       <Stack
                         direction="row"
                         spacing={0.4}

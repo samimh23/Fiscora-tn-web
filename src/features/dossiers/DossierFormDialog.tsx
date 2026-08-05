@@ -12,11 +12,16 @@ import type { DossierSummary } from '../../types/api';
 import { billingFrequencyOptions, legalFormOptions, taxRegimeOptions } from './options';
 
 const money = z.string().refine((value) => !value || /^\d{1,12}(\.\d{1,3})?$/.test(value), 'Montant invalide (3 décimales maximum).');
+const validTunisianTaxIdentifier = (value: string) =>
+  !value || /^\d{7,8}\s*\/?\s*[A-Z]\s*\/?\s*[A-Z]\s*\/?\s*\d{3}$/i.test(value.trim());
+const validRneNumber = (value: string) =>
+  !value || /^[A-Z0-9][A-Z0-9\-_/ ]{4,24}$/i.test(value.trim());
+
 const dossierSchema = z.object({
   legalName: z.string().min(2, 'La raison sociale est obligatoire.').max(200),
   tradeName: z.string().max(200),
-  taxIdentifier: z.string().max(100),
-  rneNumber: z.string().max(100),
+  taxIdentifier: z.string().max(100).refine(validTunisianTaxIdentifier, 'Format MF attendu : 1234567/A/M/000.'),
+  rneNumber: z.string().max(100).refine(validRneNumber, 'RNE invalide : lettres/chiffres uniquement.'),
   vatCode: z.string().max(50),
   customsCode: z.string().max(100),
   legalForm: z.string().min(1),
@@ -142,8 +147,8 @@ export function DossierFormDialog({ open, onClose, organizationId, dossier, onSa
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
               <TextField label="Raison sociale" error={Boolean(errors.legalName)} helperText={errors.legalName?.message} {...register('legalName')} />
               <TextField label="Nom commercial" {...register('tradeName')} />
-              <TextField label="Matricule fiscal" {...register('taxIdentifier')} />
-              <TextField label="Numéro RNE" {...register('rneNumber')} />
+              <TextField label="Matricule fiscal" error={Boolean(errors.taxIdentifier)} helperText={errors.taxIdentifier?.message ?? 'Exemple : 1234567/A/M/000'} {...register('taxIdentifier')} />
+              <TextField label="Numéro RNE" error={Boolean(errors.rneNumber)} helperText={errors.rneNumber?.message} {...register('rneNumber')} />
               <Controller name="legalForm" control={control} render={({ field }) => <TextField select label="Forme juridique" {...field}>{legalFormOptions.map((item) => <MenuItem key={item.value} value={item.value}>{item.label}</MenuItem>)}</TextField>} />
               <Controller name="taxRegime" control={control} render={({ field }) => <TextField select label="Régime fiscal" {...field}>{taxRegimeOptions.map((item) => <MenuItem key={item.value} value={item.value}>{item.label}</MenuItem>)}</TextField>} />
               <TextField label="Code TVA" {...register('vatCode')} />

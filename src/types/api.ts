@@ -22,6 +22,15 @@ export interface AuthResponse {
   organizations: OrganizationSummary[];
 }
 
+export interface InvitationPreview {
+  email: string;
+  organizationName: string;
+  roleName: string;
+  expiresAtUtc: string;
+  accountExists: boolean;
+  existingFullName: string | null;
+}
+
 export interface PlatformOverview {
   generatedAtUtc: string;
   totals: {
@@ -109,6 +118,37 @@ export interface PlatformAuditLog {
   organizationId: string | null;
   organizationName: string | null;
   reason: string | null;
+}
+
+export interface PlatformEmailStatus {
+  configured: boolean;
+  provider: string;
+  host: string | null;
+  port: number;
+  secure: boolean;
+  from: string | null;
+  sentLast24h: number;
+  failedLast24h: number;
+  lastSuccessAtUtc: string | null;
+  lastFailureAtUtc: string | null;
+}
+
+export interface PlatformEmailLog {
+  id: string;
+  createdAtUtc: string;
+  category: "INVITATION" | "ADMIN_TEST" | "SYSTEM";
+  provider: string;
+  recipient: string;
+  sender: string | null;
+  subject: string;
+  status: "ENVOYE" | "ECHEC";
+  providerMessageId: string | null;
+  smtpResponse: string | null;
+  errorMessage: string | null;
+  organizationId: string | null;
+  organizationName: string | null;
+  actorUserId: string | null;
+  actorName: string | null;
 }
 
 export interface SaasPlan {
@@ -200,6 +240,50 @@ export interface PagedResponse<T> {
   total: number;
   page: number;
   pageSize: number;
+}
+
+export interface CockpitItem {
+  id: string;
+  sourceType:
+    | "TASK"
+    | "TASK_REVIEW"
+    | "DOCUMENT"
+    | "INVOICE"
+    | "PAYMENT"
+    | "BANK"
+    | "OBLIGATION"
+    | "PAYROLL";
+  dossierId: string;
+  dossierName: string;
+  title: string;
+  subtitle: string;
+  dueOn: string | null;
+  status: string;
+  amount: string | null;
+  actionLabel: string;
+  actionPath: string;
+}
+
+export interface CockpitLane {
+  key: string;
+  title: string;
+  description: string;
+  severity: "success" | "info" | "warning" | "error";
+  count: number;
+  actionLabel: string;
+  actionPath: string;
+  items: CockpitItem[];
+}
+
+export interface CabinetCockpit {
+  generatedAtUtc: string;
+  totals: {
+    totalActions: number;
+    criticalActions: number;
+    validationActions: number;
+    collectionActions: number;
+  };
+  lanes: CockpitLane[];
 }
 
 export interface DossierSummary {
@@ -375,7 +459,16 @@ export interface MissingDocumentExpectation {
   periodMonth: number;
   label: string;
   category: string;
+  dueOn: string | null;
+  message: string | null;
+  status: "DEMANDEE" | "RECUE" | "VALIDEE" | "REJETEE" | "ANNULEE";
+  requestedByUserId: string | null;
+  requestedAtUtc: string | null;
   receivedDocumentId: string | null;
+  validatedAtUtc: string | null;
+  rejectedAtUtc: string | null;
+  rejectionReason: string | null;
+  cancelledAtUtc: string | null;
 }
 
 export interface BillingSummary {
@@ -402,6 +495,54 @@ export interface ProfitabilitySummary {
     marginOnBilled: string;
     marginOnCollected: string;
   };
+}
+
+export interface WorkSession {
+  id: string;
+  organizationId: string;
+  dossierId: string;
+  dossierName: string | null;
+  membershipId: string;
+  fullName: string | null;
+  taskId: string | null;
+  taskTitle: string | null;
+  description: string;
+  billable: boolean;
+  status: "ACTIVE" | "EN_PAUSE" | "TERMINEE";
+  startedAtUtc: string;
+  lastHeartbeatAtUtc: string;
+  stoppedAtUtc: string | null;
+  activeSeconds: number;
+  inactiveSeconds: number;
+  heartbeatCount: number;
+  idleTimeoutSeconds: number;
+}
+
+export interface TimeEntry {
+  id: string;
+  dossierId: string;
+  membershipId: string;
+  fullName: string | null;
+  taskId: string | null;
+  taskTitle: string | null;
+  workDate: string;
+  durationMinutes: number;
+  durationHours: string;
+  source: "MANUEL" | "AUTOMATIQUE";
+  sourceSessionId: string | null;
+  startedAtUtc: string | null;
+  stoppedAtUtc: string | null;
+  originalDurationMinutes: number | null;
+  correctionReason: string | null;
+  requiresReview: boolean;
+  anomalyCode: string | null;
+  billable: boolean;
+  description: string;
+  status: "BROUILLON" | "SOUMIS" | "APPROUVE" | "REJETE";
+  submittedAtUtc: string | null;
+  reviewedAtUtc: string | null;
+  reviewedByUserId: string | null;
+  reviewComment: string | null;
 }
 
 export interface LedgerAccount {
@@ -845,6 +986,32 @@ export interface BankTransaction {
   matchedPayment: ThirdPartyPayment | null;
   journalEntryId: string | null;
   journalEntry: JournalEntry | null;
+  ruleSuggestion?: BankRuleSuggestion | null;
+}
+
+export interface BankRuleSuggestion {
+  ruleId: string;
+  label: string;
+  confidence: number;
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  thirdPartyId: string | null;
+  thirdPartyName: string | null;
+}
+
+export interface BankReconciliationRule {
+  id: string;
+  label: string;
+  pattern: string;
+  matchType: "CONTIENT" | "COMMENCE_PAR" | "EXACT";
+  direction: "TOUS" | "DEBIT" | "CREDIT";
+  suggestedAccountId: string;
+  suggestedAccount: LedgerAccount;
+  suggestedThirdPartyId: string | null;
+  suggestedThirdParty: ThirdParty | null;
+  isActive: boolean;
+  lastUsedAtUtc: string | null;
 }
 
 export interface BankStatement {
@@ -867,4 +1034,23 @@ export interface BankStatement {
     "IMPORTE" | "PARTIELLEMENT_RAPPROCHE" | "PRET_A_VALIDER" | "RAPPROCHE";
   reconciledAtUtc: string | null;
   transactions?: BankTransaction[];
+}
+
+export interface MigrationPreview {
+  kind: "accounts" | "journals" | "third-parties" | "opening-balances";
+  rows: number;
+  validRows: number;
+  warnings: string[];
+  sample: Array<Record<string, string>>;
+}
+
+export interface MigrationImportResult {
+  kind: "accounts" | "journals" | "third-parties" | "opening-balances";
+  rows: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  importedLines?: number;
+  warnings: string[];
+  sample: Array<Record<string, string>>;
 }
