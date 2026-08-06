@@ -381,11 +381,11 @@ function ImportDialog({
             variant="outlined"
             startIcon={<CloudUploadOutlined />}
           >
-            {file ? file.name : "Choisir un fichier CSV, XLSX ou OFX"}
+            {file ? file.name : "Choisir un fichier CSV, XLSX, OFX ou MT940"}
             <input
               hidden
               type="file"
-              accept=".csv,.xlsx,.ofx,.qfx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/x-ofx"
+              accept=".csv,.xlsx,.ofx,.qfx,.sta,.940,.mt940,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/x-ofx"
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             />
           </Button>
@@ -394,8 +394,9 @@ function ImportDialog({
             color="text.secondary"
             sx={{ display: "block", mt: 1 }}
           >
-            CSV/XLSX : Date, Libellé et Montant — ou Débit/Crédit. OFX/QFX :
-            import automatique des opérations bancaires. Taille maximale 10 Mo.
+            CSV/XLSX : Date, Libellé et Montant — ou Débit/Crédit. OFX/QFX et
+            MT940 (.sta) : import automatique des opérations bancaires.
+            Taille maximale 10 Mo.
           </Typography>
           <Button
             size="small"
