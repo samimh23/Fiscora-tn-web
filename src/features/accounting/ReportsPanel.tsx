@@ -45,6 +45,11 @@ export function ReportsPanel({ organizationId, dossierId }: { organizationId: st
     catch (error) { setDownloadError(error instanceof Error ? error.message : "Impossible de générer l'export."); }
   };
   const drillAccount = (row: TrialBalanceRow) => { setAccountFilter(`${row.code} — ${row.name}`); setTab('ledger'); };
+  const exportFec = async () => {
+    setDownloadError('');
+    try { await downloadApiFile(`${base}/reports/fec/export?from=${from}&to=${to}`, `FEC-${from}-${to}.txt`); }
+    catch (error) { setDownloadError(error instanceof Error ? error.message : "Impossible de générer l'export."); }
+  };
 
   return <Stack spacing={2}>
     <Card><Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
@@ -54,6 +59,7 @@ export function ReportsPanel({ organizationId, dossierId }: { organizationId: st
         <TextField size="small" label="Au" type="date" value={to} onChange={(event) => setTo(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
         <Button startIcon={<DownloadRounded />} onClick={() => exportReport('pdf')}>PDF</Button>
         <Button startIcon={<DownloadRounded />} onClick={() => exportReport('xlsx')}>Excel</Button>
+        <Button startIcon={<DownloadRounded />} onClick={exportFec}>Export FEC (.txt)</Button>
       </Stack>
     </Box></Card>
     {downloadError && <Alert severity="error">{downloadError}</Alert>}
