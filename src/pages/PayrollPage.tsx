@@ -87,6 +87,33 @@ interface CnssReport {
     employerCnss: string;
   }>;
 }
+interface DueReport {
+  year: number;
+  warning: string;
+  employer: {
+    legalName: string;
+    taxIdentifier: string | null;
+    cnssEmployerNumber: string | null;
+  };
+  employees: Array<{
+    employeeId: string;
+    fullName: string;
+    cin: string | null;
+    cnssNumber: string | null;
+    grossAnnual: string;
+    employeeCnssAnnual: string;
+    taxableAnnual: string;
+    incomeTaxAnnual: string;
+    netAnnual: string;
+  }>;
+  totals: {
+    grossAnnual: string;
+    employeeCnssAnnual: string;
+    taxableAnnual: string;
+    incomeTaxAnnual: string;
+    netAnnual: string;
+  };
+}
 
 export function PayrollPage() {
   const { organization, can } = useAuth();
@@ -134,6 +161,11 @@ export function PayrollPage() {
       api.get<CnssReport>(`${base}/payroll/cnss/${year}/${quarter}`),
     enabled: Boolean(base && tab === 2),
   });
+  const due = useQuery({
+    queryKey: ["due", organization?.id, dossierId, year],
+    queryFn: () => api.get<DueReport>(`${base}/payroll/due/${year}`),
+    enabled: Boolean(base && tab === 3),
+  });
   const saveEmployee = useMutation({
     mutationFn: () => api.post(`${base}/employees`, employee),
     onSuccess: () => {
@@ -166,6 +198,13 @@ export function PayrollPage() {
       `bulletin-paie-${lineId}.pdf`,
     );
   };
+  const downloadDue = (format: "pdf" | "csv") => {
+    if (!base) return;
+    void downloadApiFile(
+      `${base}/payroll/due/${year}/export?format=${format}`,
+      `due-${year}.${format}`,
+    );
+  };
   const error = saveEmployee.error ?? generate.error ?? validate.error;
   return (
     <>
@@ -189,6 +228,7 @@ export function PayrollPage() {
           <Tab label="Salariés" />
           <Tab label="Traitements de paie" />
           <Tab label="CNSS trimestrielle" />
+          <Tab label="Déclaration annuelle (DUE)" />
         </Tabs>
         <CardContent>
           {tab === 0 && (
@@ -448,6 +488,105 @@ export function PayrollPage() {
                   ))}
                 </TableBody>
               </Table>
+            </>
+          )}
+          {tab === 3 && (
+            <>
+              <Stack direction="row" spacing={2} sx={{ mb: 2, alignItems: "center" }}>
+                <TextField
+                  size="small"
+                  type="number"
+                  label="Année"
+                  value={year}
+                  onChange={(e) => setYear(Number(e.target.value))}
+                />
+                <Button
+                  startIcon={<DownloadRounded />}
+                  disabled={!base}
+                  onClick={() => downloadDue("pdf")}
+                >
+                  Export PDF
+                </Button>
+                <Button
+                  startIcon={<DownloadRounded />}
+                  disabled={!base}
+                  onClick={() => downloadDue("csv")}
+                >
+                  Export CSV
+                </Button>
+              </Stack>
+              <QueryState
+                loading={due.isLoading}
+                error={due.isError}
+                empty={!due.data?.employees.length}
+                emptyText="Aucune paie validée pour cet exercice."
+              />
+              {due.data && due.data.employees.length > 0 && (
+                <>
+                  <Alert severity="warning" sx={{ mb: 2 }}>
+                    {due.data.warning}
+                  </Alert>
+                  <Box sx={{ overflowX: "auto" }}>
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Salarié</TableCell>
+                          <TableCell>CIN / CNSS</TableCell>
+                          <TableCell align="right">Brut annuel</TableCell>
+                          <TableCell align="right">CNSS salarié</TableCell>
+                          <TableCell align="right">Base imposable</TableCell>
+                          <TableCell align="right">IRPP retenu</TableCell>
+                          <TableCell align="right">Net annuel</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {due.data.employees.map((employee) => (
+                          <TableRow key={employee.employeeId}>
+                            <TableCell>{employee.fullName}</TableCell>
+                            <TableCell>
+                              {employee.cin || "—"} / {employee.cnssNumber || "—"}
+                            </TableCell>
+                            <TableCell align="right">
+                              <Money value={employee.grossAnnual} />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Money value={employee.employeeCnssAnnual} />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Money value={employee.taxableAnnual} />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Money value={employee.incomeTaxAnnual} />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Money value={employee.netAnnual} />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700 }}>TOTAL</TableCell>
+                          <TableCell />
+                          <TableCell align="right" sx={{ fontWeight: 700 }}>
+                            <Money value={due.data.totals.grossAnnual} />
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700 }}>
+                            <Money value={due.data.totals.employeeCnssAnnual} />
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700 }}>
+                            <Money value={due.data.totals.taxableAnnual} />
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700 }}>
+                            <Money value={due.data.totals.incomeTaxAnnual} />
+                          </TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 700 }}>
+                            <Money value={due.data.totals.netAnnual} />
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </Box>
+                </>
+              )}
             </>
           )}
         </CardContent>

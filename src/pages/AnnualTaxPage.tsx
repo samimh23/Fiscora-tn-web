@@ -49,10 +49,10 @@ export function AnnualTaxPage() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [form, setForm] = useState({
     regime: "IS",
-    corporateTaxRate: "0.15000",
-    minimumTax: "0",
+    corporateTaxRate: "",
+    minimumTax: "",
     taxCredits: "0",
-    forfaitaireTax: "0",
+    forfaitaireTax: "",
     reintegrationLabel: "",
     reintegrationAmount: "",
     deductionLabel: "",
@@ -67,10 +67,10 @@ export function AnnualTaxPage() {
 
   const payload = () => ({
     regime: form.regime,
-    corporateTaxRate: form.corporateTaxRate,
-    minimumTax: form.minimumTax || "0",
+    ...(form.corporateTaxRate ? { corporateTaxRate: form.corporateTaxRate } : {}),
+    ...(form.minimumTax ? { minimumTax: form.minimumTax } : {}),
     taxCredits: form.taxCredits || "0",
-    forfaitaireTax: form.forfaitaireTax || "0",
+    ...(form.forfaitaireTax ? { forfaitaireTax: form.forfaitaireTax } : {}),
     reintegrations:
       form.reintegrationLabel && form.reintegrationAmount
         ? [{ label: form.reintegrationLabel, amount: form.reintegrationAmount }]
@@ -96,10 +96,10 @@ export function AnnualTaxPage() {
     const params = new URLSearchParams({
       format,
       regime: form.regime,
-      corporateTaxRate: form.corporateTaxRate,
-      minimumTax: form.minimumTax || "0",
       taxCredits: form.taxCredits || "0",
-      forfaitaireTax: form.forfaitaireTax || "0",
+      ...(form.corporateTaxRate ? { corporateTaxRate: form.corporateTaxRate } : {}),
+      ...(form.minimumTax ? { minimumTax: form.minimumTax } : {}),
+      ...(form.forfaitaireTax ? { forfaitaireTax: form.forfaitaireTax } : {}),
     });
     await downloadApiFile(
       `${base}/export?${params.toString()}`,
@@ -124,8 +124,20 @@ export function AnnualTaxPage() {
               <MenuItem value="IS">IS annuel</MenuItem>
               <MenuItem value="FORFAITAIRE">Régime forfaitaire</MenuItem>
             </TextField>
-            <TextField label="Taux IS" value={form.corporateTaxRate} onChange={(event) => setForm({ ...form, corporateTaxRate: event.target.value })} />
-            <TextField label="Minimum / avance" value={form.minimumTax} onChange={(event) => setForm({ ...form, minimumTax: event.target.value })} />
+            <TextField
+              label="Taux IS"
+              placeholder="Auto (selon secteur)"
+              helperText="Laisser vide pour résoudre automatiquement selon le secteur du dossier"
+              value={form.corporateTaxRate}
+              onChange={(event) => setForm({ ...form, corporateTaxRate: event.target.value })}
+            />
+            <TextField
+              label="Minimum / avance"
+              placeholder="Auto"
+              helperText="Laisser vide pour appliquer le minimum d'impôt configuré"
+              value={form.minimumTax}
+              onChange={(event) => setForm({ ...form, minimumTax: event.target.value })}
+            />
             <TextField label="Crédits imputables" value={form.taxCredits} onChange={(event) => setForm({ ...form, taxCredits: event.target.value })} />
           </Stack>
           <Divider sx={{ my: 3 }} />
