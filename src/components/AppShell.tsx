@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Link as RouterLink,
   NavLink,
@@ -11,8 +11,10 @@ import {
   AppBar,
   Autocomplete,
   Avatar,
+  Badge,
   Box,
   Button,
+  Chip,
   Collapse,
   Divider,
   Drawer,
@@ -27,6 +29,7 @@ import {
   Menu,
   MenuItem,
   Select,
+  Stack,
   TextField,
   Toolbar,
   Tooltip,
@@ -47,6 +50,7 @@ import {
   CreditCardOutlined,
   DashboardOutlined,
   DescriptionOutlined,
+  DoneAllRounded,
   ExpandLessRounded,
   ExpandMoreRounded,
   FactCheckOutlined,
@@ -68,7 +72,7 @@ import {
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
-import type { DossierSummary, PagedResponse } from "../types/api";
+import type { DossierSummary, NotificationItem, PagedResponse } from "../types/api";
 import { Brand } from "./Brand";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
@@ -249,9 +253,26 @@ const navSections: Array<{
 export function AppShell() {
   const { session, organization, selectOrganization, can, logout } = useAuth();
   const { direction, t } = useLanguage();
+  const qc = useQueryClient();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null);
   const [createAnchor, setCreateAnchor] = useState<HTMLElement | null>(null);
+  const [notificationsAnchor, setNotificationsAnchor] = useState<HTMLElement | null>(null);
+  const notifications = useQuery({
+    queryKey: ["cabinet-notifications", organization?.id],
+    queryFn: () => api.get<NotificationItem[]>(`/api/organizations/${organization?.id}/notifications`),
+    enabled: Boolean(organization?.id && can("notifications.view")),
+    refetchInterval: 60_000,
+  });
+  const unreadCount = notifications.data?.filter((item) => !item.readAtUtc).length ?? 0;
+  const markNotificationRead = useMutation({
+    mutationFn: (notificationId: string) => api.patch(`/api/organizations/${organization?.id}/notifications/${notificationId}/read`),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["cabinet-notifications"] }),
+  });
+  const markAllNotificationsRead = useMutation({
+    mutationFn: () => api.patch(`/api/organizations/${organization?.id}/notifications/read-all`),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["cabinet-notifications"] }),
+  });
   const theme = useTheme();
   const desktop = useMediaQuery(theme.breakpoints.up("lg"));
   const location = useLocation();
@@ -597,11 +618,81 @@ export function AppShell() {
           </Menu>
           <LanguageSwitcher />
           {can("notifications.view") && (
-            <Tooltip title={t("Notifications")}>
-              <IconButton>
-                <NotificationsNoneOutlined />
-              </IconButton>
-            </Tooltip>
+            <>
+              <Tooltip title={t("Notifications")}>
+                <IconButton
+                  onClick={(event) => setNotificationsAnchor(event.currentTarget)}
+                >
+                  <Badge badgeContent={unreadCount} color="secondary">
+                    <NotificationsNoneOutlined />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
+              <Menu
+                anchorEl={notificationsAnchor}
+                open={Boolean(notificationsAnchor)}
+                onClose={() => setNotificationsAnchor(null)}
+                slotProps={{ paper: { sx: { width: 380, maxHeight: 480 } } }}
+              >
+                <Box sx={{ px: 2, py: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Typography sx={{ fontWeight: 700 }}>Notifications</Typography>
+                  <Button
+                    size="small"
+                    startIcon={<DoneAllRounded />}
+                    disabled={!unreadCount || markAllNotificationsRead.isPending}
+                    onClick={() => markAllNotificationsRead.mutate()}
+                  >
+                    Tout marquer comme lu
+                  </Button>
+                </Box>
+                <Divider />
+                {notifications.isLoading && (
+                  <Box sx={{ p: 3, textAlign: "center" }}>
+                    <Typography variant="body2" color="text.secondary">Chargement…</Typography>
+                  </Box>
+                )}
+                {!notifications.isLoading && !notifications.data?.length && (
+                  <Box sx={{ p: 4, textAlign: "center" }}>
+                    <NotificationsNoneOutlined sx={{ fontSize: 32, color: "text.disabled" }} />
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      Aucune notification
+                    </Typography>
+                  </Box>
+                )}
+                {notifications.data?.slice(0, 20).map((item) => (
+                  <MenuItem
+                    key={item.id}
+                    onClick={() => {
+                      if (!item.readAtUtc) markNotificationRead.mutate(item.id);
+                    }}
+                    sx={{
+                      whiteSpace: "normal",
+                      alignItems: "flex-start",
+                      gap: 1,
+                      bgcolor: item.readAtUtc ? "transparent" : "#fff9ec",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        mt: 0.7,
+                        borderRadius: "50%",
+                        flexShrink: 0,
+                        bgcolor: item.readAtUtc ? "grey.300" : "secondary.main",
+                      }}
+                    />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{item.title}</Typography>
+                        {!item.readAtUtc && <Chip label="Nouveau" size="small" color="secondary" />}
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary">{item.message}</Typography>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
           )}
           <Tooltip title={t("Mon compte")}>
             <IconButton
