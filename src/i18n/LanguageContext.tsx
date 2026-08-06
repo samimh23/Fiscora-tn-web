@@ -46,6 +46,24 @@ function translateValue(value: string, language: Language) {
     if (text.startsWith("E-mail envoyé à ")) {
       return preserveWhitespace(value, `تم إرسال البريد الإلكتروني إلى ${text.slice("E-mail envoyé à ".length)}`);
     }
+    if (text.startsWith("Ma journée, ")) {
+      return preserveWhitespace(value, `يومي، ${text.slice("Ma journée, ".length)}`);
+    }
+    if (text.startsWith("Un seul écran pour savoir quoi traiter maintenant dans ")) {
+      return preserveWhitespace(
+        value,
+        `شاشة واحدة لمعرفة ما يجب معالجته الآن في ${text.slice("Un seul écran pour savoir quoi traiter maintenant dans ".length)}`,
+      );
+    }
+    if (text.startsWith("Déclaration mensuelle — ")) {
+      return preserveWhitespace(value, `التصريح الشهري — ${text.slice("Déclaration mensuelle — ".length)}`);
+    }
+    if (text.startsWith("Déclaration CNSS trimestrielle — ")) {
+      return preserveWhitespace(
+        value,
+        `التصريح الفصلي للصندوق الوطني للضمان الاجتماعي — ${text.slice("Déclaration CNSS trimestrielle — ".length)}`,
+      );
+    }
   }
   return value;
 }
