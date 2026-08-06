@@ -656,6 +656,9 @@ export interface BusinessInvoice {
   exciseAccountId: string | null;
   withholdingAccountId: string | null;
   vatSuspensionCertificateId: string | null;
+  currencyCode: string;
+  exchangeRate: string;
+  foreignGrossAmount: string | null;
   netAmount: string;
   exciseAmount: string;
   vatAmount: string;

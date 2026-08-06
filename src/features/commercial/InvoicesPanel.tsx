@@ -73,6 +73,8 @@ type Form = {
   exciseAccountId: string;
   withholdingAccountId: string;
   vatSuspensionCertificateId: string;
+  currencyCode: string;
+  exchangeRate: string;
   stampDuty: string;
   withholdingNature: string;
   withholdingBase: string;
@@ -107,6 +109,8 @@ const emptyForm = (): Form => ({
   exciseAccountId: "",
   withholdingAccountId: "",
   vatSuspensionCertificateId: "",
+  currencyCode: "TND",
+  exchangeRate: "",
   stampDuty: "",
   withholdingNature: "",
   withholdingBase: "",
@@ -170,6 +174,11 @@ function InvoiceDialog({
           exciseAccountId: invoice.exciseAccountId ?? "",
           withholdingAccountId: invoice.withholdingAccountId ?? "",
           vatSuspensionCertificateId: invoice.vatSuspensionCertificateId ?? "",
+          currencyCode: invoice.currencyCode ?? "TND",
+          exchangeRate:
+            invoice.currencyCode && invoice.currencyCode !== "TND"
+              ? invoice.exchangeRate
+              : "",
           stampDuty: invoice.stampDuty,
           withholdingNature: "",
           withholdingBase: invoice.withholdingBase,
@@ -342,6 +351,10 @@ function InvoiceDialog({
           form.type === "ACHAT"
             ? form.vatSuspensionCertificateId || undefined
             : undefined,
+        currencyCode:
+          form.currencyCode !== "TND" ? form.currencyCode : undefined,
+        exchangeRate:
+          form.currencyCode !== "TND" ? form.exchangeRate || undefined : undefined,
         stampDuty: form.stampDuty || undefined,
         withholdingNature: form.withholdingNature.trim() || undefined,
         withholdingBase: form.withholdingBase || undefined,
@@ -388,7 +401,8 @@ function InvoiceDialog({
     form.lines.length &&
     form.lines.every(
       (line) => line.accountId && line.description.trim() && line.unitPrice,
-    ),
+    ) &&
+    (form.currencyCode === "TND" || form.exchangeRate),
   );
 
   return (
@@ -692,6 +706,38 @@ function InvoiceDialog({
         </Button>
 
         <Divider sx={{ my: 3 }}>
+          <Chip label="Devise" />
+        </Divider>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)" },
+            gap: 2,
+          }}
+        >
+          <TextField
+            select
+            label="Devise de la facture"
+            value={form.currencyCode}
+            onChange={(event) => set("currencyCode", event.target.value)}
+            helperText="Les lignes sont saisies dans cette devise puis converties en TND"
+          >
+            <MenuItem value="TND">TND</MenuItem>
+            <MenuItem value="EUR">EUR</MenuItem>
+            <MenuItem value="USD">USD</MenuItem>
+            <MenuItem value="GBP">GBP</MenuItem>
+          </TextField>
+          {form.currencyCode !== "TND" && (
+            <TextField
+              label={`1 ${form.currencyCode} = ? TND`}
+              value={form.exchangeRate}
+              onChange={(event) => set("exchangeRate", event.target.value)}
+              helperText="Taux de change appliqué à toute la facture"
+            />
+          )}
+        </Box>
+
+        <Divider sx={{ my: 3 }}>
           <Chip label="Taxes et retenue" />
         </Divider>
         <Box
@@ -859,6 +905,17 @@ function InvoiceDialog({
               </Typography>
             </Box>
           </Stack>
+          {form.currencyCode !== "TND" && form.exchangeRate && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", textAlign: "right", mt: 1 }}
+            >
+              Montants convertis en TND au taux 1 {form.currencyCode} ={" "}
+              {form.exchangeRate} TND — les lignes ont été saisies en{" "}
+              {form.currencyCode}.
+            </Typography>
+          )}
         </Card>
       </DialogContent>
       <DialogActions>
