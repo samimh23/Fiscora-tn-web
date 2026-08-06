@@ -50,6 +50,16 @@ export function ReportsPanel({ organizationId, dossierId }: { organizationId: st
     try { await downloadApiFile(`${base}/reports/fec/export?from=${from}&to=${to}`, `FEC-${from}-${to}.txt`); }
     catch (error) { setDownloadError(error instanceof Error ? error.message : "Impossible de générer l'export."); }
   };
+  const exportSage = async () => {
+    setDownloadError('');
+    try { await downloadApiFile(`${base}/reports/sage/export?from=${from}&to=${to}`, `Sage-${from}-${to}.csv`); }
+    catch (error) { setDownloadError(error instanceof Error ? error.message : "Impossible de générer l'export."); }
+  };
+  const exportOdoo = async () => {
+    setDownloadError('');
+    try { await downloadApiFile(`${base}/reports/odoo/export?from=${from}&to=${to}`, `Odoo-${from}-${to}.csv`); }
+    catch (error) { setDownloadError(error instanceof Error ? error.message : "Impossible de générer l'export."); }
+  };
 
   return <Stack spacing={2}>
     <Card><Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
@@ -59,7 +69,15 @@ export function ReportsPanel({ organizationId, dossierId }: { organizationId: st
         <TextField size="small" label="Au" type="date" value={to} onChange={(event) => setTo(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
         <Button startIcon={<DownloadRounded />} onClick={() => exportReport('pdf')}>PDF</Button>
         <Button startIcon={<DownloadRounded />} onClick={() => exportReport('xlsx')}>Excel</Button>
-        <Button startIcon={<DownloadRounded />} onClick={exportFec}>Export FEC (.txt)</Button>
+        <TextField select size="small" label="Exports comptables" value="" onChange={(event) => {
+          if (event.target.value === 'fec') void exportFec();
+          if (event.target.value === 'sage') void exportSage();
+          if (event.target.value === 'odoo') void exportOdoo();
+        }} sx={{ minWidth: 200 }}>
+          <MenuItem value="fec">Journal complet (FEC, .txt)</MenuItem>
+          <MenuItem value="sage">Sage 100 / Ciel (.csv)</MenuItem>
+          <MenuItem value="odoo">Odoo — écritures (.csv)</MenuItem>
+        </TextField>
       </Stack>
     </Box></Card>
     {downloadError && <Alert severity="error">{downloadError}</Alert>}
