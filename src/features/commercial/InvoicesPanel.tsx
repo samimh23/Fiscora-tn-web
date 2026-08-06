@@ -27,7 +27,7 @@ import {
   PostAddRounded,
   ReceiptLongOutlined,
 } from "@mui/icons-material";
-import { api, ApiError } from "../../api/client";
+import { api, ApiError, downloadApiFile } from "../../api/client";
 import type {
   AccountingJournal,
   BusinessInvoice,
@@ -1139,6 +1139,26 @@ export function InvoicesPanel({
                     onClick={() => setMatchingInvoice(invoice)}
                   >
                     Vérifier BR
+                  </Button>
+                )}
+              {invoice.type === "ACHAT" &&
+                Number(invoice.withholdingAmount) > 0 && (
+                  <Button
+                    size="small"
+                    onClick={() =>
+                      downloadApiFile(
+                        `/api/organizations/${organizationId}/dossiers/${dossierId}/business-invoices/${invoice.id}/withholding-certificate`,
+                        `certificat-retenue-${invoice.number}.pdf`,
+                      ).catch((reason) =>
+                        setError(
+                          reason instanceof Error
+                            ? reason.message
+                            : "Impossible de générer le certificat.",
+                        ),
+                      )
+                    }
+                  >
+                    Certificat RS
                   </Button>
                 )}
             </Stack>
