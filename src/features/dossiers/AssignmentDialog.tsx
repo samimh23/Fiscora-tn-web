@@ -12,7 +12,7 @@ import type { DossierAssignment, OrganizationMember } from '../../types/api';
 
 const assignmentSchema = z.object({
   membershipId: z.string().uuid('Sélectionnez un collaborateur.'),
-  assignmentRole: z.enum(['RESPONSABLE', 'SUPPORT']),
+  assignmentRole: z.enum(['RESPONSABLE', 'SUPPORT', 'CLIENT']),
   monthlyTimeBudgetHours: z.number().min(0).max(1666),
   isActive: z.boolean(),
 });
@@ -30,10 +30,11 @@ export function AssignmentDialog({ open, onClose, organizationId, dossierId, mem
   const queryClient = useQueryClient();
   const [apiError, setApiError] = useState('');
   const editing = Boolean(assignment);
-  const { control, register, reset, handleSubmit, formState: { errors } } = useForm<AssignmentFormValues>({
+  const { control, register, reset, setValue, watch, handleSubmit, formState: { errors } } = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentSchema),
     defaultValues: { membershipId: '', assignmentRole: 'SUPPORT', monthlyTimeBudgetHours: 0, isActive: true },
   });
+  const assignmentRole = watch('assignmentRole');
 
   useEffect(() => {
     if (!open) return;
@@ -68,9 +69,37 @@ export function AssignmentDialog({ open, onClose, organizationId, dossierId, mem
       <DialogContent dividers>
         {apiError && <Alert severity="error" sx={{ mb: 2 }}>{apiError}</Alert>}
         <Box component="form" id="assignment-form" onSubmit={handleSubmit((values) => mutation.mutate(values))} sx={{ display: 'grid', gap: 2 }}>
-          <Controller name="membershipId" control={control} render={({ field }) => <TextField select label="Collaborateur" disabled={editing} error={Boolean(errors.membershipId)} helperText={errors.membershipId?.message} {...field}>{members.filter((member) => member.isActive || member.membershipId === assignment?.membershipId).map((member) => <MenuItem key={member.membershipId} value={member.membershipId}>{member.fullName} · {member.role}</MenuItem>)}</TextField>} />
-          <Controller name="assignmentRole" control={control} render={({ field }) => <TextField select label="Rôle sur le dossier" {...field}><MenuItem value="RESPONSABLE">Responsable</MenuItem><MenuItem value="SUPPORT">Support</MenuItem></TextField>} />
-          <TextField type="number" label="Budget mensuel (heures)" slotProps={{ htmlInput: { min: 0, step: 0.25 } }} error={Boolean(errors.monthlyTimeBudgetHours)} helperText={errors.monthlyTimeBudgetHours?.message ?? 'Utilisé pour suivre la charge et la rentabilité du dossier.'} {...register('monthlyTimeBudgetHours', { valueAsNumber: true })} />
+          <Controller
+            name="membershipId"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                select
+                label="Collaborateur"
+                disabled={editing}
+                error={Boolean(errors.membershipId)}
+                helperText={errors.membershipId?.message}
+                {...field}
+                onChange={(event) => {
+                  field.onChange(event);
+                  const member = members.find((item) => item.membershipId === event.target.value);
+                  if (member?.role === 'Portail client') setValue('assignmentRole', 'CLIENT');
+                  else if (assignmentRole === 'CLIENT') setValue('assignmentRole', 'SUPPORT');
+                }}
+              >
+                {members.filter((member) => member.isActive || member.membershipId === assignment?.membershipId).map((member) => <MenuItem key={member.membershipId} value={member.membershipId}>{member.fullName} · {member.role}</MenuItem>)}
+              </TextField>
+            )}
+          />
+          <Controller name="assignmentRole" control={control} render={({ field }) => <TextField select label="Rôle sur le dossier" {...field}><MenuItem value="RESPONSABLE">Responsable</MenuItem><MenuItem value="SUPPORT">Support</MenuItem><MenuItem value="CLIENT">Accès portail client</MenuItem></TextField>} />
+          {assignmentRole !== 'CLIENT' && (
+            <TextField type="number" label="Budget mensuel (heures)" slotProps={{ htmlInput: { min: 0, step: 0.25 } }} error={Boolean(errors.monthlyTimeBudgetHours)} helperText={errors.monthlyTimeBudgetHours?.message ?? 'Utilisé pour suivre la charge et la rentabilité du dossier.'} {...register('monthlyTimeBudgetHours', { valueAsNumber: true })} />
+          )}
+          {assignmentRole === 'CLIENT' && (
+            <Alert severity="info">
+              Ce client pourra voir ce dossier, ses pièces et ses échéances dans son espace client.
+            </Alert>
+          )}
           {editing && <Controller name="isActive" control={control} render={({ field }) => <FormControlLabel control={<Switch checked={field.value} onChange={(_, value) => field.onChange(value)} />} label="Affectation active" />} />}
         </Box>
       </DialogContent>

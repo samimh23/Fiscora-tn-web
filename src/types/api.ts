@@ -344,7 +344,7 @@ export interface DossierAssignment {
   fullName: string;
   email: string;
   cabinetRole: string;
-  assignmentRole: "RESPONSABLE" | "SUPPORT";
+  assignmentRole: "RESPONSABLE" | "SUPPORT" | "CLIENT";
   isActive: boolean;
   monthlyTimeBudgetMinutes: number | null;
 }

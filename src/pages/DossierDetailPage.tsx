@@ -836,25 +836,31 @@ export function DossierDetailPage() {
                     label={
                       assignment.assignmentRole === "RESPONSABLE"
                         ? "Responsable"
-                        : "Support"
+                        : assignment.assignmentRole === "CLIENT"
+                          ? "Accès portail client"
+                          : "Support"
                     }
                     size="small"
                     color={
                       assignment.assignmentRole === "RESPONSABLE"
                         ? "primary"
-                        : "default"
+                        : assignment.assignmentRole === "CLIENT"
+                          ? "success"
+                          : "default"
                     }
                   />
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "block", mt: 0.5 }}
-                  >
-                    {((assignment.monthlyTimeBudgetMinutes ?? 0) / 60).toFixed(
-                      2,
-                    )}{" "}
-                    h / mois
-                  </Typography>
+                  {assignment.assignmentRole !== "CLIENT" && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: "block", mt: 0.5 }}
+                    >
+                      {(
+                        (assignment.monthlyTimeBudgetMinutes ?? 0) / 60
+                      ).toFixed(2)}{" "}
+                      h / mois
+                    </Typography>
+                  )}
                 </Box>
                 {!archived && (
                   <Tooltip title="Modifier">
