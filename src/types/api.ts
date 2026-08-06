@@ -592,6 +592,8 @@ export interface BusinessInvoiceLine {
   discountRate: string;
   vatCode: string | null;
   vatRate: string;
+  exciseRate?: string | null;
+  exciseAmount?: string;
   netAmount?: string;
   vatAmount?: string;
   grossAmount?: string;
@@ -651,8 +653,10 @@ export interface BusinessInvoice {
   thirdPartyAccount: LedgerAccount;
   vatAccountId: string | null;
   stampAccountId: string | null;
+  exciseAccountId: string | null;
   withholdingAccountId: string | null;
   netAmount: string;
+  exciseAmount: string;
   vatAmount: string;
   stampDuty: string;
   withholdingBase: string;
@@ -713,6 +717,25 @@ export interface FiscalWithholdingRate {
   effectiveTo: string | null;
 }
 
+export interface CostCenter {
+  id: string;
+  dossierId: string;
+  code: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+}
+
+export interface CostCenterReportRow {
+  costCenterId: string | null;
+  code: string | null;
+  name: string | null;
+  accountType: "Revenue" | "Expense";
+  totalDebit: string;
+  totalCredit: string;
+  netAmount: string;
+}
+
 export interface JournalEntryLine {
   id: string;
   accountId: string;
@@ -721,6 +744,7 @@ export interface JournalEntryLine {
   debit: string;
   credit: string;
   thirdPartyName: string | null;
+  costCenterId: string | null;
   reconciliationId: string | null;
   letterCode: string | null;
   reconciledAtUtc: string | null;

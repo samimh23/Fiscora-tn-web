@@ -47,7 +47,7 @@ import {
 type DraftLine = Pick<
   BusinessInvoiceLine,
   "accountId" | "description" | "quantity" | "unitPrice" | "discountRate"
-> & { vatCode: string; vatRate: string };
+> & { vatCode: string; vatRate: string; exciseRate: string };
 export interface InvoiceDraftSeed {
   sourceCommercialDocumentId: string;
   type: "ACHAT" | "VENTE";
@@ -70,6 +70,7 @@ type Form = {
   thirdPartyAccountId: string;
   vatAccountId: string;
   stampAccountId: string;
+  exciseAccountId: string;
   withholdingAccountId: string;
   stampDuty: string;
   withholdingNature: string;
@@ -87,6 +88,7 @@ const emptyLine = (): DraftLine => ({
   discountRate: "0.00000",
   vatCode: "",
   vatRate: "0.19000",
+  exciseRate: "",
 });
 const emptyForm = (): Form => ({
   type: "VENTE",
@@ -101,6 +103,7 @@ const emptyForm = (): Form => ({
   thirdPartyAccountId: "",
   vatAccountId: "",
   stampAccountId: "",
+  exciseAccountId: "",
   withholdingAccountId: "",
   stampDuty: "",
   withholdingNature: "",
@@ -162,6 +165,7 @@ function InvoiceDialog({
           thirdPartyAccountId: invoice.thirdPartyAccountId,
           vatAccountId: invoice.vatAccountId ?? "",
           stampAccountId: invoice.stampAccountId ?? "",
+          exciseAccountId: invoice.exciseAccountId ?? "",
           withholdingAccountId: invoice.withholdingAccountId ?? "",
           stampDuty: invoice.stampDuty,
           withholdingNature: "",
@@ -176,6 +180,7 @@ function InvoiceDialog({
             discountRate: line.discountRate,
             vatCode: line.vatCode ?? "",
             vatRate: line.vatRate,
+            exciseRate: line.exciseRate ?? "",
           })),
         }
       : draftSeed
@@ -251,10 +256,15 @@ function InvoiceDialog({
           const price = Number(line.unitPrice) || 0;
           const discount = Number(line.discountRate) || 0;
           const net = quantity * price * (1 - discount);
-          const vat = net * (Number(line.vatRate) || 0);
-          return { net: total.net + net, vat: total.vat + vat };
+          const excise = net * (Number(line.exciseRate) || 0);
+          const vat = (net + excise) * (Number(line.vatRate) || 0);
+          return {
+            net: total.net + net,
+            excise: total.excise + excise,
+            vat: total.vat + vat,
+          };
         },
-        { net: 0, vat: 0 },
+        { net: 0, excise: 0, vat: 0 },
       ),
     [form.lines],
   );
@@ -308,6 +318,7 @@ function InvoiceDialog({
         thirdPartyAccountId: form.thirdPartyAccountId,
         vatAccountId: form.vatAccountId || undefined,
         stampAccountId: form.stampAccountId || undefined,
+        exciseAccountId: form.exciseAccountId || undefined,
         withholdingAccountId: form.withholdingAccountId || undefined,
         stampDuty: form.stampDuty || undefined,
         withholdingNature: form.withholdingNature.trim() || undefined,
@@ -323,6 +334,7 @@ function InvoiceDialog({
           discountRate: line.discountRate,
           vatCode: line.vatCode || undefined,
           vatRate: line.vatCode ? undefined : line.vatRate || undefined,
+          exciseRate: line.exciseRate || undefined,
         })),
       };
       const base = `/api/organizations/${organizationId}/dossiers/${dossierId}/business-invoices`;
@@ -517,7 +529,7 @@ function InvoiceDialog({
                   display: "grid",
                   gridTemplateColumns: {
                     xs: "1fr",
-                    md: "2fr 2fr .8fr 1fr 1fr 1fr auto",
+                    md: "2fr 2fr .8fr 1fr 1fr 1fr .8fr auto",
                   },
                   gap: 1.5,
                   alignItems: "center",
@@ -606,6 +618,15 @@ function InvoiceDialog({
                   <MenuItem value="manual:0.13000">13 % (manuel)</MenuItem>
                   <MenuItem value="manual:0.19000">19 % (manuel)</MenuItem>
                 </TextField>
+                <TextField
+                  size="small"
+                  label="Droit conso."
+                  value={line.exciseRate}
+                  onChange={(event) =>
+                    updateLine(index, "exciseRate", event.target.value)
+                  }
+                  helperText="Taux, ex. 0.10"
+                />
                 <Tooltip title="Supprimer la ligne">
                   <span>
                     <IconButton
@@ -684,6 +705,20 @@ function InvoiceDialog({
           />
           <TextField
             select
+            label="Compte droit de consommation"
+            value={form.exciseAccountId}
+            onChange={(event) => set("exciseAccountId", event.target.value)}
+            helperText="Requis si un taux est saisi sur une ligne"
+          >
+            <MenuItem value="">Aucun</MenuItem>
+            {postingAccounts.map((account) => (
+              <MenuItem key={account.id} value={account.id}>
+                {account.code} — {account.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
             label="Nature de retenue"
             value={form.withholdingNature}
             onChange={(event) => set("withholdingNature", event.target.value)}
@@ -747,6 +782,16 @@ function InvoiceDialog({
                 {money(calculation.net)}
               </Typography>
             </Box>
+            {calculation.excise > 0 && (
+              <Box>
+                <Typography variant="caption">
+                  Droit de consommation
+                </Typography>
+                <Typography sx={{ fontWeight: 900 }}>
+                  {money(calculation.excise)}
+                </Typography>
+              </Box>
+            )}
             <Box>
               <Typography variant="caption">TVA estimée</Typography>
               <Typography sx={{ fontWeight: 900 }}>
@@ -756,7 +801,7 @@ function InvoiceDialog({
             <Box>
               <Typography variant="caption">TTC estimé hors timbre</Typography>
               <Typography sx={{ fontWeight: 900, color: "primary.dark" }}>
-                {money(calculation.net + calculation.vat)}
+                {money(calculation.net + calculation.excise + calculation.vat)}
               </Typography>
             </Box>
           </Stack>

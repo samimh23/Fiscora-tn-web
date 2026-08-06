@@ -621,6 +621,7 @@ export function CommercialDocumentsPanel({
         discountRate: line.discountRate,
         vatCode: line.vatCode ?? "",
         vatRate: line.vatRate,
+        exciseRate: "",
       })),
       notes: `Créée depuis ${kindLabels[document.kind]} ${document.number}`,
     });

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Alert, Box, Button, Card, Chip, Collapse, Dialog, DialogActions, DialogContent,
   DialogTitle, IconButton, MenuItem, Skeleton, Stack, TextField, Tooltip, Typography,
@@ -9,17 +9,21 @@ import {
   EditRounded, RateReviewOutlined, ReplayRounded, SendRounded, SwapVertRounded,
 } from '@mui/icons-material';
 import { api, ApiError } from '../../api/client';
-import type { AccountingJournal, JournalEntry, LedgerAccount } from '../../types/api';
+import type { AccountingJournal, CostCenter, JournalEntry, LedgerAccount } from '../../types/api';
 import { entryStatusLabels, money, shortDate } from './options';
 
-type DraftLine = { accountId: string; label: string; debit: string; credit: string; thirdPartyName: string };
-const emptyLine = (): DraftLine => ({ accountId: '', label: '', debit: '0.000', credit: '0.000', thirdPartyName: '' });
+type DraftLine = { accountId: string; label: string; debit: string; credit: string; thirdPartyName: string; costCenterId: string };
+const emptyLine = (): DraftLine => ({ accountId: '', label: '', debit: '0.000', credit: '0.000', thirdPartyName: '', costCenterId: '' });
 
 function EntryDialog({ open, onClose, organizationId, dossierId, journals, accounts, entry }: {
   open: boolean; onClose: () => void; organizationId: string; dossierId: string;
   journals: AccountingJournal[]; accounts: LedgerAccount[]; entry?: JournalEntry | null;
 }) {
   const queryClient = useQueryClient();
+  const { data: costCenters = [] } = useQuery({
+    queryKey: ['cost-centers', organizationId, dossierId],
+    queryFn: () => api.get<CostCenter[]>(`/api/organizations/${organizationId}/dossiers/${dossierId}/cost-centers`),
+  });
   const [journalId, setJournalId] = useState(entry?.journalId ?? '');
   const [entryDate, setEntryDate] = useState(entry?.entryDate ?? new Date().toISOString().slice(0, 10));
   const [pieceReference, setPieceReference] = useState(entry?.pieceReference ?? '');
@@ -30,6 +34,7 @@ function EntryDialog({ open, onClose, organizationId, dossierId, journals, accou
     debit: line.debit,
     credit: line.credit,
     thirdPartyName: line.thirdPartyName ?? '',
+    costCenterId: line.costCenterId ?? '',
   })) ?? [emptyLine(), emptyLine()]);
   const [error, setError] = useState('');
   const totals = useMemo(() => lines.reduce((sum, line) => ({
@@ -44,10 +49,10 @@ function EntryDialog({ open, onClose, organizationId, dossierId, journals, accou
   const mutation = useMutation({
     mutationFn: () => (entry ? api.put<JournalEntry>(`/api/organizations/${organizationId}/dossiers/${dossierId}/entries/${entry.id}`, {
       journalId, entryDate, pieceReference: pieceReference.trim(), description: description.trim(),
-      lines: lines.map((line) => ({ accountId: line.accountId, label: line.label.trim(), debit: line.debit || '0.000', credit: line.credit || '0.000', thirdPartyName: line.thirdPartyName.trim() || undefined })),
+      lines: lines.map((line) => ({ accountId: line.accountId, label: line.label.trim(), debit: line.debit || '0.000', credit: line.credit || '0.000', thirdPartyName: line.thirdPartyName.trim() || undefined, costCenterId: line.costCenterId || undefined })),
     }) : api.post<JournalEntry>(`/api/organizations/${organizationId}/dossiers/${dossierId}/entries`, {
       journalId, entryDate, pieceReference: pieceReference.trim(), description: description.trim(),
-      lines: lines.map((line) => ({ accountId: line.accountId, label: line.label.trim(), debit: line.debit || '0.000', credit: line.credit || '0.000', thirdPartyName: line.thirdPartyName.trim() || undefined })),
+      lines: lines.map((line) => ({ accountId: line.accountId, label: line.label.trim(), debit: line.debit || '0.000', credit: line.credit || '0.000', thirdPartyName: line.thirdPartyName.trim() || undefined, costCenterId: line.costCenterId || undefined })),
     })),
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['journal-entries', organizationId, dossierId] }); onClose(); },
     onError: (reason) => setError(reason instanceof ApiError ? reason.message : `Impossible de ${entry ? 'modifier' : 'créer'} cette écriture.`),
@@ -68,7 +73,7 @@ function EntryDialog({ open, onClose, organizationId, dossierId, journals, accou
       </Box>
       <Typography sx={{ fontWeight: 900, mt: 3, mb: 1.5 }}>Mouvements débit / crédit</Typography>
       <Stack spacing={1.2}>{lines.map((line, index) => <Card key={index} variant="outlined" sx={{ p: 1.7 }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 2fr 1fr 1fr 1.5fr auto' }, gap: 1.2, alignItems: 'center' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 2fr 1fr 1fr 1.5fr 1.3fr auto' }, gap: 1.2, alignItems: 'center' }}>
           <TextField select size="small" label="Compte" value={line.accountId} onChange={(event) => updateLine(index, 'accountId', event.target.value)}>
             <MenuItem value="">Sélectionner…</MenuItem>{accounts.filter((account) => account.allowsPosting && account.isActive).map((account) => <MenuItem key={account.id} value={account.id}>{account.code} — {account.name}</MenuItem>)}
           </TextField>
@@ -76,6 +81,9 @@ function EntryDialog({ open, onClose, organizationId, dossierId, journals, accou
           <TextField size="small" label="Débit" value={line.debit} onChange={(event) => updateLine(index, 'debit', event.target.value)} />
           <TextField size="small" label="Crédit" value={line.credit} onChange={(event) => updateLine(index, 'credit', event.target.value)} />
           <TextField size="small" label="Tiers (facultatif)" value={line.thirdPartyName} onChange={(event) => updateLine(index, 'thirdPartyName', event.target.value)} />
+          <TextField select size="small" label="Centre de coût" value={line.costCenterId} onChange={(event) => updateLine(index, 'costCenterId', event.target.value)}>
+            <MenuItem value="">Aucun</MenuItem>{costCenters.filter((cc) => cc.isActive).map((cc) => <MenuItem key={cc.id} value={cc.id}>{cc.code} — {cc.name}</MenuItem>)}
+          </TextField>
           <Tooltip title="Supprimer"><span><IconButton color="error" disabled={lines.length === 2} onClick={() => setLines((current) => current.filter((_, position) => position !== index))}><DeleteOutlineRounded /></IconButton></span></Tooltip>
         </Box>
       </Card>)}</Stack>

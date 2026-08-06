@@ -11,7 +11,7 @@ import { useAuth } from '../auth/AuthContext';
 import { DossierSelector, QueryState } from '../components/WorkspaceTools';
 import { PageHeader } from '../components/PageHeader';
 import { DossierAccountingPanel } from '../features/accounting/DossierAccountingPanel';
-import type { DossierSummary, LedgerAccount } from '../types/api';
+import type { CostCenter, CostCenterReportRow, DossierSummary, LedgerAccount } from '../types/api';
 
 interface AccountForm {
   code: string; name: string; description: string; type: string; normalBalance: string;
@@ -22,6 +22,11 @@ const emptyAccount: AccountForm = {
   code: '', name: '', description: '', type: 'Asset', normalBalance: 'Debit',
   parentAccountId: '', allowsPosting: true, isActive: true,
 };
+
+interface CostCenterForm { code: string; name: string; description: string; isActive: boolean }
+const emptyCostCenter: CostCenterForm = { code: '', name: '', description: '', isActive: true };
+const firstOfYear = () => `${new Date().getFullYear()}-01-01`;
+const today = () => new Date().toISOString().slice(0, 10);
 
 const accountTypeLabels: Record<string, string> = {
   Asset: 'Actif', Liability: 'Passif', Equity: 'Capitaux propres', Revenue: 'Produit',
@@ -39,6 +44,11 @@ export function AccountingPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<LedgerAccount | null>(null);
   const [form, setForm] = useState<AccountForm>(emptyAccount);
+  const [ccDialogOpen, setCcDialogOpen] = useState(false);
+  const [editingCc, setEditingCc] = useState<CostCenter | null>(null);
+  const [ccForm, setCcForm] = useState<CostCenterForm>(emptyCostCenter);
+  const [reportFrom, setReportFrom] = useState(firstOfYear());
+  const [reportTo, setReportTo] = useState(today());
 
   const base = `/api/organizations/${organizationId}/dossiers/${dossierId}`;
   const accounts = useQuery({
@@ -50,6 +60,16 @@ export function AccountingPage() {
     queryKey: ['dossier', organizationId, dossierId],
     queryFn: () => api.get<DossierSummary>(`${base}`),
     enabled: Boolean(organizationId && dossierId),
+  });
+  const costCenters = useQuery({
+    queryKey: ['cost-centers', organizationId, dossierId, true],
+    queryFn: () => api.get<CostCenter[]>(`${base}/cost-centers?includeInactive=true`),
+    enabled: Boolean(organizationId && dossierId && can('chart_of_accounts.view')),
+  });
+  const costCenterReport = useQuery({
+    queryKey: ['cost-center-report', organizationId, dossierId, reportFrom, reportTo],
+    queryFn: () => api.get<CostCenterReportRow[]>(`${base}/cost-centers/report?from=${reportFrom}&to=${reportTo}`),
+    enabled: Boolean(organizationId && dossierId && tab === 'costcenters' && can('accounting.view')),
   });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['ledger-accounts', organizationId, dossierId] });
@@ -63,6 +83,16 @@ export function AccountingPage() {
   const install = useMutation({
     mutationFn: () => api.post<{ added: number; skipped: number; total: number; reference: string }>(`${base}/ledger-accounts/apply-tunisian-chart`),
     onSuccess: refresh,
+  });
+  const saveCc = useMutation({
+    mutationFn: () => {
+      const payload = { ...ccForm, description: ccForm.description.trim() || null };
+      return editingCc ? api.put(`${base}/cost-centers/${editingCc.id}`, payload) : api.post(`${base}/cost-centers`, payload);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['cost-centers', organizationId, dossierId] });
+      setCcDialogOpen(false);
+    },
   });
 
   const filtered = useMemo(() => (accounts.data ?? []).filter((item) => {
@@ -80,7 +110,13 @@ export function AccountingPage() {
     });
     setDialogOpen(true);
   };
-  const error = save.error ?? install.error;
+  const openCreateCc = () => { setEditingCc(null); setCcForm(emptyCostCenter); setCcDialogOpen(true); };
+  const openEditCc = (cc: CostCenter) => {
+    setEditingCc(cc);
+    setCcForm({ code: cc.code, name: cc.name, description: cc.description ?? '', isActive: cc.isActive });
+    setCcDialogOpen(true);
+  };
+  const error = save.error ?? install.error ?? saveCc.error;
 
   return <>
     <PageHeader
@@ -95,6 +131,7 @@ export function AccountingPage() {
     <Card sx={{ mb: 2 }}>
       <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ px: 2 }}>
         <Tab value="chart" label="Plan comptable du dossier" />
+        <Tab value="costcenters" label="Centres de coût" />
         <Tab value="dossier" label="Production comptable" />
       </Tabs>
     </Card>
@@ -124,6 +161,47 @@ export function AccountingPage() {
         </TableRow>)}</TableBody>
       </Table></Box>}
     </CardContent></Card>}
+
+    {tab === 'costcenters' && dossierId && <>
+      <Card sx={{ mb: 2 }}><CardContent sx={{ p: 0 }}>
+        <Box sx={{ p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Typography sx={{ fontWeight: 800 }}>Centres de coût du dossier</Typography>
+          <Button variant="contained" startIcon={<AddRounded />} disabled={!can('chart_of_accounts.manage')} onClick={openCreateCc}>Nouveau centre de coût</Button>
+        </Box>
+        <Alert severity="info" sx={{ mx: 2.5, mb: 2 }}>Taguez chaque ligne d’écriture (module Écritures comptables) avec un centre de coût pour obtenir un compte de résultat par département, projet ou site.</Alert>
+        <QueryState loading={costCenters.isLoading} error={costCenters.isError} empty={!costCenters.data?.length} emptyText="Aucun centre de coût. Créez-en un pour commencer à ventiler vos écritures." />
+        {Boolean(costCenters.data?.length) && <Box sx={{ overflowX: 'auto' }}><Table size="small">
+          <TableHead><TableRow><TableCell>Code</TableCell><TableCell>Nom</TableCell><TableCell>Statut</TableCell><TableCell /></TableRow></TableHead>
+          <TableBody>{costCenters.data?.map((cc) => <TableRow key={cc.id}>
+            <TableCell><Typography sx={{ fontWeight: 850 }}>{cc.code}</Typography></TableCell>
+            <TableCell><Typography sx={{ fontWeight: 700 }}>{cc.name}</Typography>{cc.description && <Typography variant="caption" color="text.secondary">{cc.description}</Typography>}</TableCell>
+            <TableCell><Chip size="small" label={cc.isActive ? 'Actif' : 'Inactif'} color={cc.isActive ? 'success' : 'default'} variant="outlined" /></TableCell>
+            <TableCell><Button size="small" startIcon={<EditOutlined />} disabled={!can('chart_of_accounts.manage')} onClick={() => openEditCc(cc)}>Modifier</Button></TableCell>
+          </TableRow>)}</TableBody>
+        </Table></Box>}
+      </CardContent></Card>
+      <Card><CardContent sx={{ p: 0 }}>
+        <Box sx={{ p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Typography sx={{ fontWeight: 800 }}>Résultat par centre de coût</Typography>
+          <Stack direction="row" spacing={1.5}>
+            <TextField size="small" type="date" label="Du" value={reportFrom} onChange={(event) => setReportFrom(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+            <TextField size="small" type="date" label="Au" value={reportTo} onChange={(event) => setReportTo(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+          </Stack>
+        </Box>
+        <QueryState loading={costCenterReport.isLoading} error={costCenterReport.isError} empty={!costCenterReport.data?.length} emptyText="Aucune écriture comptabilisée sur cette période." />
+        {Boolean(costCenterReport.data?.length) && <Box sx={{ overflowX: 'auto' }}><Table size="small">
+          <TableHead><TableRow><TableCell>Centre de coût</TableCell><TableCell>Type</TableCell><TableCell align="right">Débit</TableCell><TableCell align="right">Crédit</TableCell><TableCell align="right">Net</TableCell></TableRow></TableHead>
+          <TableBody>{costCenterReport.data?.map((row, i) => <TableRow key={i}>
+            <TableCell>{row.code ? `${row.code} — ${row.name}` : 'Non affecté'}</TableCell>
+            <TableCell>{row.accountType === 'Revenue' ? 'Produits' : 'Charges'}</TableCell>
+            <TableCell align="right">{row.totalDebit}</TableCell>
+            <TableCell align="right">{row.totalCredit}</TableCell>
+            <TableCell align="right"><b>{row.netAmount}</b></TableCell>
+          </TableRow>)}</TableBody>
+        </Table></Box>}
+      </CardContent></Card>
+    </>}
+    {tab === 'costcenters' && !dossierId && <Alert severity="info">Choisissez un dossier client.</Alert>}
 
     {tab === 'dossier' && <>
       {!dossierId && <Alert severity="info">Choisissez un dossier client.</Alert>}
@@ -161,6 +239,19 @@ export function AccountingPage() {
         {editing && <FormControlLabel control={<Checkbox checked={form.isActive} onChange={(event) => setForm({ ...form, isActive: event.target.checked })} />} label="Compte actif" />}
       </Stack></DialogContent>
       <DialogActions><Button onClick={() => setDialogOpen(false)}>Annuler</Button><Button variant="contained" disabled={!form.code.trim() || !form.name.trim() || save.isPending} onClick={() => save.mutate()}>Enregistrer</Button></DialogActions>
+    </Dialog>
+
+    <Dialog open={ccDialogOpen} onClose={saveCc.isPending ? undefined : () => setCcDialogOpen(false)} fullWidth maxWidth="sm">
+      <DialogTitle>{editingCc ? 'Modifier le centre de coût' : 'Nouveau centre de coût'}</DialogTitle>
+      <DialogContent><Stack spacing={2} sx={{ mt: 1 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <TextField label="Code" value={ccForm.code} onChange={(event) => setCcForm({ ...ccForm, code: event.target.value })} />
+          <TextField fullWidth label="Nom" value={ccForm.name} onChange={(event) => setCcForm({ ...ccForm, name: event.target.value })} />
+        </Stack>
+        <TextField multiline minRows={2} label="Description" value={ccForm.description} onChange={(event) => setCcForm({ ...ccForm, description: event.target.value })} />
+        {editingCc && <FormControlLabel control={<Checkbox checked={ccForm.isActive} onChange={(event) => setCcForm({ ...ccForm, isActive: event.target.checked })} />} label="Centre de coût actif" />}
+      </Stack></DialogContent>
+      <DialogActions><Button onClick={() => setCcDialogOpen(false)}>Annuler</Button><Button variant="contained" disabled={!ccForm.code.trim() || !ccForm.name.trim() || saveCc.isPending} onClick={() => saveCc.mutate()}>Enregistrer</Button></DialogActions>
     </Dialog>
   </>;
 }
