@@ -72,6 +72,7 @@ type Form = {
   stampAccountId: string;
   exciseAccountId: string;
   withholdingAccountId: string;
+  vatSuspensionCertificateId: string;
   stampDuty: string;
   withholdingNature: string;
   withholdingBase: string;
@@ -105,6 +106,7 @@ const emptyForm = (): Form => ({
   stampAccountId: "",
   exciseAccountId: "",
   withholdingAccountId: "",
+  vatSuspensionCertificateId: "",
   stampDuty: "",
   withholdingNature: "",
   withholdingBase: "",
@@ -167,6 +169,7 @@ function InvoiceDialog({
           stampAccountId: invoice.stampAccountId ?? "",
           exciseAccountId: invoice.exciseAccountId ?? "",
           withholdingAccountId: invoice.withholdingAccountId ?? "",
+          vatSuspensionCertificateId: invoice.vatSuspensionCertificateId ?? "",
           stampDuty: invoice.stampDuty,
           withholdingNature: "",
           withholdingBase: invoice.withholdingBase,
@@ -248,6 +251,21 @@ function InvoiceDialog({
       rate.effectiveFrom <= form.invoiceDate &&
       (!rate.effectiveTo || rate.effectiveTo >= form.invoiceDate),
   );
+  const { data: vatSuspensionCertificates = [] } = useQuery({
+    queryKey: ["vat-suspension-certificates", organizationId, dossierId],
+    queryFn: () =>
+      api.get<
+        Array<{
+          id: string;
+          number: string;
+          currentStatus: string;
+          remainingBase: string;
+        }>
+      >(
+        `/api/organizations/${organizationId}/foreign-trade/dossiers/${dossierId}/certificates`,
+      ),
+    enabled: form.type === "ACHAT",
+  });
   const calculation = useMemo(
     () =>
       form.lines.reduce(
@@ -320,6 +338,10 @@ function InvoiceDialog({
         stampAccountId: form.stampAccountId || undefined,
         exciseAccountId: form.exciseAccountId || undefined,
         withholdingAccountId: form.withholdingAccountId || undefined,
+        vatSuspensionCertificateId:
+          form.type === "ACHAT"
+            ? form.vatSuspensionCertificateId || undefined
+            : undefined,
         stampDuty: form.stampDuty || undefined,
         withholdingNature: form.withholdingNature.trim() || undefined,
         withholdingBase: form.withholdingBase || undefined,
@@ -383,6 +405,18 @@ function InvoiceDialog({
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
+          </Alert>
+        )}
+        {form.vatSuspensionCertificateId && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Mention légale obligatoire sur la facture fournisseur : « Achat en
+            suspension de TVA — attestation n°{" "}
+            {
+              vatSuspensionCertificates.find(
+                (item) => item.id === form.vatSuspensionCertificateId,
+              )?.number
+            }{" "}
+            »
           </Alert>
         )}
         <Box
@@ -756,6 +790,26 @@ function InvoiceDialog({
                 ))}
               </TextField>
             </>
+          )}
+          {form.type === "ACHAT" && (
+            <TextField
+              select
+              label="Attestation de suspension de TVA"
+              value={form.vatSuspensionCertificateId}
+              onChange={(event) =>
+                set("vatSuspensionCertificateId", event.target.value)
+              }
+              helperText="Achat effectué sans TVA au titre d’une attestation détenue par le dossier"
+            >
+              <MenuItem value="">Aucune</MenuItem>
+              {vatSuspensionCertificates
+                .filter((item) => item.currentStatus === "ACTIVE")
+                .map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.number} — restant {item.remainingBase} TND
+                  </MenuItem>
+                ))}
+            </TextField>
           )}
           <TextField
             label="Notes"

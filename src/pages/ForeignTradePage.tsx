@@ -31,7 +31,7 @@ import { PageHeader } from "../components/PageHeader";
 import type { AccountingJournal, LedgerAccount } from "../types/api";
 
 interface ExchangeRate { id: string; currencyCode: string; effectiveDate: string; rate: string; sourceLabel: string }
-interface SuspensionCertificate { id: string; number: string; validFrom: string; validTo: string; authorizedBase: string; usedBase: string; remainingBase: string; currentStatus: string }
+interface SuspensionCertificate { id: string; number: string; validFrom: string; validTo: string; authorizedBase: string; usedBase: string; remainingBase: string; currentStatus: string; daysUntilExpiry: number; expiringSoon: boolean }
 interface TradeOperation {
   id: string; direction: "IMPORT" | "EXPORT"; reference: string; operationDate: string;
   thirdPartyName: string; countryCode: string; currencyCode: string; foreignAmount: string;
@@ -113,7 +113,13 @@ export function ForeignTradePage() {
         </Box>}
         {tab === 2 && <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "400px 1fr" }, gap: 3 }}>
           <Card variant="outlined"><CardContent><Typography variant="h6" sx={{ mb: 2 }}>Nouvelle attestation</Typography><Stack spacing={2}><TextField label="Numéro" value={certificate.number} onChange={(e) => setCertificate({ ...certificate, number: e.target.value })} /><Stack direction="row" spacing={1}><TextField fullWidth type="date" label="Du" value={certificate.validFrom} onChange={(e) => setCertificate({ ...certificate, validFrom: e.target.value })} slotProps={{ inputLabel: { shrink: true } }} /><TextField fullWidth type="date" label="Au" value={certificate.validTo} onChange={(e) => setCertificate({ ...certificate, validTo: e.target.value })} slotProps={{ inputLabel: { shrink: true } }} /></Stack><TextField label="Plafond de base TND" value={certificate.authorizedBase} onChange={(e) => setCertificate({ ...certificate, authorizedBase: e.target.value })} /><TextField multiline label="Notes" value={certificate.notes} onChange={(e) => setCertificate({ ...certificate, notes: e.target.value })} /><Button variant="contained" disabled={!base || !certificate.number || !certificate.authorizedBase || !can("foreign_trade.manage")} onClick={() => saveCertificate.mutate()}>Créer l’attestation</Button></Stack></CardContent></Card>
-          <Box><QueryState loading={certificates.isLoading} error={certificates.isError} empty={!certificates.data?.length} /><Table size="small"><TableHead><TableRow><TableCell>Attestation</TableCell><TableCell>Validité</TableCell><TableCell align="right">Plafond</TableCell><TableCell align="right">Utilisé</TableCell><TableCell align="right">Restant</TableCell><TableCell>Statut</TableCell></TableRow></TableHead><TableBody>{certificates.data?.map((item) => <TableRow key={item.id}><TableCell><b>{item.number}</b></TableCell><TableCell>{item.validFrom}<br />{item.validTo}</TableCell><TableCell align="right"><Money value={item.authorizedBase} /></TableCell><TableCell align="right"><Money value={item.usedBase} /></TableCell><TableCell align="right"><Money value={item.remainingBase} /></TableCell><TableCell><Chip size="small" label={item.currentStatus} /></TableCell></TableRow>)}</TableBody></Table></Box>
+          <Box>
+            {!!certificates.data?.filter((item) => item.expiringSoon).length && <Alert severity="warning" sx={{ mb: 2 }}>
+              {certificates.data.filter((item) => item.expiringSoon).map((item) => `${item.number} expire dans ${item.daysUntilExpiry} jour(s)`).join(' · ')}
+            </Alert>}
+            <QueryState loading={certificates.isLoading} error={certificates.isError} empty={!certificates.data?.length} />
+            <Table size="small"><TableHead><TableRow><TableCell>Attestation</TableCell><TableCell>Validité</TableCell><TableCell align="right">Plafond</TableCell><TableCell align="right">Utilisé</TableCell><TableCell align="right">Restant</TableCell><TableCell>Statut</TableCell></TableRow></TableHead><TableBody>{certificates.data?.map((item) => <TableRow key={item.id}><TableCell><b>{item.number}</b></TableCell><TableCell>{item.validFrom}<br />{item.validTo}</TableCell><TableCell align="right"><Money value={item.authorizedBase} /></TableCell><TableCell align="right"><Money value={item.usedBase} /></TableCell><TableCell align="right"><Money value={item.remainingBase} /></TableCell><TableCell><Chip size="small" label={item.expiringSoon ? `${item.currentStatus} — J-${item.daysUntilExpiry}` : item.currentStatus} color={item.currentStatus === 'EXPIREE' ? 'error' : item.expiringSoon ? 'warning' : item.currentStatus === 'ACTIVE' ? 'success' : 'default'} /></TableCell></TableRow>)}</TableBody></Table>
+          </Box>
         </Box>}
       </CardContent>
     </Card>
