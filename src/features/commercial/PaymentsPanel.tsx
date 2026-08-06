@@ -11,6 +11,13 @@ import type { AccountingJournal, BusinessInvoice, LedgerAccount, ThirdParty, Thi
 import { money, paymentStatusLabels, shortDate } from './options';
 
 type AllocationMap = Record<string, string>;
+const isInstrumentMethod = (method: string) => {
+  const normalized = method.trim().toLowerCase();
+  return normalized.includes('chèque') || normalized.includes('cheque') || normalized.includes('traite');
+};
+const instrumentStatusLabels: Record<string, string> = {
+  RECU: 'Reçu', DEPOSE: 'Déposé en banque', ENCAISSE: 'Encaissé', IMPAYE: 'Impayé',
+};
 
 function PaymentDialog({ open, onClose, organizationId, dossierId, parties, invoices, accounts, journals }: {
   open: boolean; onClose: () => void; organizationId: string; dossierId: string; parties: ThirdParty[];
@@ -22,6 +29,9 @@ function PaymentDialog({ open, onClose, organizationId, dossierId, parties, invo
   const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
   const [method, setMethod] = useState('Virement');
   const [reference, setReference] = useState('');
+  const [instrumentNumber, setInstrumentNumber] = useState('');
+  const [instrumentBank, setInstrumentBank] = useState('');
+  const [instrumentDueDate, setInstrumentDueDate] = useState('');
   const [journalId, setJournalId] = useState('');
   const [cashAccountId, setCashAccountId] = useState('');
   const [thirdPartyAccountId, setThirdPartyAccountId] = useState('');
@@ -49,6 +59,9 @@ function PaymentDialog({ open, onClose, organizationId, dossierId, parties, invo
       thirdPartyId, direction, paymentDate, amount: total.toFixed(3), method: method.trim(),
       reference: reference.trim() || undefined, journalId, cashAccountId, thirdPartyAccountId,
       allocations: Object.entries(allocations).map(([invoiceId, amount]) => ({ invoiceId, amount })),
+      instrumentNumber: isInstrumentMethod(method) ? instrumentNumber.trim() || undefined : undefined,
+      instrumentBank: isInstrumentMethod(method) ? instrumentBank.trim() || undefined : undefined,
+      instrumentDueDate: isInstrumentMethod(method) ? instrumentDueDate || undefined : undefined,
     }),
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['third-party-payments', organizationId, dossierId] }); onClose(); },
     onError: (reason) => setError(reason instanceof ApiError ? reason.message : 'Impossible d’enregistrer le règlement.'),
@@ -64,6 +77,11 @@ function PaymentDialog({ open, onClose, organizationId, dossierId, parties, invo
       <TextField label="Date" type="date" value={paymentDate} onChange={(event) => setPaymentDate(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
       <TextField select label="Mode" value={method} onChange={(event) => setMethod(event.target.value)}><MenuItem value="Virement">Virement</MenuItem><MenuItem value="Chèque">Chèque</MenuItem><MenuItem value="Espèces">Espèces</MenuItem><MenuItem value="Traite">Traite</MenuItem><MenuItem value="Carte bancaire">Carte bancaire</MenuItem></TextField>
       <TextField label="Référence" value={reference} onChange={(event) => setReference(event.target.value)} />
+      {isInstrumentMethod(method) && <>
+        <TextField label={`Numéro ${method.toLowerCase()}`} value={instrumentNumber} onChange={(event) => setInstrumentNumber(event.target.value)} />
+        <TextField label="Banque tirée" value={instrumentBank} onChange={(event) => setInstrumentBank(event.target.value)} />
+        <TextField label="Échéance / date de dépôt prévue" type="date" value={instrumentDueDate} onChange={(event) => setInstrumentDueDate(event.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+      </>}
       <TextField select label="Journal banque / caisse" value={journalId} onChange={(event) => setJournalId(event.target.value)}><MenuItem value="">Sélectionner…</MenuItem>{paymentJournals.map((journal) => <MenuItem key={journal.id} value={journal.id}>{journal.code} — {journal.name}</MenuItem>)}</TextField>
       <TextField select label="Compte banque / caisse" value={cashAccountId} onChange={(event) => setCashAccountId(event.target.value)}><MenuItem value="">Sélectionner…</MenuItem>{postingAccounts.map((account) => <MenuItem key={account.id} value={account.id}>{account.code} — {account.name}</MenuItem>)}</TextField>
       <TextField select label="Compte tiers" value={thirdPartyAccountId} onChange={(event) => setThirdPartyAccountId(event.target.value)}><MenuItem value="">Sélectionner…</MenuItem>{postingAccounts.map((account) => <MenuItem key={account.id} value={account.id}>{account.code} — {account.name}</MenuItem>)}</TextField>
@@ -89,7 +107,42 @@ export function PaymentsPanel({ organizationId, dossierId, payments, parties, in
     onSuccess: async () => { setError(''); await Promise.all([queryClient.invalidateQueries({ queryKey: ['third-party-payments', organizationId, dossierId] }), queryClient.invalidateQueries({ queryKey: ['business-invoices', organizationId, dossierId] }), queryClient.invalidateQueries({ queryKey: ['third-parties', organizationId, dossierId] })]); },
     onError: (reason) => setError(reason instanceof ApiError ? reason.message : 'Comptabilisation impossible.'),
   });
+  const instrumentAction = useMutation({
+    mutationFn: ({ payment, action }: { payment: ThirdPartyPayment; action: 'deposit' | 'clear' | 'reject' }) =>
+      api.post<ThirdPartyPayment>(`/api/organizations/${organizationId}/dossiers/${dossierId}/payments/${payment.id}/instrument/${action}`),
+    onSuccess: async () => { setError(''); await Promise.all([queryClient.invalidateQueries({ queryKey: ['third-party-payments', organizationId, dossierId] }), queryClient.invalidateQueries({ queryKey: ['business-invoices', organizationId, dossierId] })]); },
+    onError: (reason) => setError(reason instanceof ApiError ? reason.message : 'Action impossible sur cet effet.'),
+  });
+  const instruments = payments.filter((payment) => payment.instrumentStatus);
+  const columns: Array<{ status: 'RECU' | 'DEPOSE' | 'ENCAISSE' | 'IMPAYE'; next?: 'deposit' | 'clear'; nextLabel?: string }> = [
+    { status: 'RECU', next: 'deposit', nextLabel: 'Déposer en banque' },
+    { status: 'DEPOSE', next: 'clear', nextLabel: 'Marquer encaissé' },
+    { status: 'ENCAISSE' },
+    { status: 'IMPAYE' },
+  ];
   return <>
+    {Boolean(instruments.length) && <Card sx={{ mb: 2 }}>
+      <Box sx={{ p: 2.5 }}><Typography variant="h3" sx={{ fontSize: 24 }}>Portefeuille chèques &amp; traites</Typography><Typography variant="body2" color="text.secondary">Suivi Reçu → Déposé en banque → Encaissé ou Impayé.</Typography></Box>
+      <Box sx={{ px: 2.5, pb: 2.5, display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(4, 1fr)' }, gap: 1.5 }}>
+        {columns.map((column) => <Box key={column.status}>
+          <Chip size="small" label={`${instrumentStatusLabels[column.status]} (${instruments.filter((p) => p.instrumentStatus === column.status).length})`}
+            color={column.status === 'IMPAYE' ? 'error' : column.status === 'ENCAISSE' ? 'success' : column.status === 'DEPOSE' ? 'info' : 'default'} sx={{ mb: 1 }} />
+          <Stack spacing={1}>
+            {instruments.filter((payment) => payment.instrumentStatus === column.status).map((payment) => <Card key={payment.id} variant="outlined" sx={{ p: 1.5 }}>
+              <Typography sx={{ fontWeight: 800 }}>{payment.thirdParty.name}</Typography>
+              <Typography variant="caption" color="text.secondary">{payment.method}{payment.instrumentNumber ? ` n°${payment.instrumentNumber}` : ''}</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>{money(payment.amount)}</Typography>
+              {payment.instrumentBank && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{payment.instrumentBank}</Typography>}
+              {payment.instrumentDueDate && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Échéance {shortDate(payment.instrumentDueDate)}</Typography>}
+              {canManage && !archived && column.next && <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                <Button size="small" variant="contained" disabled={instrumentAction.isPending} onClick={() => instrumentAction.mutate({ payment, action: column.next! })}>{column.nextLabel}</Button>
+                {column.status === 'DEPOSE' && <Button size="small" color="error" disabled={instrumentAction.isPending} onClick={() => instrumentAction.mutate({ payment, action: 'reject' })}>Impayé</Button>}
+              </Stack>}
+            </Card>)}
+          </Stack>
+        </Box>)}
+      </Box>
+    </Card>}
     <Card><Box sx={{ p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}><Box><Typography variant="h3" sx={{ fontSize: 24 }}>Règlements clients et fournisseurs</Typography><Typography variant="body2" color="text.secondary">Encaissements, décaissements et lettrage des factures.</Typography></Box>{canManage && !archived && <Button variant="contained" startIcon={<AddRounded />} onClick={() => setOpen(true)}>Nouveau règlement</Button>}</Box>
       {error && <Alert severity="error" sx={{ mx: 2.5, mb: 2 }}>{error}</Alert>}
       {loading && <Box sx={{ p: 2.5 }}><Skeleton height={80} /><Skeleton height={80} /></Box>}

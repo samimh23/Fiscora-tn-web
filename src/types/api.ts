@@ -697,6 +697,12 @@ export interface ThirdPartyPayment {
   thirdPartyAccountId: string;
   status: "BROUILLON" | "COMPTABILISE" | "ANNULE";
   allocations: PaymentAllocation[];
+  instrumentNumber: string | null;
+  instrumentBank: string | null;
+  instrumentDueDate: string | null;
+  instrumentStatus: "RECU" | "DEPOSE" | "ENCAISSE" | "IMPAYE" | null;
+  instrumentDepositedAtUtc: string | null;
+  instrumentClearedAtUtc: string | null;
 }
 
 export interface FiscalVatRate {
