@@ -1060,7 +1060,7 @@ export function DossierDocumentsPanel({
         <DialogTitle>Demander une correction</DialogTitle>
         <DialogContent sx={{ pt: "12px !important" }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Le client verra la raison et pourra redÃ©poser la bonne piÃ¨ce.
+            Le client verra la raison et pourra redéposer la bonne pièce.
           </Typography>
           <TextField
             autoFocus
@@ -1070,7 +1070,7 @@ export function DossierDocumentsPanel({
             label="Raison de la correction"
             value={rejectReason}
             onChange={(event) => setRejectReason(event.target.value)}
-            placeholder="Ex. Le relevÃ© bancaire est incomplet, il manque la derniÃ¨re page."
+            placeholder="Ex. Le relevé bancaire est incomplet, il manque la dernière page."
           />
         </DialogContent>
         <DialogActions>
