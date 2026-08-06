@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
   Box,
@@ -863,6 +863,35 @@ export function InvoicesPanel({
   const [selected, setSelected] = useState<BusinessInvoice | null>(null);
   const [filter, setFilter] = useState("TOUTES");
   const [error, setError] = useState("");
+  const [matchingInvoice, setMatchingInvoice] = useState<BusinessInvoice | null>(null);
+  const matchResult = useQuery({
+    queryKey: ["invoice-match", organizationId, dossierId, matchingInvoice?.id],
+    queryFn: () =>
+      api.get<{
+        receiptNumber: string;
+        invoiceNumber: string;
+        hasDiscrepancies: boolean;
+        lines: Array<{
+          accountCode: string;
+          description: string;
+          receiptQuantity: string;
+          invoiceQuantity: string;
+          receiptUnitPrice: string;
+          invoiceUnitPrice: string;
+          status: "OK" | "ECART_QUANTITE" | "ECART_PRIX" | "ABSENT_FACTURE" | "ABSENT_RECEPTION";
+        }>;
+      }>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/business-invoices/${matchingInvoice?.id}/match`,
+      ),
+    enabled: Boolean(matchingInvoice),
+  });
+  const matchStatusLabels: Record<string, string> = {
+    OK: "Conforme",
+    ECART_QUANTITE: "Écart de quantité",
+    ECART_PRIX: "Écart de prix",
+    ABSENT_FACTURE: "Absent de la facture",
+    ABSENT_RECEPTION: "Absent du bon de réception",
+  };
   useEffect(() => {
     if (!draftSeed) return;
     setSelected(null);
@@ -1103,6 +1132,15 @@ export function InvoicesPanel({
                   Comptabiliser
                 </Button>
               )}
+              {invoice.type === "ACHAT" &&
+                invoice.sourceCommercialDocumentId && (
+                  <Button
+                    size="small"
+                    onClick={() => setMatchingInvoice(invoice)}
+                  >
+                    Vérifier BR
+                  </Button>
+                )}
             </Stack>
           </Box>
         ))}
@@ -1124,6 +1162,87 @@ export function InvoicesPanel({
           withholdingRates={withholdingRates}
         />
       )}
+      <Dialog
+        open={Boolean(matchingInvoice)}
+        onClose={() => setMatchingInvoice(null)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>
+          Rapprochement bon de réception — facture {matchingInvoice?.number}
+        </DialogTitle>
+        <DialogContent>
+          {matchResult.isLoading && <Skeleton height={120} />}
+          {matchResult.isError && (
+            <Alert severity="error">
+              Impossible de charger le rapprochement.
+            </Alert>
+          )}
+          {matchResult.data && (
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <Alert severity={matchResult.data.hasDiscrepancies ? "warning" : "success"}>
+                {matchResult.data.hasDiscrepancies
+                  ? "Des écarts ont été détectés entre le bon de réception et la facture."
+                  : "Aucun écart : la facture correspond au bon de réception."}
+                {" "}Bon de réception {matchResult.data.receiptNumber}.
+              </Alert>
+              <Box sx={{ overflowX: "auto" }}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "1fr 100px 100px 110px 110px 170px",
+                    gap: 1.5,
+                    px: 1,
+                    py: 1,
+                    bgcolor: "background.default",
+                  }}
+                >
+                  <Typography variant="caption">Article</Typography>
+                  <Typography variant="caption">Qté BR</Typography>
+                  <Typography variant="caption">Qté facture</Typography>
+                  <Typography variant="caption">PU BR</Typography>
+                  <Typography variant="caption">PU facture</Typography>
+                  <Typography variant="caption">Statut</Typography>
+                </Box>
+                {matchResult.data.lines.map((line, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "1fr 100px 100px 110px 110px 170px",
+                      gap: 1.5,
+                      px: 1,
+                      py: 1,
+                      borderTop: "1px solid",
+                      borderColor: "divider",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography variant="body2">
+                      {line.accountCode} — {line.description}
+                    </Typography>
+                    <Typography variant="body2">{line.receiptQuantity}</Typography>
+                    <Typography variant="body2">{line.invoiceQuantity}</Typography>
+                    <Typography variant="body2">{line.receiptUnitPrice}</Typography>
+                    <Typography variant="body2">{line.invoiceUnitPrice}</Typography>
+                    <Chip
+                      size="small"
+                      label={matchStatusLabels[line.status]}
+                      color={line.status === "OK" ? "success" : "warning"}
+                      variant="outlined"
+                    />
+                  </Box>
+                ))}
+              </Box>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMatchingInvoice(null)}>Fermer</Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
