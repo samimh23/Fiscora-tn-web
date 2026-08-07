@@ -5,7 +5,12 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent,
   DialogTitle, Divider, FormControl, InputLabel, MenuItem, Select, Skeleton, Stack,
   Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography,
+  useTheme,
 } from "@mui/material";
+import {
+  Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip as ChartTooltip,
+  XAxis, YAxis,
+} from "recharts";
 import {
   ArrowBackRounded, CloudUploadOutlined, DescriptionOutlined, DownloadOutlined,
   DoneAllRounded, ForumOutlined, OpenInNewRounded, SendRounded, TaskAltOutlined,
@@ -21,9 +26,42 @@ interface CabinetInvoice { id: string; number: string; issueDate: string; dueDat
 interface PortalMessage { id: string; senderUserId: string; senderName: string; senderRole: string; body: string; createdAtUtc: string; clientReadAtUtc: string | null; cabinetReadAtUtc: string | null }
 interface PortalContact { userId: string; fullName: string; email: string; role: string }
 interface ClientApproval { id: string; resourceType: string; resourceId: string; version: string; label: string; decision: "APPROUVE" | "REJETE"; comment: string | null; createdAtUtc: string }
+interface MonthlyTrendPoint { month: string; revenue: string; expenses: string; netResult: string }
 
 const money = (value?: string) => new Intl.NumberFormat("fr-TN", { style: "currency", currency: "TND", minimumFractionDigits: 3 }).format(Number(value ?? 0));
 const formatDate = (value?: string | null) => value ? new Intl.DateTimeFormat("fr-TN", { dateStyle: "medium" }).format(new Date(`${value.slice(0, 10)}T00:00:00`)) : "—";
+const monthLabel = (value: string) => new Intl.DateTimeFormat("fr-TN", { month: "short", year: "2-digit" }).format(new Date(`${value}-01T00:00:00`));
+
+function FinancialTrendCard({ points }: { points: MonthlyTrendPoint[] }) {
+  const theme = useTheme();
+  const hasMovement = points.some((point) => Number(point.revenue) !== 0 || Number(point.expenses) !== 0);
+  const data = points.map((point) => ({
+    month: monthLabel(point.month),
+    "Produits": Number(point.revenue),
+    "Charges": Number(point.expenses),
+    "Résultat net": Number(point.netResult),
+  }));
+  return <Card sx={{ mb: 3 }}>
+    <CardContent>
+      <Typography variant="h4" sx={{ mb: 0.5 }}>Évolution financière</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Produits, charges et résultat net comptabilisés sur les 12 derniers mois.</Typography>
+      {!hasMovement ? <Empty text="Aucune écriture comptabilisée sur cette période." /> : <Box sx={{ width: "100%", height: 300 }}>
+        <ResponsiveContainer>
+          <ComposedChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+            <XAxis dataKey="month" tick={{ fontSize: 12, fill: theme.palette.text.secondary }} />
+            <YAxis tick={{ fontSize: 12, fill: theme.palette.text.secondary }} width={70} />
+            <ChartTooltip formatter={(value: unknown) => money(String(value ?? 0))} />
+            <Legend wrapperStyle={{ fontSize: 13 }} />
+            <Bar dataKey="Produits" fill={theme.palette.success.main} radius={[4, 4, 0, 0]} />
+            <Bar dataKey="Charges" fill={theme.palette.warning.main} radius={[4, 4, 0, 0]} />
+            <Line type="linear" dataKey="Résultat net" stroke={theme.palette.primary.main} strokeWidth={2.5} dot={{ r: 3 }} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </Box>}
+    </CardContent>
+  </Card>;
+}
 const statusLabel: Record<string, string> = { BROUILLON: "Brouillon", PRETE_POUR_REVISION: "En révision", VALIDEE: "Validée", DEPOSEE: "Déposée", PAYEE: "Payée", ENVOYEE: "Envoyée", PARTIELLEMENT_PAYEE: "Partiellement réglée", COMPTABILISEE: "Comptabilisée", REGLEE: "Réglée", NON_REGLEE: "Non réglée", PARTIELLEMENT_REGLEE: "Partiellement réglée", A_FAIRE: "À faire", EN_COURS: "En cours", DEPOSE: "Déposé" };
 const categories = [
   ["BOITE_RECEPTION", "Boîte de réception"], ["FACTURES_ACHATS", "Factures d’achats"],
@@ -69,6 +107,7 @@ export function ClientPortalDossierPage() {
   const messages = useQuery({ queryKey: ["portal-messages", organizationId, dossierId], queryFn: () => api.get<PortalMessage[]>(`${base}/client-portal/messages`), enabled: Boolean(organizationId && dossierId) });
   const contacts = useQuery({ queryKey: ["portal-contacts", organizationId, dossierId], queryFn: () => api.get<PortalContact[]>(`${base}/client-portal/contacts`), enabled: Boolean(organizationId && dossierId) });
   const approvals = useQuery({ queryKey: ["portal-approvals", organizationId, dossierId], queryFn: () => api.get<ClientApproval[]>(`${base}/client-portal/approvals`), enabled: Boolean(organizationId && dossierId) });
+  const trend = useQuery({ queryKey: ["portal-financial-trend", organizationId, dossierId], queryFn: () => api.get<MonthlyTrendPoint[]>(`${base}/financial-statements/trend?months=12`), enabled: Boolean(organizationId && dossierId) });
 
   useEffect(() => {
     const expectationId = searchParams.get("expectationId");
@@ -115,6 +154,8 @@ export function ClientPortalDossierPage() {
     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", lg: "repeat(4,1fr)" }, gap: 2, mb: 3 }}>
       {[ [documents.data?.length ?? 0, "Documents"], [expectations.data?.filter(isOpenExpectation).length ?? 0, "Pièces attendues"], [overdue, "Échéances en retard"], [money(String(unpaid)), "Honoraires à régler"] ].map(([value, label]) => <Card key={String(label)}><CardContent><Typography variant="h4">{value}</Typography><Typography variant="body2" color="text.secondary">{label}</Typography></CardContent></Card>)}
     </Box>
+
+    {trend.isLoading ? <Skeleton height={300} sx={{ mb: 3 }} /> : trend.data && <FinancialTrendCard points={trend.data} />}
 
     <Card><Box sx={{ overflowX: "auto" }}><Tabs value={tab} onChange={(_, value) => setTab(value)} variant="scrollable" scrollButtons="auto"><Tab label="Vue d’ensemble" /><Tab label="Documents" /><Tab label="Échéances" /><Tab label="Déclarations" /><Tab label="Factures" /><Tab label="Honoraires" /><Tab label="États financiers" /><Tab label="Messages" /></Tabs></Box><Divider /><CardContent sx={{ p: { xs: 2, md: 3 } }}>
       {tab === 0 && <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.3fr .7fr" }, gap: 3 }}><Stack spacing={2}><Typography variant="h4">À faire ce mois-ci</Typography>{expectations.data?.filter(isOpenExpectation).map((item) => <Alert key={item.id} severity={item.status === "REJETEE" ? "warning" : "info"} action={<Button size="small" onClick={() => openExpectationUpload(item)}>Déposer</Button>}><b>{item.label}</b><br />{item.status === "REJETEE" ? "Correction demandée" : "Pièce demandée"} pour {String(item.periodMonth).padStart(2, "0")}/{item.periodYear}{item.dueOn ? ` · avant le ${formatDate(item.dueOn)}` : ""}{item.message ? <><br />{item.message}</> : null}{item.rejectionReason ? <><br />Correction : {item.rejectionReason}</> : null}</Alert>)}{!expectations.data?.some(isOpenExpectation) && <Alert severity="success">Aucune pièce manquante signalée ce mois-ci.</Alert>}<Typography variant="h4" sx={{ pt: 1 }}>Prochaines échéances</Typography>{obligations.data?.slice(0, 5).map((item) => <Box key={item.id} sx={{ display: "flex", gap: 2, alignItems: "center", py: 1 }}><Box sx={{ flex: 1 }}><Typography sx={{ fontWeight: 800 }}>{item.name}</Typography><Typography variant="body2" color="text.secondary">Échéance : {formatDate(item.dueOn)}</Typography></Box><Status value={item.status} /></Box>)}</Stack><Card variant="outlined"><CardContent><Typography variant="h4">Votre interlocuteur</Typography>{contacts.data?.length ? contacts.data.map((contact) => <Box key={contact.userId} sx={{ mt: 2 }}><Typography sx={{ fontWeight: 900 }}>{contact.fullName}</Typography><Typography variant="body2" color="text.secondary">{contact.role}</Typography><Typography variant="body2">{contact.email}</Typography></Box>) : <><Typography sx={{ mt: 2, fontWeight: 800 }}>{organization?.name}</Typography><Typography variant="body2" color="text.secondary">Votre demande sera transmise à l’équipe autorisée du cabinet.</Typography></>}<Button fullWidth variant="outlined" startIcon={<ForumOutlined />} sx={{ mt: 3 }} onClick={() => setTab(7)}>Écrire au cabinet</Button></CardContent></Card></Box>}
