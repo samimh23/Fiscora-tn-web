@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Card,
@@ -27,15 +28,20 @@ import {
   AutoAwesomeRounded,
   CheckCircleOutlineRounded,
   CloudUploadOutlined,
+  DeleteOutlineRounded,
   DownloadOutlined,
+  EditOutlined,
   LinkRounded,
   PostAddRounded,
   ReceiptLongOutlined,
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
+import { BankMatchSuggestion } from "./BankMatchSuggestion";
 import type {
   AccountingJournal,
+  Bank,
   BankAccount,
+  BankReconciliationRule,
   BankStatement,
   BankTransaction,
   JournalEntry,
@@ -46,7 +52,9 @@ import { money, shortDate } from "../accounting/options";
 
 const validTunisianIbanOrRib = (value: string) => {
   const normalized = value.replace(/[\s.\-_/]/g, "").toUpperCase();
-  return !normalized || /^TN\d{22}$/.test(normalized) || /^\d{20}$/.test(normalized);
+  return (
+    !normalized || /^TN\d{22}$/.test(normalized) || /^\d{20}$/.test(normalized)
+  );
 };
 
 const statementLabels: Record<string, string> = {
@@ -82,23 +90,29 @@ function BankAccountDialog({
   onClose,
   organizationId,
   dossierId,
+  account,
   accounts,
   journals,
+  banks,
 }: {
   open: boolean;
   onClose: () => void;
   organizationId: string;
   dossierId: string;
+  account?: BankAccount | null;
   accounts: LedgerAccount[];
   journals: AccountingJournal[];
+  banks: Bank[];
 }) {
   const queryClient = useQueryClient();
-  const [name, setName] = useState("");
-  const [bankName, setBankName] = useState("");
-  const [iban, setIban] = useState("");
-  const [ledgerAccountId, setLedgerAccountId] = useState("");
-  const [journalId, setJournalId] = useState("");
-  const [currency, setCurrency] = useState("TND");
+  const [name, setName] = useState(account?.name ?? "");
+  const [bankName, setBankName] = useState(account?.bank?.name ?? "");
+  const [iban, setIban] = useState(account?.iban ?? "");
+  const [ledgerAccountId, setLedgerAccountId] = useState(
+    account?.ledgerAccountId ?? "",
+  );
+  const [journalId, setJournalId] = useState(account?.journalId ?? "");
+  const [currency, setCurrency] = useState(account?.currency ?? "TND");
   const [error, setError] = useState("");
   const mutation = useMutation({
     mutationFn: () => {
@@ -108,17 +122,18 @@ function BankAccountDialog({
           "IBAN/RIB invalide : utilisez TN + 22 chiffres ou un RIB tunisien de 20 chiffres.",
         );
       }
-      return api.post<BankAccount>(
-        `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/accounts`,
-        {
-          name: name.trim(),
-          bankName: bankName.trim(),
-          iban: iban.trim() || undefined,
-          ledgerAccountId,
-          journalId,
-          currency,
-        },
-      );
+      const body = {
+        name: name.trim(),
+        bankName: bankName.trim(),
+        iban: iban.trim() || undefined,
+        ledgerAccountId,
+        journalId,
+        currency,
+      };
+      const base = `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/accounts`;
+      return account
+        ? api.put<BankAccount>(`${base}/${account.id}`, body)
+        : api.post<BankAccount>(base, body);
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
@@ -130,7 +145,9 @@ function BankAccountDialog({
       setError(
         reason instanceof ApiError
           ? reason.message
-          : "Impossible de créer ce compte bancaire.",
+          : account
+            ? "Impossible de modifier ce compte bancaire."
+            : "Impossible de créer ce compte bancaire.",
       ),
   });
   return (
@@ -140,7 +157,9 @@ function BankAccountDialog({
       fullWidth
       maxWidth="sm"
     >
-      <DialogTitle>Nouveau compte bancaire</DialogTitle>
+      <DialogTitle>
+        {account ? "Modifier le compte bancaire" : "Nouveau compte bancaire"}
+      </DialogTitle>
       <DialogContent
         sx={{
           display: "grid",
@@ -160,11 +179,32 @@ function BankAccountDialog({
           onChange={(event) => setName(event.target.value)}
           placeholder="Compte principal TND"
         />
-        <TextField
-          label="Banque"
+        {/* Établissement partagé par le cabinet : on choisit dans la liste
+            déjà connue, avec saisie libre pour en ajouter un sans quitter
+            l'écran. Sans cela « BIAT » finit ressaisi de dix façons. */}
+        <Autocomplete
+          freeSolo
+          // freeSolo masque la flèche par défaut : le champ passe alors pour
+          // une simple zone de texte et la liste des établissements déjà
+          // connus reste invisible tant qu'on n'a pas tapé. On force donc
+          // l'indicateur, et l'ouverture au clic.
+          forcePopupIcon
+          openOnFocus
+          selectOnFocus
+          handleHomeEndKeys
+          options={banks.map((bank) => bank.name)}
           value={bankName}
-          onChange={(event) => setBankName(event.target.value)}
-          placeholder="BIAT, BNA…"
+          onChange={(_, value) => setBankName(value ?? "")}
+          onInputChange={(_, value) => setBankName(value)}
+          noOptionsText="Aucun établissement enregistré — saisissez le nom."
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Banque"
+              placeholder="BIAT, BNA, Amen…"
+              helperText="Choisissez un établissement existant ou saisissez-en un nouveau."
+            />
+          )}
         />
         <TextField
           label="IBAN / RIB"
@@ -228,10 +268,333 @@ function BankAccountDialog({
           }
           onClick={() => mutation.mutate()}
         >
-          Créer
+          {account ? "Enregistrer les changements" : "Créer"}
         </Button>
       </DialogActions>
     </Dialog>
+  );
+}
+
+function BankRuleDialog({
+  open,
+  onClose,
+  organizationId,
+  dossierId,
+  rule,
+  accounts,
+}: {
+  open: boolean;
+  onClose: () => void;
+  organizationId: string;
+  dossierId: string;
+  rule?: BankReconciliationRule | null;
+  accounts: LedgerAccount[];
+}) {
+  const queryClient = useQueryClient();
+  const [label, setLabel] = useState(rule?.label ?? "");
+  const [pattern, setPattern] = useState(rule?.pattern ?? "");
+  const [matchType, setMatchType] = useState<
+    BankReconciliationRule["matchType"]
+  >(rule?.matchType ?? "CONTIENT");
+  const [direction, setDirection] = useState<
+    BankReconciliationRule["direction"]
+  >(rule?.direction ?? "TOUS");
+  const [suggestedAccountId, setSuggestedAccountId] = useState(
+    rule?.suggestedAccountId ?? "",
+  );
+  const [error, setError] = useState("");
+  const postingAccounts = accounts.filter(
+    (account) => account.isActive && account.allowsPosting,
+  );
+  const mutation = useMutation({
+    mutationFn: () => {
+      const body = {
+        label: label.trim(),
+        pattern: pattern.trim(),
+        matchType,
+        direction,
+        suggestedAccountId,
+      };
+      const base = `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/rules`;
+      return rule
+        ? api.put<BankReconciliationRule>(`${base}/${rule.id}`, body)
+        : api.post<BankReconciliationRule>(base, body);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ["bank-rules", organizationId, dossierId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["bank-statement", organizationId, dossierId],
+      });
+      onClose();
+    },
+    onError: (reason) =>
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : "Impossible d’enregistrer cette règle.",
+      ),
+  });
+  return (
+    <Dialog
+      open={open}
+      onClose={mutation.isPending ? undefined : onClose}
+      fullWidth
+      maxWidth="sm"
+    >
+      <DialogTitle>
+        {rule ? "Modifier la règle bancaire" : "Nouvelle règle bancaire"}
+      </DialogTitle>
+      <DialogContent sx={{ display: "grid", gap: 2, pt: "12px !important" }}>
+        {error && <Alert severity="error">{error}</Alert>}
+        <TextField
+          label="Nom de la règle"
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          placeholder="STEG, Tunisie Telecom, frais bancaires…"
+        />
+        <TextField
+          label="Motif recherché dans le relevé"
+          value={pattern}
+          onChange={(event) => setPattern(event.target.value)}
+          helperText="Exemple : STEG. La règle s'applique quand ce texte est trouvé dans le libellé bancaire."
+        />
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            gap: 2,
+          }}
+        >
+          <TextField
+            select
+            label="Type de recherche"
+            value={matchType}
+            onChange={(event) =>
+              setMatchType(
+                event.target.value as BankReconciliationRule["matchType"],
+              )
+            }
+          >
+            <MenuItem value="CONTIENT">Contient</MenuItem>
+            <MenuItem value="COMMENCE_PAR">Commence par</MenuItem>
+            <MenuItem value="EXACT">Exact</MenuItem>
+          </TextField>
+          <TextField
+            select
+            label="Sens"
+            value={direction}
+            onChange={(event) =>
+              setDirection(
+                event.target.value as BankReconciliationRule["direction"],
+              )
+            }
+          >
+            <MenuItem value="TOUS">Tous</MenuItem>
+            <MenuItem value="DEBIT">Débit</MenuItem>
+            <MenuItem value="CREDIT">Crédit</MenuItem>
+          </TextField>
+        </Box>
+        <TextField
+          select
+          label="Compte suggéré"
+          value={suggestedAccountId}
+          onChange={(event) => setSuggestedAccountId(event.target.value)}
+        >
+          <MenuItem value="">Sélectionner…</MenuItem>
+          {postingAccounts.map((account) => (
+            <MenuItem key={account.id} value={account.id}>
+              {account.code} — {account.name}
+            </MenuItem>
+          ))}
+        </TextField>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Annuler</Button>
+        <Button
+          variant="contained"
+          disabled={
+            !label.trim() ||
+            !pattern.trim() ||
+            !suggestedAccountId ||
+            mutation.isPending
+          }
+          onClick={() => mutation.mutate()}
+        >
+          {rule ? "Enregistrer les changements" : "Créer"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function BankRulesCard({
+  organizationId,
+  dossierId,
+  rules,
+  accounts,
+  canManage,
+  archived,
+}: {
+  organizationId: string;
+  dossierId: string;
+  rules: BankReconciliationRule[];
+  accounts: LedgerAccount[];
+  canManage: boolean;
+  archived: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<BankReconciliationRule | null>(null);
+  const [error, setError] = useState("");
+  const deactivate = useMutation({
+    mutationFn: (ruleId: string) =>
+      api.delete(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/rules/${ruleId}`,
+      ),
+    onSuccess: async () => {
+      setError("");
+      await queryClient.invalidateQueries({
+        queryKey: ["bank-rules", organizationId, dossierId],
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["bank-statement", organizationId, dossierId],
+      });
+    },
+    onError: (reason) =>
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : "Impossible de désactiver cette règle.",
+      ),
+  });
+  const openNew = () => {
+    setEditing(null);
+    setOpen(true);
+  };
+  const openEdit = (rule: BankReconciliationRule) => {
+    setEditing(rule);
+    setOpen(true);
+  };
+  const close = () => {
+    setOpen(false);
+    setEditing(null);
+  };
+  return (
+    <Card>
+      <Box
+        sx={{
+          p: 2.5,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 2,
+          flexWrap: "wrap",
+        }}
+      >
+        <Box>
+          <Typography sx={{ fontWeight: 700 }}>
+            Règles de rapprochement
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Automatisez les libellés répétitifs comme STEG, CNSS, frais
+            bancaires ou loyers.
+          </Typography>
+        </Box>
+        {canManage && !archived && (
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<AddRounded />}
+            onClick={openNew}
+          >
+            Nouvelle règle
+          </Button>
+        )}
+      </Box>
+      {error && (
+        <Alert severity="error" sx={{ mx: 2.5, mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {!rules.length ? (
+        <Box sx={{ px: 2.5, pb: 2.5 }}>
+          <Alert severity="info">
+            Aucune règle mémorisée. Vous pouvez en créer ici ou en mémoriser
+            une depuis une opération bancaire non rapprochée.
+          </Alert>
+        </Box>
+      ) : (
+        rules.map((rule) => (
+          <Box
+            key={rule.id}
+            sx={{
+              px: 2.5,
+              py: 1.6,
+              borderTop: "1px solid",
+              borderColor: "divider",
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "minmax(220px,1fr) minmax(180px,1fr) 120px auto",
+              },
+              gap: 1.5,
+              alignItems: "center",
+            }}
+          >
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {rule.label}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Motif : {rule.pattern}
+              </Typography>
+            </Box>
+            <Typography variant="body2">
+              {rule.suggestedAccount.code} — {rule.suggestedAccount.name}
+            </Typography>
+            <Stack direction="row" spacing={0.5}>
+              <Chip size="small" label={rule.matchType} variant="outlined" />
+              <Chip size="small" label={rule.direction} />
+            </Stack>
+            {canManage && !archived && (
+              <Stack
+                direction="row"
+                spacing={0.5}
+                sx={{ justifyContent: "flex-end" }}
+              >
+                <Tooltip title="Modifier">
+                  <IconButton onClick={() => openEdit(rule)}>
+                    <EditOutlined />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Désactiver">
+                  <IconButton
+                    color="error"
+                    disabled={deactivate.isPending}
+                    onClick={() => deactivate.mutate(rule.id)}
+                  >
+                    <DeleteOutlineRounded />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            )}
+          </Box>
+        ))
+      )}
+      {open && (
+        <BankRuleDialog
+          key={editing?.id ?? "new-rule"}
+          open={open}
+          onClose={close}
+          organizationId={organizationId}
+          dossierId={dossierId}
+          rule={editing}
+          accounts={accounts}
+        />
+      )}
+    </Card>
   );
 }
 
@@ -338,7 +701,7 @@ function ImportDialog({
         >
           {bankAccounts.map((account) => (
             <MenuItem key={account.id} value={account.id}>
-              {account.name} — {account.bankName}
+              {account.name} — {account.bank?.name}
             </MenuItem>
           ))}
         </TextField>
@@ -395,8 +758,8 @@ function ImportDialog({
             sx={{ display: "block", mt: 1 }}
           >
             CSV/XLSX : Date, Libellé et Montant — ou Débit/Crédit. OFX/QFX et
-            MT940 (.sta) : import automatique des opérations bancaires.
-            Taille maximale 10 Mo.
+            MT940 (.sta) : import automatique des opérations bancaires. Taille
+            maximale 10 Mo.
           </Typography>
           <Button
             size="small"
@@ -456,7 +819,7 @@ function MatchDialog({
 }) {
   const queryClient = useQueryClient();
   const [selection, setSelection] = useState(
-    mode === "generate" ? transaction.ruleSuggestion?.accountId ?? "" : "",
+    mode === "generate" ? (transaction.ruleSuggestion?.accountId ?? "") : "",
   );
   const [description, setDescription] = useState(transaction.description);
   const [reference, setReference] = useState(transaction.reference ?? "");
@@ -543,7 +906,7 @@ function MatchDialog({
       <DialogContent sx={{ display: "grid", gap: 2, pt: "12px !important" }}>
         {error && <Alert severity="error">{error}</Alert>}
         <Card variant="outlined" sx={{ p: 2 }}>
-          <Typography sx={{ fontWeight: 900 }}>
+          <Typography sx={{ fontWeight: 700 }}>
             {transaction.description}
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -552,7 +915,7 @@ function MatchDialog({
           </Typography>
           <Typography
             sx={{
-              fontWeight: 900,
+              fontWeight: 700,
               mt: 1,
               color: amount > 0 ? "success.dark" : "error.dark",
             }}
@@ -713,6 +1076,9 @@ export function DossierBankReconciliationPanel({
 }) {
   const queryClient = useQueryClient();
   const [accountOpen, setAccountOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<BankAccount | null>(
+    null,
+  );
   const [importOpen, setImportOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [match, setMatch] = useState<{
@@ -742,6 +1108,22 @@ export function DossierBankReconciliationPanel({
         `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/statements/${selectedId}`,
       ),
     enabled: Boolean(selectedId),
+  });
+  const rules = useQuery({
+    queryKey: ["bank-rules", organizationId, dossierId],
+    queryFn: () =>
+      api.get<BankReconciliationRule[]>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/rules`,
+      ),
+    enabled: canAccountsView,
+  });
+  // Les établissements sont au niveau du cabinet, pas du dossier.
+  const banks = useQuery({
+    queryKey: ["banks", organizationId],
+    queryFn: () =>
+      api.get<Bank[]>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/banks`,
+      ),
   });
   const accounts = useQuery({
     queryKey: ["ledger-accounts", organizationId, dossierId],
@@ -775,6 +1157,7 @@ export function DossierBankReconciliationPanel({
       ),
     enabled: canPaymentsView,
   });
+  const selected = statement.data;
   const refresh = async () => {
     await Promise.all([
       queryClient.invalidateQueries({
@@ -788,8 +1171,41 @@ export function DossierBankReconciliationPanel({
       }),
     ]);
   };
+  const deactivateBankAccount = useMutation({
+    mutationFn: (accountId: string) =>
+      api.delete(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/accounts/${accountId}`,
+      ),
+    onSuccess: async (_result, accountId) => {
+      setError("");
+      if (selected?.bankAccountId === accountId) setSelectedId(null);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["bank-accounts", organizationId, dossierId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["bank-statements", organizationId, dossierId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["bank-statement", organizationId, dossierId],
+        }),
+      ]);
+    },
+    onError: (reason) =>
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : "Impossible de désactiver ce compte bancaire.",
+      ),
+  });
   const action = useMutation({
-    mutationFn: async ({ type, transaction }: { type: "auto" | "reconcile" | "post-generated"; transaction?: BankTransaction }) => {
+    mutationFn: async ({
+      type,
+      transaction,
+    }: {
+      type: "auto" | "reconcile" | "post-generated";
+      transaction?: BankTransaction;
+    }) => {
       if (!statement.data) return;
       const base = `/api/organizations/${organizationId}/dossiers/${dossierId}`;
       if (type === "auto")
@@ -816,7 +1232,31 @@ export function DossierBankReconciliationPanel({
         reason instanceof ApiError ? reason.message : "Action impossible.",
       ),
   });
-  const selected = statement.data;
+  // Confirmation d'une correspondance proposée : le comptable valide, il ne
+  // ressaisit rien.
+  const confirmSuggestion = useMutation({
+    mutationFn: ({
+      transactionId,
+      paymentId,
+    }: {
+      transactionId: string;
+      paymentId: string;
+    }) =>
+      api.post(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/transactions/${transactionId}/match-payment`,
+        { paymentId },
+      ),
+    onSuccess: async () => {
+      setError("");
+      await refresh();
+    },
+    onError: (reason) =>
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : "Le rapprochement a échoué.",
+      ),
+  });
   const filteredTransactions = (selected?.transactions ?? []).filter(
     (transaction) => filter === "TOUTES" || transaction.status === filter,
   );
@@ -843,9 +1283,7 @@ export function DossierBankReconciliationPanel({
             }}
           >
             <Box>
-              <Typography variant="h3" sx={{ fontSize: 24 }}>
-                Rapprochement bancaire
-              </Typography>
+              <Typography variant="h3">Rapprochement bancaire</Typography>
               <Typography variant="body2" color="text.secondary">
                 Importez les relevés, rapprochez chaque ligne et contrôlez
                 l’écart comptable.
@@ -857,7 +1295,10 @@ export function DossierBankReconciliationPanel({
                   variant="outlined"
                   startIcon={<AddRounded />}
                   disabled={!canAccountsView || !canAccountingView}
-                  onClick={() => setAccountOpen(true)}
+                  onClick={() => {
+                    setEditingAccount(null);
+                    setAccountOpen(true);
+                  }}
                 >
                   Compte bancaire
                 </Button>
@@ -903,29 +1344,66 @@ export function DossierBankReconciliationPanel({
                   <Stack
                     direction="row"
                     spacing={1.5}
-                    sx={{ alignItems: "center" }}
+                    sx={{
+                      alignItems: "flex-start",
+                      justifyContent: "space-between",
+                    }}
                   >
-                    <Box
-                      sx={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: 3,
-                        bgcolor: "primary.light",
-                        color: "primary.main",
-                        display: "grid",
-                        placeItems: "center",
-                      }}
+                    <Stack
+                      direction="row"
+                      spacing={1.5}
+                      sx={{ alignItems: "center" }}
                     >
-                      <AccountBalanceOutlined />
-                    </Box>
-                    <Box>
-                      <Typography sx={{ fontWeight: 900 }}>
-                        {account.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {account.bankName} · {account.currency}
-                      </Typography>
-                    </Box>
+                      <Box
+                        sx={{
+                          width: 42,
+                          height: 42,
+                          borderRadius: 3,
+                          bgcolor: "primary.light",
+                          color: "primary.main",
+                          display: "grid",
+                          placeItems: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <AccountBalanceOutlined />
+                      </Box>
+                      <Box>
+                        <Typography sx={{ fontWeight: 700 }}>
+                          {account.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {account.bank?.name} · {account.currency}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    {canManage && !archived && (
+                      <Stack direction="row" spacing={0.4}>
+                        <Tooltip title="Modifier le compte bancaire">
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setEditingAccount(account);
+                              setAccountOpen(true);
+                            }}
+                          >
+                            <EditOutlined fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Désactiver">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            disabled={deactivateBankAccount.isPending}
+                            onClick={() =>
+                              deactivateBankAccount.mutate(account.id)
+                            }
+                          >
+                            <DeleteOutlineRounded fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    )}
                   </Stack>
                   <Typography
                     variant="caption"
@@ -949,6 +1427,16 @@ export function DossierBankReconciliationPanel({
             )
           )}
         </Card>
+        {canAccountsView && (
+          <BankRulesCard
+            organizationId={organizationId}
+            dossierId={dossierId}
+            rules={rules.data ?? []}
+            accounts={accounts.data ?? []}
+            canManage={canManage}
+            archived={archived}
+          />
+        )}
         <Box
           sx={{
             display: "grid",
@@ -958,7 +1446,7 @@ export function DossierBankReconciliationPanel({
         >
           <Card sx={{ alignSelf: "start" }}>
             <Box sx={{ p: 2.2 }}>
-              <Typography sx={{ fontWeight: 900 }}>Relevés importés</Typography>
+              <Typography sx={{ fontWeight: 700 }}>Relevés importés</Typography>
             </Box>
             {statements.isLoading && (
               <Box sx={{ p: 2 }}>
@@ -1002,7 +1490,7 @@ export function DossierBankReconciliationPanel({
                       alignItems: "center",
                     }}
                   >
-                    <Typography variant="body2" sx={{ fontWeight: 900 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
                       {item.bankAccount.name}
                     </Typography>
                     <Chip
@@ -1028,7 +1516,7 @@ export function DossierBankReconciliationPanel({
                 <ReceiptLongOutlined
                   sx={{ fontSize: 48, color: "text.disabled" }}
                 />
-                <Typography sx={{ fontWeight: 900, mt: 1 }}>
+                <Typography sx={{ fontWeight: 700, mt: 1 }}>
                   Sélectionnez un relevé
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -1061,7 +1549,7 @@ export function DossierBankReconciliationPanel({
                           spacing={1}
                           sx={{ alignItems: "center", flexWrap: "wrap" }}
                         >
-                          <Typography variant="h3" sx={{ fontSize: 23 }}>
+                          <Typography variant="h3">
                             {selected.bankAccount.name}
                           </Typography>
                           <Chip
@@ -1094,7 +1582,9 @@ export function DossierBankReconciliationPanel({
                               variant="contained"
                               color="success"
                               startIcon={<CheckCircleOutlineRounded />}
-                              onClick={() => action.mutate({ type: "reconcile" })}
+                              onClick={() =>
+                                action.mutate({ type: "reconcile" })
+                              }
                             >
                               Valider le relevé
                             </Button>
@@ -1129,7 +1619,7 @@ export function DossierBankReconciliationPanel({
                           </Typography>
                           <Typography
                             sx={{
-                              fontWeight: 900,
+                              fontWeight: 700,
                               color:
                                 index === 4 && Number(value) !== 0
                                   ? "error.dark"
@@ -1154,7 +1644,7 @@ export function DossierBankReconciliationPanel({
                       flexWrap: "wrap",
                     }}
                   >
-                    <Typography sx={{ fontWeight: 900 }}>
+                    <Typography sx={{ fontWeight: 700 }}>
                       Opérations du relevé
                     </Typography>
                     <TextField
@@ -1181,123 +1671,150 @@ export function DossierBankReconciliationPanel({
                         py: 1.8,
                         borderTop: "1px solid",
                         borderColor: "divider",
-                        display: "grid",
-                        gridTemplateColumns: {
-                          xs: "1fr",
-                          lg: "115px minmax(230px,1fr) 140px 175px auto",
-                        },
-                        gap: 1.5,
-                        alignItems: "center",
                       }}
                     >
-                      <Typography variant="body2">
-                        {shortDate(transaction.transactionDate)}
-                      </Typography>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                          {transaction.description}
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: {
+                            xs: "1fr",
+                            lg: "115px minmax(230px,1fr) 140px 175px auto",
+                          },
+                          gap: 1.5,
+                          alignItems: "center",
+                        }}
+                      >
+                        <Typography variant="body2">
+                          {shortDate(transaction.transactionDate)}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {transaction.reference || "Sans référence"}
-                          {transaction.matchType
-                            ? ` · ${matchLabels[transaction.matchType]}`
-                            : ""}
-                          {transaction.matchConfidence
-                            ? ` · ${transaction.matchConfidence}%`
-                            : ""}
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                            {transaction.description}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {transaction.reference || "Sans référence"}
+                            {transaction.matchType
+                              ? ` · ${matchLabels[transaction.matchType]}`
+                              : ""}
+                            {transaction.matchConfidence
+                              ? ` · ${transaction.matchConfidence}%`
+                              : ""}
+                          </Typography>
+                        </Box>
+                        <Typography
+                          sx={{
+                            fontWeight: 700,
+                            color:
+                              Number(transaction.amount) > 0
+                                ? "success.dark"
+                                : "error.dark",
+                          }}
+                        >
+                          {money(transaction.amount)}
                         </Typography>
+                        <Stack spacing={0.7}>
+                          <Chip
+                            label={transactionLabels[transaction.status]}
+                            size="small"
+                            color={statusColor(transaction.status)}
+                            variant="outlined"
+                          />
+                          {transaction.ruleSuggestion &&
+                            transaction.status === "NON_RAPPROCHEE" && (
+                              <Chip
+                                size="small"
+                                color="success"
+                                variant="outlined"
+                                label={`${transaction.ruleSuggestion.accountCode} — ${transaction.ruleSuggestion.accountName}`}
+                              />
+                            )}
+                        </Stack>
+                        <Stack
+                          direction="row"
+                          spacing={0.4}
+                          sx={{
+                            justifyContent: { lg: "flex-end" },
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          {canManage &&
+                            !archived &&
+                            transaction.status === "NON_RAPPROCHEE" &&
+                            canPaymentsView && (
+                              <Tooltip title="Associer un règlement">
+                                <IconButton
+                                  onClick={() =>
+                                    setMatch({ mode: "payment", transaction })
+                                  }
+                                >
+                                  <LinkRounded />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          {canManage &&
+                            !archived &&
+                            transaction.status === "NON_RAPPROCHEE" &&
+                            canAccountingView && (
+                              <Tooltip title="Associer une écriture">
+                                <IconButton
+                                  onClick={() =>
+                                    setMatch({ mode: "entry", transaction })
+                                  }
+                                >
+                                  <PostAddRounded />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          {canManage &&
+                            !archived &&
+                            transaction.status === "NON_RAPPROCHEE" &&
+                            canAccountsView && (
+                              <Button
+                                size="small"
+                                onClick={() =>
+                                  setMatch({ mode: "generate", transaction })
+                                }
+                              >
+                                Créer écriture
+                              </Button>
+                            )}
+                          {canManage &&
+                            canAccountingPost &&
+                            !archived &&
+                            transaction.status === "ECRITURE_BROUILLON" && (
+                              <Button
+                                size="small"
+                                color="success"
+                                variant="contained"
+                                onClick={() =>
+                                  action.mutate({
+                                    type: "post-generated",
+                                    transaction,
+                                  })
+                                }
+                              >
+                                Comptabiliser & rapprocher
+                              </Button>
+                            )}
+                        </Stack>
                       </Box>
-                      <Typography
-                        sx={{
-                          fontWeight: 900,
-                          color:
-                            Number(transaction.amount) > 0
-                              ? "success.dark"
-                              : "error.dark",
-                        }}
-                      >
-                        {money(transaction.amount)}
-                      </Typography>
-                      <Stack spacing={0.7}>
-                        <Chip
-                          label={transactionLabels[transaction.status]}
-                          size="small"
-                          color={statusColor(transaction.status)}
-                          variant="outlined"
+                      {transaction.status === "NON_RAPPROCHEE" && (
+                        <BankMatchSuggestion
+                          transaction={transaction}
+                          disabled={!canManage || archived || !canPaymentsView}
+                          pending={
+                            confirmSuggestion.isPending &&
+                            confirmSuggestion.variables?.transactionId ===
+                              transaction.id
+                          }
+                          onMatch={(suggestion) =>
+                            confirmSuggestion.mutate({
+                              transactionId: transaction.id,
+                              paymentId: suggestion.paymentId,
+                            })
+                          }
                         />
-                        {transaction.ruleSuggestion &&
-                          transaction.status === "NON_RAPPROCHEE" && (
-                            <Chip
-                              size="small"
-                              color="success"
-                              variant="outlined"
-                              label={`${transaction.ruleSuggestion.accountCode} — ${transaction.ruleSuggestion.accountName}`}
-                            />
-                          )}
-                      </Stack>
-                      <Stack
-                        direction="row"
-                        spacing={0.4}
-                        sx={{
-                          justifyContent: { lg: "flex-end" },
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        {canManage &&
-                          !archived &&
-                          transaction.status === "NON_RAPPROCHEE" &&
-                          canPaymentsView && (
-                            <Tooltip title="Associer un règlement">
-                              <IconButton
-                                onClick={() =>
-                                  setMatch({ mode: "payment", transaction })
-                                }
-                              >
-                                <LinkRounded />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        {canManage &&
-                          !archived &&
-                          transaction.status === "NON_RAPPROCHEE" &&
-                          canAccountingView && (
-                            <Tooltip title="Associer une écriture">
-                              <IconButton
-                                onClick={() =>
-                                  setMatch({ mode: "entry", transaction })
-                                }
-                              >
-                                <PostAddRounded />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        {canManage &&
-                          !archived &&
-                          transaction.status === "NON_RAPPROCHEE" &&
-                          canAccountsView && (
-                            <Button
-                              size="small"
-                              onClick={() =>
-                                setMatch({ mode: "generate", transaction })
-                              }
-                            >
-                              Créer écriture
-                            </Button>
-                          )}
-                        {canManage &&
-                          canAccountingPost &&
-                          !archived &&
-                          transaction.status === "ECRITURE_BROUILLON" && (
-                            <Button
-                              size="small"
-                              color="success"
-                              variant="contained"
-                              onClick={() => action.mutate({ type: "post-generated", transaction })}
-                            >
-                              Comptabiliser & rapprocher
-                            </Button>
-                          )}
-                      </Stack>
+                      )}
                     </Box>
                   ))}
                   {!filteredTransactions.length && (
@@ -1315,12 +1832,18 @@ export function DossierBankReconciliationPanel({
       </Stack>
       {accountOpen && (
         <BankAccountDialog
+          key={editingAccount?.id ?? "new-bank-account"}
           open={accountOpen}
-          onClose={() => setAccountOpen(false)}
+          onClose={() => {
+            setAccountOpen(false);
+            setEditingAccount(null);
+          }}
           organizationId={organizationId}
           dossierId={dossierId}
+          account={editingAccount}
           accounts={accounts.data ?? []}
           journals={journals.data ?? []}
+          banks={banks.data ?? []}
         />
       )}
       {importOpen && (

@@ -29,8 +29,10 @@ import { useAuth } from "../auth/AuthContext";
 import { PageHeader } from "../components/PageHeader";
 import { DossierSelector } from "../components/WorkspaceTools";
 import type { MigrationImportResult, MigrationPreview } from "../types/api";
+import { useDossierSelection } from "../hooks/useDossierSelection";
 
-type ImportKind = "accounts" | "journals" | "third-parties" | "opening-balances";
+type ImportKind =
+  "accounts" | "journals" | "third-parties" | "opening-balances";
 
 const importKinds: Array<{
   value: ImportKind;
@@ -41,14 +43,17 @@ const importKinds: Array<{
   {
     value: "accounts",
     label: "Plan comptable",
-    description: "Codes, libellés et types de comptes exportés depuis Sage/Ciel.",
-    template: "code;libelle;type;description\r\n401000;Fournisseurs;Asset;Compte collectif fournisseurs",
+    description:
+      "Codes, libellés et types de comptes exportés depuis Sage/Ciel.",
+    template:
+      "code;libelle;type;description\r\n401000;Fournisseurs;Asset;Compte collectif fournisseurs",
   },
   {
     value: "journals",
     label: "Journaux",
     description: "Journaux achats, ventes, banque, caisse, OD, paie.",
-    template: "code;libelle;type\r\nACH;Journal achats;ACHATS\r\nBQ;Banque;BANQUE",
+    template:
+      "code;libelle;type\r\nACH;Journal achats;ACHATS\r\nBQ;Banque;BANQUE",
   },
   {
     value: "third-parties",
@@ -70,7 +75,7 @@ export function MigrationAssistantPage() {
   const { organization, can } = useAuth();
   const organizationId = organization?.id ?? "";
   const queryClient = useQueryClient();
-  const [dossierId, setDossierId] = useState("");
+  const [dossierId, setDossierId] = useDossierSelection();
   const [kind, setKind] = useState<ImportKind>("accounts");
   const [openingDate, setOpeningDate] = useState(
     new Date(new Date().getFullYear(), 0, 1).toISOString().slice(0, 10),
@@ -94,31 +99,49 @@ export function MigrationAssistantPage() {
   };
 
   const preview = useMutation({
-    mutationFn: () => api.upload<MigrationPreview>(`${endpoint}/preview/${kind}`, makeBody()),
+    mutationFn: () =>
+      api.upload<MigrationPreview>(`${endpoint}/preview/${kind}`, makeBody()),
     onSuccess: (data) => {
       setError("");
       setResult(null);
       setPreviewData(data);
     },
     onError: (reason) =>
-      setError(reason instanceof ApiError ? reason.message : "Prévisualisation impossible."),
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : "Prévisualisation impossible.",
+      ),
   });
 
   const importFile = useMutation({
     mutationFn: () =>
-      api.upload<MigrationImportResult>(`${endpoint}/import/${kind}`, makeBody()),
+      api.upload<MigrationImportResult>(
+        `${endpoint}/import/${kind}`,
+        makeBody(),
+      ),
     onSuccess: async (data) => {
       setError("");
       setResult(data);
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["ledger-accounts", organizationId, dossierId] }),
-        queryClient.invalidateQueries({ queryKey: ["journals", organizationId, dossierId] }),
-        queryClient.invalidateQueries({ queryKey: ["third-parties", organizationId, dossierId] }),
-        queryClient.invalidateQueries({ queryKey: ["journal-entries", organizationId, dossierId] }),
+        queryClient.invalidateQueries({
+          queryKey: ["ledger-accounts", organizationId, dossierId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["journals", organizationId, dossierId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["third-parties", organizationId, dossierId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["journal-entries", organizationId, dossierId],
+        }),
       ]);
     },
     onError: (reason) =>
-      setError(reason instanceof ApiError ? reason.message : "Import impossible."),
+      setError(
+        reason instanceof ApiError ? reason.message : "Import impossible.",
+      ),
   });
 
   const downloadTemplate = () => {
@@ -143,7 +166,8 @@ export function MigrationAssistantPage() {
 
       {!dossierId && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Choisissez le dossier client avant d’importer. Chaque migration reste isolée dans son dossier.
+          Choisissez le dossier client avant d’importer. Chaque migration reste
+          isolée dans son dossier.
         </Alert>
       )}
       {error && (
@@ -153,9 +177,12 @@ export function MigrationAssistantPage() {
       )}
       {result && (
         <Alert severity="success" sx={{ mb: 2 }}>
-          Import terminé : {result.created} créé(s), {result.updated} mis à jour,{" "}
-          {result.skipped} ignoré(s)
-          {result.importedLines ? `, ${result.importedLines} ligne(s) de balance` : ""}.
+          Import terminé : {result.created} créé(s), {result.updated} mis à
+          jour, {result.skipped} ignoré(s)
+          {result.importedLines
+            ? `, ${result.importedLines} ligne(s) de balance`
+            : ""}
+          .
         </Alert>
       )}
 
@@ -206,7 +233,11 @@ export function MigrationAssistantPage() {
                   textAlign: "center",
                 }}
               >
-                <Button component="label" variant="outlined" startIcon={<CloudUploadOutlined />}>
+                <Button
+                  component="label"
+                  variant="outlined"
+                  startIcon={<CloudUploadOutlined />}
+                >
                   {file ? file.name : "Choisir un CSV/XLSX"}
                   <input
                     hidden
@@ -219,18 +250,31 @@ export function MigrationAssistantPage() {
                     }}
                   />
                 </Button>
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-                  Export Sage/Ciel ou fichier préparé avec les colonnes du modèle.
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: "block", mt: 1 }}
+                >
+                  Export Sage/Ciel ou fichier préparé avec les colonnes du
+                  modèle.
                 </Typography>
               </Box>
-              <Button startIcon={<DownloadOutlined />} onClick={downloadTemplate}>
+              <Button
+                startIcon={<DownloadOutlined />}
+                onClick={downloadTemplate}
+              >
                 Télécharger le modèle CSV
               </Button>
               <Divider />
               <Button
                 variant="outlined"
                 startIcon={<PreviewOutlined />}
-                disabled={!dossierId || !file || preview.isPending || !can("accounting.view")}
+                disabled={
+                  !dossierId ||
+                  !file ||
+                  preview.isPending ||
+                  !can("accounting.view")
+                }
                 onClick={() => preview.mutate()}
               >
                 Prévisualiser
@@ -257,25 +301,29 @@ export function MigrationAssistantPage() {
           <CardContent>
             <Stack spacing={2}>
               <Box>
-                <Typography variant="h3" sx={{ fontSize: 24 }}>
-                  Prévisualisation
-                </Typography>
+                <Typography variant="h3">Prévisualisation</Typography>
                 <Typography variant="body2" color="text.secondary">
                   Vérifiez les premières lignes avant de confirmer l’import.
                 </Typography>
               </Box>
               {!previewData && (
                 <Alert severity="info">
-                  Importez un fichier puis cliquez sur “Prévisualiser”. Aucune donnée n’est écrite avant confirmation.
+                  Importez un fichier puis cliquez sur “Prévisualiser”. Aucune
+                  donnée n’est écrite avant confirmation.
                 </Alert>
               )}
               {previewData && (
                 <>
                   <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
                     <Chip label={`${previewData.rows} ligne(s)`} />
-                    <Chip color="success" label={`${previewData.validRows} valide(s)`} />
                     <Chip
-                      color={previewData.warnings.length ? "warning" : "default"}
+                      color="success"
+                      label={`${previewData.validRows} valide(s)`}
+                    />
+                    <Chip
+                      color={
+                        previewData.warnings.length ? "warning" : "default"
+                      }
                       label={`${previewData.warnings.length} alerte(s)`}
                     />
                   </Stack>
@@ -292,9 +340,11 @@ export function MigrationAssistantPage() {
                     <Table size="small">
                       <TableHead>
                         <TableRow>
-                          {Object.keys(previewData.sample[0] ?? {}).map((key) => (
-                            <TableCell key={key}>{key}</TableCell>
-                          ))}
+                          {Object.keys(previewData.sample[0] ?? {}).map(
+                            (key) => (
+                              <TableCell key={key}>{key}</TableCell>
+                            ),
+                          )}
                         </TableRow>
                       </TableHead>
                       <TableBody>

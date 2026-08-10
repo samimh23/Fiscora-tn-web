@@ -33,6 +33,7 @@ import {
   QueryState,
 } from "../components/WorkspaceTools";
 import { PageHeader } from "../components/PageHeader";
+import { useDossierSelection } from "../hooks/useDossierSelection";
 
 interface StatementLine {
   code: string;
@@ -140,19 +141,51 @@ function LinesTable({
   );
 }
 
-function NoteEditor({ section, disabled, onSave }: { section: NoteSection; disabled: boolean; onSave: (content: string) => void }) {
+function NoteEditor({
+  section,
+  disabled,
+  onSave,
+}: {
+  section: NoteSection;
+  disabled: boolean;
+  onSave: (content: string) => void;
+}) {
   const [content, setContent] = useState(section.content);
   return (
     <Card variant="outlined">
       <CardContent>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ alignItems: { md: "flex-start" } }}>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={2}
+          sx={{ alignItems: { md: "flex-start" } }}
+        >
           <Box sx={{ minWidth: 220 }}>
             <Typography variant="h6">Note {section.noteNumber}</Typography>
             <Typography color="text.secondary">{section.title}</Typography>
-            {section.isRequired && <Chip size="small" color="warning" label="Obligatoire" sx={{ mt: 1 }} />}
+            {section.isRequired && (
+              <Chip
+                size="small"
+                color="warning"
+                label="Obligatoire"
+                sx={{ mt: 1 }}
+              />
+            )}
           </Box>
-          <TextField fullWidth multiline minRows={4} label="Commentaire et méthodes appliquées" value={content} onChange={(event) => setContent(event.target.value)} />
-          <Button variant="outlined" disabled={disabled} onClick={() => onSave(content)}>Enregistrer</Button>
+          <TextField
+            fullWidth
+            multiline
+            minRows={4}
+            label="Commentaire et méthodes appliquées"
+            value={content}
+            onChange={(event) => setContent(event.target.value)}
+          />
+          <Button
+            variant="outlined"
+            disabled={disabled}
+            onClick={() => onSave(content)}
+          >
+            Enregistrer
+          </Button>
         </Stack>
       </CardContent>
     </Card>
@@ -161,7 +194,7 @@ function NoteEditor({ section, disabled, onSave }: { section: NoteSection; disab
 
 export function FinancialStatementsPage() {
   const { organization, can } = useAuth();
-  const [dossierId, setDossierId] = useState("");
+  const [dossierId, setDossierId] = useDossierSelection();
   const [year, setYear] = useState(new Date().getFullYear() - 1);
   const [tab, setTab] = useState(0);
   const [message, setMessage] = useState("");
@@ -190,8 +223,13 @@ export function FinancialStatementsPage() {
     },
   });
   const saveNote = useMutation({
-    mutationFn: ({ sectionId, content }: { sectionId: string; content: string }) =>
-      api.put(`${base}/notes/${year}/sections/${sectionId}`, { content }),
+    mutationFn: ({
+      sectionId,
+      content,
+    }: {
+      sectionId: string;
+      content: string;
+    }) => api.put(`${base}/notes/${year}/sections/${sectionId}`, { content }),
     onSuccess: () => {
       setMessage("Annexe enregistrée.");
       void refresh();
@@ -241,7 +279,10 @@ export function FinancialStatementsPage() {
         }
       />
       {(message || action.error || saveNote.error) && (
-        <Alert severity={action.error || saveNote.error ? "error" : "success"} sx={{ mb: 2 }}>
+        <Alert
+          severity={action.error || saveNote.error ? "error" : "success"}
+          sx={{ mb: 2 }}
+        >
           {action.error instanceof Error
             ? action.error.message
             : saveNote.error instanceof Error
@@ -387,15 +428,22 @@ export function FinancialStatementsPage() {
             ) : (
               <Box sx={{ p: 2 }}>
                 {!query.data.notes && (
-                  <Alert severity="info">Générez d’abord les annexes de cet exercice.</Alert>
+                  <Alert severity="info">
+                    Générez d’abord les annexes de cet exercice.
+                  </Alert>
                 )}
                 <Stack spacing={2}>
                   {query.data.notes?.sections.map((section) => (
                     <NoteEditor
                       key={section.id}
                       section={section}
-                      disabled={!can("financial_statements.manage") || saveNote.isPending}
-                      onSave={(content) => saveNote.mutate({ sectionId: section.id, content })}
+                      disabled={
+                        !can("financial_statements.manage") ||
+                        saveNote.isPending
+                      }
+                      onSave={(content) =>
+                        saveNote.mutate({ sectionId: section.id, content })
+                      }
                     />
                   ))}
                 </Stack>

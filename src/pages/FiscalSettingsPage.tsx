@@ -59,10 +59,7 @@ interface RegulatoryRule {
   articleReference: string;
   effectiveFrom: string;
   status:
-    | "ACTIVE"
-    | "ACTION_REQUISE"
-    | "TEXTE_APPLICATION_ATTENDU"
-    | "INFORMATION";
+    "ACTIVE" | "ACTION_REQUISE" | "TEXTE_APPLICATION_ATTENDU" | "INFORMATION";
   impactedModules: string[];
   sourceLabel: string;
   sourceUrl: string;
@@ -116,9 +113,7 @@ export function FiscalSettingsPage() {
   const regulatory = useQuery({
     queryKey: ["regulatory-updates", organization?.id, today],
     queryFn: () =>
-      api.get<RegulatoryRule[]>(
-        `${base}/regulatory-updates?date=${today}`,
-      ),
+      api.get<RegulatoryRule[]>(`${base}/regulatory-updates?date=${today}`),
     enabled: Boolean(base),
   });
   const save = useMutation({
@@ -214,7 +209,7 @@ export function FiscalSettingsPage() {
         >
           <GavelRounded />
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h5" sx={{ fontWeight: 900 }}>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
               Mise à jour réglementaire 2026
             </Typography>
             <Typography sx={{ opacity: 0.82 }}>
@@ -271,7 +266,11 @@ export function FiscalSettingsPage() {
                       label={rule.articleReference}
                       color="primary"
                     />
-                    <Chip size="small" label={rule.category} variant="outlined" />
+                    <Chip
+                      size="small"
+                      label={rule.category}
+                      variant="outlined"
+                    />
                     <Chip
                       size="small"
                       icon={
@@ -319,7 +318,10 @@ export function FiscalSettingsPage() {
                     ))}
                   </Stack>
                   {rule.notes && (
-                    <Alert severity={requiresAction ? "warning" : "info"} sx={{ mt: 1.5 }}>
+                    <Alert
+                      severity={requiresAction ? "warning" : "info"}
+                      sx={{ mt: 1.5 }}
+                    >
                       {rule.notes}
                     </Alert>
                   )}

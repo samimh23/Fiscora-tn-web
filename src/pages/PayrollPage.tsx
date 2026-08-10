@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  IconButton,
   MenuItem,
   Stack,
   Tab,
@@ -30,6 +31,7 @@ import {
   CalculateRounded,
   CheckRounded,
   DownloadRounded,
+  EditRounded,
 } from "@mui/icons-material";
 import { api, downloadApiFile } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
@@ -39,6 +41,7 @@ import {
   QueryState,
 } from "../components/WorkspaceTools";
 import { PageHeader } from "../components/PageHeader";
+import { useDossierSelection } from "../hooks/useDossierSelection";
 
 interface Employee {
   id: string;
@@ -118,15 +121,18 @@ interface DueReport {
 export function PayrollPage() {
   const { organization, can } = useAuth();
   const qc = useQueryClient();
-  const [dossierId, setDossierId] = useState("");
+  const [dossierId, setDossierId] = useDossierSelection();
   const [tab, setTab] = useState(0);
   const [employeeOpen, setEmployeeOpen] = useState(false);
+  const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(
+    null,
+  );
   const [runOpen, setRunOpen] = useState(false);
   const [year, setYear] = useState(new Date().getFullYear());
   const [quarter, setQuarter] = useState(
     Math.ceil((new Date().getMonth() + 1) / 3),
   );
-  const [employee, setEmployee] = useState({
+  const emptyEmployee = () => ({
     fullName: "",
     cin: "",
     cnssNumber: "",
@@ -137,6 +143,7 @@ export function PayrollPage() {
     employerSupportEligible: false,
     employerSupportStartDate: new Date().toISOString().slice(0, 10),
   });
+  const [employee, setEmployee] = useState(emptyEmployee);
   const [period, setPeriod] = useState({
     periodYear: new Date().getFullYear(),
     periodMonth: new Date().getMonth() + 1,
@@ -167,9 +174,14 @@ export function PayrollPage() {
     enabled: Boolean(base && tab === 3),
   });
   const saveEmployee = useMutation({
-    mutationFn: () => api.post(`${base}/employees`, employee),
+    mutationFn: () =>
+      editingEmployeeId
+        ? api.put(`${base}/employees/${editingEmployeeId}`, employee)
+        : api.post(`${base}/employees`, employee),
     onSuccess: () => {
       setEmployeeOpen(false);
+      setEditingEmployeeId(null);
+      setEmployee(emptyEmployee());
       void qc.invalidateQueries({ queryKey: ["employees"] });
     },
   });
@@ -205,6 +217,32 @@ export function PayrollPage() {
       `due-${year}.${format}`,
     );
   };
+  const closeEmployeeDialog = () => {
+    setEmployeeOpen(false);
+    setEditingEmployeeId(null);
+    setEmployee(emptyEmployee());
+  };
+  const openNewEmployee = () => {
+    setEditingEmployeeId(null);
+    setEmployee(emptyEmployee());
+    setEmployeeOpen(true);
+  };
+  const openEditEmployee = (item: Employee) => {
+    setEditingEmployeeId(item.id);
+    setEmployee({
+      fullName: item.fullName,
+      cin: item.cin ?? "",
+      cnssNumber: item.cnssNumber ?? "",
+      hireDate: item.hireDate,
+      contractType: item.contractType,
+      grossSalary: item.grossSalary,
+      isHigherEducationGraduate: item.isHigherEducationGraduate,
+      employerSupportEligible: item.employerSupportEligible,
+      employerSupportStartDate:
+        item.employerSupportStartDate ?? new Date().toISOString().slice(0, 10),
+    });
+    setEmployeeOpen(true);
+  };
   const error = saveEmployee.error ?? generate.error ?? validate.error;
   return (
     <>
@@ -238,7 +276,7 @@ export function PayrollPage() {
                   variant="contained"
                   startIcon={<AddRounded />}
                   disabled={!base || !can("payroll.manage")}
-                  onClick={() => setEmployeeOpen(true)}
+                  onClick={openNewEmployee}
                 >
                   Nouveau salarié
                 </Button>
@@ -256,6 +294,7 @@ export function PayrollPage() {
                     <TableCell>CIN / CNSS</TableCell>
                     <TableCell>Contrat</TableCell>
                     <TableCell align="right">Salaire brut</TableCell>
+                    <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -276,10 +315,24 @@ export function PayrollPage() {
                       <TableCell align="right">
                         <Money value={item.grossSalary} />
                         {item.employerSupportEligible && (
-                          <Typography variant="caption" sx={{ display: "block" }} color="success.main">
+                          <Typography
+                            variant="caption"
+                            sx={{ display: "block" }}
+                            color="success.main"
+                          >
                             Aide patronale art. 13 activée
                           </Typography>
                         )}
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          aria-label="Modifier le salarié"
+                          disabled={!can("payroll.manage")}
+                          onClick={() => openEditEmployee(item)}
+                        >
+                          <EditRounded fontSize="small" />
+                        </IconButton>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -373,7 +426,9 @@ export function PayrollPage() {
                             <TableCell align="right">IRPP</TableCell>
                             <TableCell align="right">Net</TableCell>
                             <TableCell align="right">CNSS employeur</TableCell>
-                            <TableCell align="right">Prise en charge État</TableCell>
+                            <TableCell align="right">
+                              Prise en charge État
+                            </TableCell>
                             <TableCell align="right">Bulletin</TableCell>
                           </TableRow>
                         </TableHead>
@@ -399,8 +454,14 @@ export function PayrollPage() {
                               <TableCell align="right">
                                 <Money value={line.employerSupportAmount} />
                                 {Number(line.employerSupportRate) > 0 && (
-                                  <Typography variant="caption" sx={{ display: "block" }}>
-                                    {(Number(line.employerSupportRate) * 100).toFixed(0)} %
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ display: "block" }}
+                                  >
+                                    {(
+                                      Number(line.employerSupportRate) * 100
+                                    ).toFixed(0)}{" "}
+                                    %
                                   </Typography>
                                 )}
                               </TableCell>
@@ -408,7 +469,9 @@ export function PayrollPage() {
                                 <Button
                                   size="small"
                                   startIcon={<DownloadRounded />}
-                                  onClick={() => downloadPayslip(run.id, line.id)}
+                                  onClick={() =>
+                                    downloadPayslip(run.id, line.id)
+                                  }
                                 >
                                   PDF
                                 </Button>
@@ -492,7 +555,11 @@ export function PayrollPage() {
           )}
           {tab === 3 && (
             <>
-              <Stack direction="row" spacing={2} sx={{ mb: 2, alignItems: "center" }}>
+              <Stack
+                direction="row"
+                spacing={2}
+                sx={{ mb: 2, alignItems: "center" }}
+              >
                 <TextField
                   size="small"
                   type="number"
@@ -544,7 +611,8 @@ export function PayrollPage() {
                           <TableRow key={employee.employeeId}>
                             <TableCell>{employee.fullName}</TableCell>
                             <TableCell>
-                              {employee.cin || "—"} / {employee.cnssNumber || "—"}
+                              {employee.cin || "—"} /{" "}
+                              {employee.cnssNumber || "—"}
                             </TableCell>
                             <TableCell align="right">
                               <Money value={employee.grossAnnual} />
@@ -593,11 +661,13 @@ export function PayrollPage() {
       </Card>
       <Dialog
         open={employeeOpen}
-        onClose={() => setEmployeeOpen(false)}
+        onClose={closeEmployeeDialog}
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>Nouveau salarié</DialogTitle>
+        <DialogTitle>
+          {editingEmployeeId ? "Modifier le salarié" : "Nouveau salarié"}
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
@@ -703,7 +773,8 @@ export function PayrollPage() {
                       slotProps={{ inputLabel: { shrink: true } }}
                     />
                     <Alert severity="warning">
-                      Activez cette aide uniquement après vérification des conditions et conservation du justificatif.
+                      Activez cette aide uniquement après vérification des
+                      conditions et conservation du justificatif.
                     </Alert>
                   </>
                 )}
@@ -712,7 +783,7 @@ export function PayrollPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEmployeeOpen(false)}>Annuler</Button>
+          <Button onClick={closeEmployeeDialog}>Annuler</Button>
           <Button
             variant="contained"
             disabled={
@@ -722,7 +793,7 @@ export function PayrollPage() {
             }
             onClick={() => saveEmployee.mutate()}
           >
-            Enregistrer
+            {editingEmployeeId ? "Enregistrer les changements" : "Enregistrer"}
           </Button>
         </DialogActions>
       </Dialog>

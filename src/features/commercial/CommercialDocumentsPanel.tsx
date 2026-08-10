@@ -493,19 +493,19 @@ function DocumentDialog({
           >
             <Box>
               <Typography variant="caption">Total HT</Typography>
-              <Typography sx={{ fontWeight: 800 }}>
+              <Typography sx={{ fontWeight: 700 }}>
                 {money(calculation.net)}
               </Typography>
             </Box>
             <Box>
               <Typography variant="caption">TVA</Typography>
-              <Typography sx={{ fontWeight: 800 }}>
+              <Typography sx={{ fontWeight: 700 }}>
                 {money(calculation.vat)}
               </Typography>
             </Box>
             <Box>
               <Typography variant="caption">Total TTC</Typography>
-              <Typography sx={{ fontWeight: 900, color: "primary.main" }}>
+              <Typography sx={{ fontWeight: 700, color: "primary.main" }}>
                 {money(calculation.net + calculation.vat)}
               </Typography>
             </Box>
@@ -640,9 +640,7 @@ export function CommercialDocumentsPanel({
           }}
         >
           <Box>
-            <Typography variant="h3" sx={{ fontSize: 24 }}>
-              Cycle commercial
-            </Typography>
+            <Typography variant="h3">Cycle commercial</Typography>
             <Typography variant="body2" color="text.secondary">
               Devis, commandes et livraisons convertis sans ressaisie.
             </Typography>
@@ -728,7 +726,7 @@ export function CommercialDocumentsPanel({
             <DescriptionOutlined
               sx={{ fontSize: 46, color: "text.disabled" }}
             />
-            <Typography sx={{ fontWeight: 800, mt: 1 }}>
+            <Typography sx={{ fontWeight: 700, mt: 1 }}>
               Aucun document commercial
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -764,7 +762,7 @@ export function CommercialDocumentsPanel({
                   spacing={1}
                   sx={{ alignItems: "center", flexWrap: "wrap" }}
                 >
-                  <Typography sx={{ fontWeight: 900 }}>
+                  <Typography sx={{ fontWeight: 700 }}>
                     {kindLabels[document.kind]} {document.number}
                   </Typography>
                   <Chip
@@ -799,7 +797,7 @@ export function CommercialDocumentsPanel({
                 <Typography variant="caption" color="text.secondary">
                   Total TTC
                 </Typography>
-                <Typography sx={{ fontWeight: 900 }}>
+                <Typography sx={{ fontWeight: 700 }}>
                   {money(document.grossAmount)} {document.currencyCode}
                 </Typography>
               </Box>

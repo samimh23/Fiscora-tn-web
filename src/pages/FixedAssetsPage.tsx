@@ -11,6 +11,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   MenuItem,
   Stack,
   Tab,
@@ -23,7 +24,12 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { AddRounded, AutorenewRounded, LockRounded } from "@mui/icons-material";
+import {
+  AddRounded,
+  AutorenewRounded,
+  EditRounded,
+  LockRounded,
+} from "@mui/icons-material";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -33,6 +39,7 @@ import {
 } from "../components/WorkspaceTools";
 import { PageHeader } from "../components/PageHeader";
 import type { LedgerAccount } from "../types/api";
+import { useDossierSelection } from "../hooks/useDossierSelection";
 
 interface AssetCategory {
   id: string;
@@ -46,15 +53,25 @@ interface AssetCategory {
 }
 interface Asset {
   id: string;
+  categoryId?: string;
   code: string;
   name: string;
+  description?: string | null;
   category: AssetCategory;
   acquisitionDate: string;
   serviceDate: string;
+  purchaseInvoiceId?: string | null;
+  supplierId?: string | null;
   acquisitionCost: string;
   residualValue: string;
   netBookValue: string;
   status: string;
+  accountingMethod?: string;
+  usefulLifeMonths?: number;
+  accountingDecliningRate?: string | null;
+  fiscalMethod?: string;
+  fiscalUsefulLifeMonths?: number;
+  fiscalDecliningRate?: string | null;
   depreciationPeriods?: Array<{
     id: string;
     periodYear: number;
@@ -85,13 +102,17 @@ interface DepreciationReport {
 export function FixedAssetsPage() {
   const { organization, can } = useAuth();
   const qc = useQueryClient();
-  const [dossierId, setDossierId] = useState("");
+  const [dossierId, setDossierId] = useDossierSelection();
   const [tab, setTab] = useState(0);
   const [year, setYear] = useState(new Date().getFullYear());
   const [categoryOpen, setCategoryOpen] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
+    null,
+  );
   const [assetOpen, setAssetOpen] = useState(false);
+  const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState("");
-  const [category, setCategory] = useState({
+  const emptyCategory = () => ({
     code: "",
     name: "",
     assetAccountId: "",
@@ -100,8 +121,9 @@ export function FixedAssetsPage() {
     defaultMethod: "LINEAIRE",
     defaultUsefulLifeMonths: 60,
   });
+  const [category, setCategory] = useState(emptyCategory);
   const today = new Date().toISOString().slice(0, 10);
-  const [asset, setAsset] = useState({
+  const emptyAsset = () => ({
     categoryId: "",
     code: "",
     name: "",
@@ -112,6 +134,7 @@ export function FixedAssetsPage() {
     fiscalMethod: "LINEAIRE",
     fiscalUsefulLifeMonths: 60,
   });
+  const [asset, setAsset] = useState(emptyAsset);
   const base =
     organization?.id && dossierId
       ? `/api/organizations/${organization.id}/dossiers/${dossierId}/fixed-assets`
@@ -132,7 +155,9 @@ export function FixedAssetsPage() {
       api.get<LedgerAccount[]>(
         `/api/organizations/${organization?.id}/dossiers/${dossierId}/ledger-accounts`,
       ),
-    enabled: Boolean(organization?.id && dossierId && can("chart_of_accounts.view")),
+    enabled: Boolean(
+      organization?.id && dossierId && can("chart_of_accounts.view"),
+    ),
   });
   const report = useQuery({
     queryKey: ["depreciation-report", organization?.id, dossierId, year],
@@ -151,16 +176,26 @@ export function FixedAssetsPage() {
     void qc.invalidateQueries({ queryKey: ["depreciation-report"] });
   };
   const saveCategory = useMutation({
-    mutationFn: () => api.post(`${base}/categories`, category),
+    mutationFn: () =>
+      editingCategoryId
+        ? api.put(`${base}/categories/${editingCategoryId}`, category)
+        : api.post(`${base}/categories`, category),
     onSuccess: () => {
       setCategoryOpen(false);
+      setEditingCategoryId(null);
+      setCategory(emptyCategory());
       invalidate();
     },
   });
   const saveAsset = useMutation({
-    mutationFn: () => api.post(`${base}`, asset),
+    mutationFn: () =>
+      editingAssetId
+        ? api.put(`${base}/${editingAssetId}`, asset)
+        : api.post(`${base}`, asset),
     onSuccess: () => {
       setAssetOpen(false);
+      setEditingAssetId(null);
+      setAsset(emptyAsset());
       invalidate();
     },
   });
@@ -180,6 +215,59 @@ export function FixedAssetsPage() {
     saveAsset.error ??
     generate.error ??
     validateYear.error;
+  const closeCategoryDialog = () => {
+    setCategoryOpen(false);
+    setEditingCategoryId(null);
+    setCategory(emptyCategory());
+  };
+  const closeAssetDialog = () => {
+    setAssetOpen(false);
+    setEditingAssetId(null);
+    setAsset(emptyAsset());
+  };
+  const openNewCategory = () => {
+    setEditingCategoryId(null);
+    setCategory(emptyCategory());
+    setCategoryOpen(true);
+  };
+  const openEditCategory = (item: AssetCategory) => {
+    setEditingCategoryId(item.id);
+    setCategory({
+      code: item.code,
+      name: item.name,
+      assetAccountId: item.assetAccount.id,
+      accumulatedDepreciationAccountId:
+        item.accumulatedDepreciationAccount.id,
+      depreciationExpenseAccountId: item.depreciationExpenseAccount.id,
+      defaultMethod: item.defaultMethod,
+      defaultUsefulLifeMonths: item.defaultUsefulLifeMonths,
+    });
+    setCategoryOpen(true);
+  };
+  const openNewAsset = () => {
+    setEditingAssetId(null);
+    setAsset({
+      ...emptyAsset(),
+      categoryId: categories.data?.[0]?.id ?? "",
+    });
+    setAssetOpen(true);
+  };
+  const openEditAsset = (item: Asset) => {
+    setEditingAssetId(item.id);
+    setAsset({
+      categoryId: item.categoryId ?? item.category.id,
+      code: item.code,
+      name: item.name,
+      acquisitionDate: item.acquisitionDate,
+      serviceDate: item.serviceDate,
+      acquisitionCost: item.acquisitionCost,
+      residualValue: item.residualValue,
+      fiscalMethod: item.fiscalMethod ?? item.category.defaultMethod,
+      fiscalUsefulLifeMonths:
+        item.fiscalUsefulLifeMonths ?? item.category.defaultUsefulLifeMonths,
+    });
+    setAssetOpen(true);
+  };
   return (
     <>
       <PageHeader
@@ -215,13 +303,7 @@ export function FixedAssetsPage() {
                     !can("fixed_assets.manage") ||
                     !categories.data?.length
                   }
-                  onClick={() => {
-                    setAsset({
-                      ...asset,
-                      categoryId: categories.data?.[0]?.id ?? "",
-                    });
-                    setAssetOpen(true);
-                  }}
+                  onClick={openNewAsset}
                 >
                   Nouvelle immobilisation
                 </Button>
@@ -271,7 +353,18 @@ export function FixedAssetsPage() {
                       <TableCell>
                         <Chip size="small" label={a.status} />
                       </TableCell>
-                      <TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          aria-label="Modifier l’immobilisation"
+                          disabled={!can("fixed_assets.manage")}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditAsset(a);
+                          }}
+                        >
+                          <EditRounded fontSize="small" />
+                        </IconButton>
                         <Button
                           size="small"
                           startIcon={<AutorenewRounded />}
@@ -343,7 +436,7 @@ export function FixedAssetsPage() {
                     !can("fixed_assets.manage") ||
                     !accounts.data?.length
                   }
-                  onClick={() => setCategoryOpen(true)}
+                  onClick={openNewCategory}
                 >
                   Nouvelle catégorie
                 </Button>
@@ -360,6 +453,7 @@ export function FixedAssetsPage() {
                     <TableCell>Méthode</TableCell>
                     <TableCell>Durée</TableCell>
                     <TableCell>Comptes</TableCell>
+                    <TableCell align="right">Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -375,6 +469,16 @@ export function FixedAssetsPage() {
                         {c.accumulatedDepreciationAccount.code} /{" "}
                         {c.depreciationExpenseAccount.code}
                       </TableCell>
+                      <TableCell align="right">
+                        <IconButton
+                          size="small"
+                          aria-label="Modifier la catégorie"
+                          disabled={!can("fixed_assets.manage")}
+                          onClick={() => openEditCategory(c)}
+                        >
+                          <EditRounded fontSize="small" />
+                        </IconButton>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -383,7 +487,11 @@ export function FixedAssetsPage() {
           )}
           {tab === 2 && (
             <>
-              <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ justifyContent: "flex-end" }}
+              >
                 <TextField
                   size="small"
                   type="number"
@@ -469,11 +577,13 @@ export function FixedAssetsPage() {
       </Card>
       <Dialog
         open={categoryOpen}
-        onClose={() => setCategoryOpen(false)}
+        onClose={closeCategoryDialog}
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>Nouvelle catégorie</DialogTitle>
+        <DialogTitle>
+          {editingCategoryId ? "Modifier la catégorie" : "Nouvelle catégorie"}
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Stack direction="row" spacing={2}>
@@ -556,23 +666,27 @@ export function FixedAssetsPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setCategoryOpen(false)}>Annuler</Button>
+          <Button onClick={closeCategoryDialog}>Annuler</Button>
           <Button
             variant="contained"
             disabled={saveCategory.isPending}
             onClick={() => saveCategory.mutate()}
           >
-            Créer
+            {editingCategoryId ? "Enregistrer les changements" : "Créer"}
           </Button>
         </DialogActions>
       </Dialog>
       <Dialog
         open={assetOpen}
-        onClose={() => setAssetOpen(false)}
+        onClose={closeAssetDialog}
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>Nouvelle immobilisation</DialogTitle>
+        <DialogTitle>
+          {editingAssetId
+            ? "Modifier l’immobilisation"
+            : "Nouvelle immobilisation"}
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
@@ -674,7 +788,7 @@ export function FixedAssetsPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAssetOpen(false)}>Annuler</Button>
+          <Button onClick={closeAssetDialog}>Annuler</Button>
           <Button
             variant="contained"
             disabled={
@@ -686,7 +800,9 @@ export function FixedAssetsPage() {
             }
             onClick={() => saveAsset.mutate()}
           >
-            Créer et générer le plan
+            {editingAssetId
+              ? "Enregistrer et refaire le plan"
+              : "Créer et générer le plan"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -255,7 +255,7 @@ export function VatDeclarationsPanel({
           }}
         >
           <Box>
-            <Typography variant="h3" sx={{ fontSize: 24 }}>
+            <Typography variant="h3">
               Déclaration mensuelle tunisienne
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -320,7 +320,7 @@ export function VatDeclarationsPanel({
         {!declarations.isLoading && !current && !calculation.isLoading && (
           <Box sx={{ p: 5, textAlign: "center" }}>
             <CalculateOutlined sx={{ fontSize: 48, color: "text.disabled" }} />
-            <Typography sx={{ fontWeight: 900, mt: 1 }}>
+            <Typography sx={{ fontWeight: 700, mt: 1 }}>
               Déclaration non préparée
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -347,7 +347,7 @@ export function VatDeclarationsPanel({
               useFlexGap
               sx={{ mb: 2, alignItems: "center", flexWrap: "wrap" }}
             >
-              <Typography variant="h3" sx={{ fontSize: 22 }}>
+              <Typography variant="h3">
                 {monthNames[current.periodMonth - 1]} {current.periodYear}
               </Typography>
               <Chip
@@ -401,7 +401,7 @@ export function VatDeclarationsPanel({
                   <Typography variant="caption" color="text.secondary">
                     {label}
                   </Typography>
-                  <Typography sx={{ fontWeight: 900, mt: 0.4 }}>
+                  <Typography sx={{ fontWeight: 700, mt: 0.4 }}>
                     {money(value)}
                   </Typography>
                 </Card>
@@ -417,11 +417,8 @@ export function VatDeclarationsPanel({
                 alignItems: "center",
               }}
             >
-              <Typography sx={{ fontWeight: 900 }}>Total à payer</Typography>
-              <Typography
-                variant="h3"
-                sx={{ fontSize: 27, color: "primary.dark" }}
-              >
+              <Typography sx={{ fontWeight: 700 }}>Total à payer</Typography>
+              <Typography variant="h3" sx={{ color: "primary.dark" }}>
                 {money(current.totalDue)}
               </Typography>
             </Card>
@@ -516,9 +513,7 @@ export function VatDeclarationsPanel({
             }}
           >
             <Box>
-              <Typography variant="h3" sx={{ fontSize: 21 }}>
-                Contrôles de cohérence
-              </Typography>
+              <Typography variant="h3">Contrôles de cohérence</Typography>
               <Typography variant="body2" color="text.secondary">
                 {checks.blockingCount} bloquant(s) · {checks.warningCount}{" "}
                 avertissement(s)
@@ -549,9 +544,7 @@ export function VatDeclarationsPanel({
 
       {source && (
         <Card sx={{ p: 2.5 }}>
-          <Typography variant="h3" sx={{ fontSize: 21 }}>
-            Sources du calcul
-          </Typography>
+          <Typography variant="h3">Sources du calcul</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Traçabilité des montants utilisés pour {monthNames[month - 1]}{" "}
             {year}.
@@ -573,7 +566,7 @@ export function VatDeclarationsPanel({
                 <Typography variant="caption" color="text.secondary">
                   {label}
                 </Typography>
-                <Typography sx={{ fontWeight: 900, mt: 0.4 }}>
+                <Typography sx={{ fontWeight: 700, mt: 0.4 }}>
                   {value}
                 </Typography>
               </Card>
@@ -581,7 +574,7 @@ export function VatDeclarationsPanel({
           </Box>
           {source.vatByRate.length > 0 && (
             <Box sx={{ mt: 2, overflowX: "auto" }}>
-              <Typography sx={{ fontWeight: 900, mb: 1 }}>
+              <Typography sx={{ fontWeight: 700, mb: 1 }}>
                 TVA par taux
               </Typography>
               <Box
@@ -621,7 +614,7 @@ export function VatDeclarationsPanel({
           {source.withholdingByNature.length > 0 && (
             <>
               <Divider sx={{ my: 2 }} />
-              <Typography sx={{ fontWeight: 900, mb: 1 }}>
+              <Typography sx={{ fontWeight: 700, mb: 1 }}>
                 Retenues par nature
               </Typography>
               <Stack

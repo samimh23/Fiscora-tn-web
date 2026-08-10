@@ -354,7 +354,9 @@ function InvoiceDialog({
         currencyCode:
           form.currencyCode !== "TND" ? form.currencyCode : undefined,
         exchangeRate:
-          form.currencyCode !== "TND" ? form.exchangeRate || undefined : undefined,
+          form.currencyCode !== "TND"
+            ? form.exchangeRate || undefined
+            : undefined,
         stampDuty: form.stampDuty || undefined,
         withholdingNature: form.withholdingNature.trim() || undefined,
         withholdingBase: form.withholdingBase || undefined,
@@ -878,29 +880,27 @@ function InvoiceDialog({
           >
             <Box>
               <Typography variant="caption">Total HT estimé</Typography>
-              <Typography sx={{ fontWeight: 900 }}>
+              <Typography sx={{ fontWeight: 700 }}>
                 {money(calculation.net)}
               </Typography>
             </Box>
             {calculation.excise > 0 && (
               <Box>
-                <Typography variant="caption">
-                  Droit de consommation
-                </Typography>
-                <Typography sx={{ fontWeight: 900 }}>
+                <Typography variant="caption">Droit de consommation</Typography>
+                <Typography sx={{ fontWeight: 700 }}>
                   {money(calculation.excise)}
                 </Typography>
               </Box>
             )}
             <Box>
               <Typography variant="caption">TVA estimée</Typography>
-              <Typography sx={{ fontWeight: 900 }}>
+              <Typography sx={{ fontWeight: 700 }}>
                 {money(calculation.vat)}
               </Typography>
             </Box>
             <Box>
               <Typography variant="caption">TTC estimé hors timbre</Typography>
-              <Typography sx={{ fontWeight: 900, color: "primary.dark" }}>
+              <Typography sx={{ fontWeight: 700, color: "primary.dark" }}>
                 {money(calculation.net + calculation.excise + calculation.vat)}
               </Typography>
             </Box>
@@ -974,7 +974,8 @@ export function InvoicesPanel({
   const [selected, setSelected] = useState<BusinessInvoice | null>(null);
   const [filter, setFilter] = useState("TOUTES");
   const [error, setError] = useState("");
-  const [matchingInvoice, setMatchingInvoice] = useState<BusinessInvoice | null>(null);
+  const [matchingInvoice, setMatchingInvoice] =
+    useState<BusinessInvoice | null>(null);
   const matchResult = useQuery({
     queryKey: ["invoice-match", organizationId, dossierId, matchingInvoice?.id],
     queryFn: () =>
@@ -989,7 +990,12 @@ export function InvoicesPanel({
           invoiceQuantity: string;
           receiptUnitPrice: string;
           invoiceUnitPrice: string;
-          status: "OK" | "ECART_QUANTITE" | "ECART_PRIX" | "ABSENT_FACTURE" | "ABSENT_RECEPTION";
+          status:
+            | "OK"
+            | "ECART_QUANTITE"
+            | "ECART_PRIX"
+            | "ABSENT_FACTURE"
+            | "ABSENT_RECEPTION";
         }>;
       }>(
         `/api/organizations/${organizationId}/dossiers/${dossierId}/business-invoices/${matchingInvoice?.id}/match`,
@@ -1055,9 +1061,7 @@ export function InvoicesPanel({
           }}
         >
           <Box>
-            <Typography variant="h3" sx={{ fontSize: 24 }}>
-              Factures d’achat et de vente
-            </Typography>
+            <Typography variant="h3">Factures d’achat et de vente</Typography>
             <Typography variant="body2" color="text.secondary">
               TVA, retenues, validation et génération automatique des écritures.
             </Typography>
@@ -1105,7 +1109,7 @@ export function InvoicesPanel({
             <ReceiptLongOutlined
               sx={{ fontSize: 46, color: "text.disabled" }}
             />
-            <Typography sx={{ fontWeight: 800, mt: 1 }}>
+            <Typography sx={{ fontWeight: 700, mt: 1 }}>
               Aucune facture
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -1136,7 +1140,7 @@ export function InvoicesPanel({
                 spacing={1}
                 sx={{ alignItems: "center", flexWrap: "wrap" }}
               >
-                <Typography sx={{ fontWeight: 900 }}>
+                <Typography sx={{ fontWeight: 700 }}>
                   {invoice.kind === "AVOIR" ? "Avoir" : "Facture"}{" "}
                   {invoice.number}
                 </Typography>
@@ -1167,7 +1171,7 @@ export function InvoicesPanel({
               <Typography variant="caption" color="text.secondary">
                 Net à payer
               </Typography>
-              <Typography sx={{ fontWeight: 900 }}>
+              <Typography sx={{ fontWeight: 700 }}>
                 {money(invoice.netPayable)}
               </Typography>
             </Box>
@@ -1193,7 +1197,7 @@ export function InvoicesPanel({
               </Typography>
               <Typography
                 sx={{
-                  fontWeight: 900,
+                  fontWeight: 700,
                   color:
                     Number(invoice.outstandingAmount) > 0
                       ? "warning.dark"
@@ -1311,18 +1315,21 @@ export function InvoicesPanel({
           )}
           {matchResult.data && (
             <Stack spacing={2} sx={{ mt: 1 }}>
-              <Alert severity={matchResult.data.hasDiscrepancies ? "warning" : "success"}>
+              <Alert
+                severity={
+                  matchResult.data.hasDiscrepancies ? "warning" : "success"
+                }
+              >
                 {matchResult.data.hasDiscrepancies
                   ? "Des écarts ont été détectés entre le bon de réception et la facture."
-                  : "Aucun écart : la facture correspond au bon de réception."}
-                {" "}Bon de réception {matchResult.data.receiptNumber}.
+                  : "Aucun écart : la facture correspond au bon de réception."}{" "}
+                Bon de réception {matchResult.data.receiptNumber}.
               </Alert>
               <Box sx={{ overflowX: "auto" }}>
                 <Box
                   sx={{
                     display: "grid",
-                    gridTemplateColumns:
-                      "1fr 100px 100px 110px 110px 170px",
+                    gridTemplateColumns: "1fr 100px 100px 110px 110px 170px",
                     gap: 1.5,
                     px: 1,
                     py: 1,
@@ -1341,8 +1348,7 @@ export function InvoicesPanel({
                     key={index}
                     sx={{
                       display: "grid",
-                      gridTemplateColumns:
-                        "1fr 100px 100px 110px 110px 170px",
+                      gridTemplateColumns: "1fr 100px 100px 110px 110px 170px",
                       gap: 1.5,
                       px: 1,
                       py: 1,
@@ -1354,10 +1360,18 @@ export function InvoicesPanel({
                     <Typography variant="body2">
                       {line.accountCode} — {line.description}
                     </Typography>
-                    <Typography variant="body2">{line.receiptQuantity}</Typography>
-                    <Typography variant="body2">{line.invoiceQuantity}</Typography>
-                    <Typography variant="body2">{line.receiptUnitPrice}</Typography>
-                    <Typography variant="body2">{line.invoiceUnitPrice}</Typography>
+                    <Typography variant="body2">
+                      {line.receiptQuantity}
+                    </Typography>
+                    <Typography variant="body2">
+                      {line.invoiceQuantity}
+                    </Typography>
+                    <Typography variant="body2">
+                      {line.receiptUnitPrice}
+                    </Typography>
+                    <Typography variant="body2">
+                      {line.invoiceUnitPrice}
+                    </Typography>
                     <Chip
                       size="small"
                       label={matchStatusLabels[line.status]}

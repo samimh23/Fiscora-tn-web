@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -33,6 +33,7 @@ import { useAuth } from "../auth/AuthContext";
 import { PageHeader } from "../components/PageHeader";
 import { QueryState } from "../components/WorkspaceTools";
 import type { DossierSummary, PagedResponse } from "../types/api";
+import { useDossierSelection } from "../hooks/useDossierSelection";
 
 type QualitySeverity = "BLOCKER" | "WARNING" | "INFO";
 
@@ -114,7 +115,7 @@ function ScoreCard({
       <CardContent>
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
           <FactCheckOutlined color="primary" />
-          <Typography sx={{ fontWeight: 850 }}>{title}</Typography>
+          <Typography sx={{ fontWeight: 700 }}>{title}</Typography>
         </Stack>
         <Typography
           variant="h3"
@@ -139,7 +140,7 @@ function ScoreCard({
 export function QualityAssurancePage() {
   const { organization, can } = useAuth();
   const organizationId = organization?.id ?? "";
-  const [dossierId, setDossierId] = useState("");
+  const [dossierId, setDossierId] = useDossierSelection();
 
   const dossierOptions = useQuery({
     queryKey: ["qa-dossier-options", organizationId],
@@ -249,7 +250,7 @@ export function QualityAssurancePage() {
                         icon={<ErrorOutlineRounded />}
                         sx={{ height: "100%" }}
                       >
-                        <Typography sx={{ fontWeight: 900, fontSize: 26 }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: 26 }}>
                           {quality.data.totals.BLOCKER}
                         </Typography>
                         Bloquant(s)
@@ -261,7 +262,7 @@ export function QualityAssurancePage() {
                         icon={<WarningAmberRounded />}
                         sx={{ height: "100%" }}
                       >
-                        <Typography sx={{ fontWeight: 900, fontSize: 26 }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: 26 }}>
                           {quality.data.totals.WARNING}
                         </Typography>
                         Alerte(s)
@@ -273,7 +274,7 @@ export function QualityAssurancePage() {
                         icon={<InfoOutlined />}
                         sx={{ height: "100%" }}
                       >
-                        <Typography sx={{ fontWeight: 900, fontSize: 26 }}>
+                        <Typography sx={{ fontWeight: 700, fontSize: 26 }}>
                           {quality.data.totals.INFO}
                         </Typography>
                         Information(s)
@@ -301,8 +302,8 @@ export function QualityAssurancePage() {
               <Box sx={{ p: 2.5 }}>
                 <Typography variant="h5">Points à corriger</Typography>
                 <Typography color="text.secondary">
-                  Les points bloquants doivent être traités avant dépôt,
-                  clôture ou reporting client.
+                  Les points bloquants doivent être traités avant dépôt, clôture
+                  ou reporting client.
                 </Typography>
               </Box>
               <QueryState
@@ -327,15 +328,21 @@ export function QualityAssurancePage() {
                       {findings.map((finding) => (
                         <TableRow key={`${finding.dossier.id}-${finding.code}`}>
                           <TableCell>
-                            <Typography sx={{ fontWeight: 800 }}>
+                            <Typography sx={{ fontWeight: 700 }}>
                               {finding.dossier.legalName}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
                               Score {finding.score}/100
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Stack spacing={0.75} sx={{ alignItems: "flex-start" }}>
+                            <Stack
+                              spacing={0.75}
+                              sx={{ alignItems: "flex-start" }}
+                            >
                               <Chip
                                 size="small"
                                 color={severityColors[finding.severity]}
@@ -344,16 +351,22 @@ export function QualityAssurancePage() {
                               <Chip
                                 size="small"
                                 variant="outlined"
-                                label={categoryLabels[finding.category] ?? finding.category}
+                                label={
+                                  categoryLabels[finding.category] ??
+                                  finding.category
+                                }
                               />
                             </Stack>
                           </TableCell>
                           <TableCell>
-                            <Typography sx={{ fontWeight: 800 }}>
+                            <Typography sx={{ fontWeight: 700 }}>
                               {finding.title}
                             </Typography>
                             {finding.count !== undefined && (
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
                                 {finding.count} élément(s)
                               </Typography>
                             )}
@@ -366,7 +379,11 @@ export function QualityAssurancePage() {
                               component={RouterLink}
                               to={finding.actionPath}
                               size="small"
-                              variant={finding.severity === "BLOCKER" ? "contained" : "outlined"}
+                              variant={
+                                finding.severity === "BLOCKER"
+                                  ? "contained"
+                                  : "outlined"
+                              }
                             >
                               {finding.actionLabel}
                             </Button>
