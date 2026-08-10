@@ -1,77 +1,260 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link as RouterLink, useParams, useSearchParams } from "react-router-dom";
 import {
-  Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent,
-  DialogTitle, Divider, FormControl, InputLabel, MenuItem, Select, Skeleton, Stack,
-  Tab, Table, TableBody, TableCell, TableHead, TableRow, Tabs, TextField, Typography,
+  Link as RouterLink,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Skeleton,
+  Stack,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Tabs,
+  TextField,
+  Typography,
   useTheme,
 } from "@mui/material";
 import {
-  Bar, CartesianGrid, ComposedChart, Legend, Line, ResponsiveContainer, Tooltip as ChartTooltip,
-  XAxis, YAxis,
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ResponsiveContainer,
+  Tooltip as ChartTooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 import {
-  ArrowBackRounded, CloudUploadOutlined, DescriptionOutlined, DownloadOutlined,
-  DoneAllRounded, ForumOutlined, OpenInNewRounded, SendRounded, TaskAltOutlined,
+  ArrowBackRounded,
+  CloudUploadOutlined,
+  DescriptionOutlined,
+  DownloadOutlined,
+  DoneAllRounded,
+  ForumOutlined,
+  OpenInNewRounded,
+  SendRounded,
+  TaskAltOutlined,
 } from "@mui/icons-material";
 import { api, downloadApiFile } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import type {
-  AccountingDocument, BusinessInvoice, DocumentPreview, DossierSummary,
-  FiscalObligation, MissingDocumentExpectation, MonthlyTaxDeclaration,
+  AccountingDocument,
+  BusinessInvoice,
+  DocumentPreview,
+  DossierSummary,
+  FiscalObligation,
+  MissingDocumentExpectation,
+  MonthlyTaxDeclaration,
 } from "../types/api";
 
-interface CabinetInvoice { id: string; number: string; issueDate: string; dueDate: string; description: string; totalAmount: string; paidAmount: string; status: string }
-interface PortalMessage { id: string; senderUserId: string; senderName: string; senderRole: string; body: string; createdAtUtc: string; clientReadAtUtc: string | null; cabinetReadAtUtc: string | null }
-interface PortalContact { userId: string; fullName: string; email: string; role: string }
-interface ClientApproval { id: string; resourceType: string; resourceId: string; version: string; label: string; decision: "APPROUVE" | "REJETE"; comment: string | null; createdAtUtc: string }
-interface MonthlyTrendPoint { month: string; revenue: string; expenses: string; netResult: string }
+interface CabinetInvoice {
+  id: string;
+  number: string;
+  issueDate: string;
+  dueDate: string;
+  description: string;
+  totalAmount: string;
+  paidAmount: string;
+  status: string;
+}
+interface PortalMessage {
+  id: string;
+  senderUserId: string;
+  senderName: string;
+  senderRole: string;
+  body: string;
+  createdAtUtc: string;
+  clientReadAtUtc: string | null;
+  cabinetReadAtUtc: string | null;
+}
+interface PortalContact {
+  userId: string;
+  fullName: string;
+  email: string;
+  role: string;
+}
+interface ClientApproval {
+  id: string;
+  resourceType: string;
+  resourceId: string;
+  version: string;
+  label: string;
+  decision: "APPROUVE" | "REJETE";
+  comment: string | null;
+  createdAtUtc: string;
+}
+interface MonthlyTrendPoint {
+  month: string;
+  revenue: string;
+  expenses: string;
+  netResult: string;
+}
 
-const money = (value?: string) => new Intl.NumberFormat("fr-TN", { style: "currency", currency: "TND", minimumFractionDigits: 3 }).format(Number(value ?? 0));
-const formatDate = (value?: string | null) => value ? new Intl.DateTimeFormat("fr-TN", { dateStyle: "medium" }).format(new Date(`${value.slice(0, 10)}T00:00:00`)) : "—";
-const monthLabel = (value: string) => new Intl.DateTimeFormat("fr-TN", { month: "short", year: "2-digit" }).format(new Date(`${value}-01T00:00:00`));
+const money = (value?: string) =>
+  new Intl.NumberFormat("fr-TN", {
+    style: "currency",
+    currency: "TND",
+    minimumFractionDigits: 3,
+  }).format(Number(value ?? 0));
+const formatDate = (value?: string | null) =>
+  value
+    ? new Intl.DateTimeFormat("fr-TN", { dateStyle: "medium" }).format(
+        new Date(`${value.slice(0, 10)}T00:00:00`),
+      )
+    : "—";
+const monthLabel = (value: string) =>
+  new Intl.DateTimeFormat("fr-TN", { month: "short", year: "2-digit" }).format(
+    new Date(`${value}-01T00:00:00`),
+  );
 
 function FinancialTrendCard({ points }: { points: MonthlyTrendPoint[] }) {
   const theme = useTheme();
-  const hasMovement = points.some((point) => Number(point.revenue) !== 0 || Number(point.expenses) !== 0);
+  const hasMovement = points.some(
+    (point) => Number(point.revenue) !== 0 || Number(point.expenses) !== 0,
+  );
   const data = points.map((point) => ({
     month: monthLabel(point.month),
-    "Produits": Number(point.revenue),
-    "Charges": Number(point.expenses),
+    Produits: Number(point.revenue),
+    Charges: Number(point.expenses),
     "Résultat net": Number(point.netResult),
   }));
-  return <Card sx={{ mb: 3 }}>
-    <CardContent>
-      <Typography variant="h4" sx={{ mb: 0.5 }}>Évolution financière</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Produits, charges et résultat net comptabilisés sur les 12 derniers mois.</Typography>
-      {!hasMovement ? <Empty text="Aucune écriture comptabilisée sur cette période." /> : <Box sx={{ width: "100%", height: 300 }}>
-        <ResponsiveContainer>
-          <ComposedChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-            <XAxis dataKey="month" tick={{ fontSize: 12, fill: theme.palette.text.secondary }} />
-            <YAxis tick={{ fontSize: 12, fill: theme.palette.text.secondary }} width={70} />
-            <ChartTooltip formatter={(value: unknown) => money(String(value ?? 0))} />
-            <Legend wrapperStyle={{ fontSize: 13 }} />
-            <Bar dataKey="Produits" fill={theme.palette.success.main} radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Charges" fill={theme.palette.warning.main} radius={[4, 4, 0, 0]} />
-            <Line type="linear" dataKey="Résultat net" stroke={theme.palette.primary.main} strokeWidth={2.5} dot={{ r: 3 }} />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </Box>}
-    </CardContent>
-  </Card>;
+  return (
+    <Card sx={{ mb: 3 }}>
+      <CardContent>
+        <Typography variant="h4" sx={{ mb: 0.5 }}>
+          Évolution financière
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Produits, charges et résultat net comptabilisés sur les 12 derniers
+          mois.
+        </Typography>
+        {!hasMovement ? (
+          <Empty text="Aucune écriture comptabilisée sur cette période." />
+        ) : (
+          <Box sx={{ width: "100%", height: 300 }}>
+            <ResponsiveContainer>
+              <ComposedChart
+                data={data}
+                margin={{ top: 4, right: 8, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke={theme.palette.divider}
+                />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                />
+                <YAxis
+                  tick={{ fontSize: 12, fill: theme.palette.text.secondary }}
+                  width={70}
+                />
+                <ChartTooltip
+                  formatter={(value: unknown) => money(String(value ?? 0))}
+                />
+                <Legend wrapperStyle={{ fontSize: 13 }} />
+                <Bar
+                  dataKey="Produits"
+                  fill={theme.palette.success.main}
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="Charges"
+                  fill={theme.palette.warning.main}
+                  radius={[4, 4, 0, 0]}
+                />
+                <Line
+                  type="linear"
+                  dataKey="Résultat net"
+                  stroke={theme.palette.primary.main}
+                  strokeWidth={2.5}
+                  dot={{ r: 3 }}
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
-const statusLabel: Record<string, string> = { BROUILLON: "Brouillon", PRETE_POUR_REVISION: "En révision", VALIDEE: "Validée", DEPOSEE: "Déposée", PAYEE: "Payée", ENVOYEE: "Envoyée", PARTIELLEMENT_PAYEE: "Partiellement réglée", COMPTABILISEE: "Comptabilisée", REGLEE: "Réglée", NON_REGLEE: "Non réglée", PARTIELLEMENT_REGLEE: "Partiellement réglée", A_FAIRE: "À faire", EN_COURS: "En cours", DEPOSE: "Déposé" };
+const statusLabel: Record<string, string> = {
+  BROUILLON: "Brouillon",
+  PRETE_POUR_REVISION: "En révision",
+  VALIDEE: "Validée",
+  DEPOSEE: "Déposée",
+  PAYEE: "Payée",
+  ENVOYEE: "Envoyée",
+  PARTIELLEMENT_PAYEE: "Partiellement réglée",
+  COMPTABILISEE: "Comptabilisée",
+  REGLEE: "Réglée",
+  NON_REGLEE: "Non réglée",
+  PARTIELLEMENT_REGLEE: "Partiellement réglée",
+  A_FAIRE: "À faire",
+  EN_COURS: "En cours",
+  DEPOSE: "Déposé",
+};
 const categories = [
-  ["BOITE_RECEPTION", "Boîte de réception"], ["FACTURES_ACHATS", "Factures d’achats"],
-  ["FACTURES_VENTES", "Factures de ventes"], ["RELEVES_BANCAIRES", "Relevés bancaires"],
-  ["CONTRATS", "Contrats"], ["DECLARATIONS", "Déclarations"], ["PAIE", "Paie"],
-  ["JURIDIQUE", "Juridique"], ["DIVERS", "Autres"],
+  ["BOITE_RECEPTION", "Boîte de réception"],
+  ["FACTURES_ACHATS", "Factures d’achats"],
+  ["FACTURES_VENTES", "Factures de ventes"],
+  ["RELEVES_BANCAIRES", "Relevés bancaires"],
+  ["CONTRATS", "Contrats"],
+  ["DECLARATIONS", "Déclarations"],
+  ["PAIE", "Paie"],
+  ["JURIDIQUE", "Juridique"],
+  ["DIVERS", "Autres"],
 ];
 
-function Empty({ text }: { text: string }) { return <Box sx={{ p: 5, textAlign: "center" }}><TaskAltOutlined sx={{ fontSize: 42, color: "text.disabled" }} /><Typography sx={{ mt: 1.5 }} color="text.secondary">{text}</Typography></Box>; }
-function Status({ value }: { value: string }) { const good = ["VALIDEE", "DEPOSEE", "PAYEE", "REGLEE", "COMPTABILISEE", "TRAITE"].includes(value); return <Chip size="small" variant={good ? "filled" : "outlined"} color={good ? "success" : "default"} label={statusLabel[value] ?? value.replace(/_/g, " ")} />; }
+function Empty({ text }: { text: string }) {
+  return (
+    <Box sx={{ p: 5, textAlign: "center" }}>
+      <TaskAltOutlined sx={{ fontSize: 42, color: "text.disabled" }} />
+      <Typography sx={{ mt: 1.5 }} color="text.secondary">
+        {text}
+      </Typography>
+    </Box>
+  );
+}
+function Status({ value }: { value: string }) {
+  const good = [
+    "VALIDEE",
+    "DEPOSEE",
+    "PAYEE",
+    "REGLEE",
+    "COMPTABILISEE",
+    "TRAITE",
+  ].includes(value);
+  return (
+    <Chip
+      size="small"
+      variant={good ? "filled" : "outlined"}
+      color={good ? "success" : "default"}
+      label={statusLabel[value] ?? value.replace(/_/g, " ")}
+    />
+  );
+}
 const isOpenExpectation = (item: MissingDocumentExpectation) =>
   !item.receivedDocumentId &&
   !["RECUE", "VALIDEE", "ANNULEE"].includes(item.status ?? "");
@@ -86,33 +269,108 @@ export function ClientPortalDossierPage() {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
-  const tabNames: Record<string, number> = { overview: 0, documents: 1, deadlines: 2, declarations: 3, invoices: 4, fees: 5, statements: 6, messages: 7 };
-  const [tab, setTab] = useState(tabNames[searchParams.get("tab") ?? "overview"] ?? 0);
+  const tabNames: Record<string, number> = {
+    overview: 0,
+    documents: 1,
+    deadlines: 2,
+    declarations: 3,
+    invoices: 4,
+    fees: 5,
+    statements: 6,
+    messages: 7,
+  };
+  const [tab, setTab] = useState(
+    tabNames[searchParams.get("tab") ?? "overview"] ?? 0,
+  );
   const [uploadOpen, setUploadOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [category, setCategory] = useState(searchParams.get("category") ?? "BOITE_RECEPTION");
-  const [selectedExpectation, setSelectedExpectation] = useState<MissingDocumentExpectation | null>(null);
+  const [category, setCategory] = useState(
+    searchParams.get("category") ?? "BOITE_RECEPTION",
+  );
+  const [selectedExpectation, setSelectedExpectation] =
+    useState<MissingDocumentExpectation | null>(null);
   const [preview, setPreview] = useState<DocumentPreview | null>(null);
   const [message, setMessage] = useState("");
-  const [reviewTarget, setReviewTarget] = useState<{ resourceType: string; resourceId: string; version: string; label: string } | null>(null);
+  const [reviewTarget, setReviewTarget] = useState<{
+    resourceType: string;
+    resourceId: string;
+    version: string;
+    label: string;
+  } | null>(null);
   const [reviewComment, setReviewComment] = useState("");
 
-  const dossier = useQuery({ queryKey: ["portal-dossier", organizationId, dossierId], queryFn: () => api.get<DossierSummary>(base), enabled: Boolean(organizationId && dossierId) });
-  const documents = useQuery({ queryKey: ["portal-documents", organizationId, dossierId], queryFn: () => api.get<AccountingDocument[]>(`${base}/documents`), enabled: Boolean(organizationId && dossierId) });
-  const expectations = useQuery({ queryKey: ["portal-expectations", organizationId, dossierId, year, month], queryFn: () => api.get<MissingDocumentExpectation[]>(`${base}/documents/missing/${year}/${month}`), enabled: Boolean(organizationId && dossierId) });
-  const obligations = useQuery({ queryKey: ["portal-obligations", organizationId, dossierId, year], queryFn: () => api.get<FiscalObligation[]>(`${base}/obligations?year=${year}`), enabled: Boolean(organizationId && dossierId) });
-  const declarations = useQuery({ queryKey: ["portal-declarations", organizationId, dossierId, year], queryFn: () => api.get<MonthlyTaxDeclaration[]>(`${base}/monthly-declarations?year=${year}`), enabled: Boolean(organizationId && dossierId) });
-  const businessInvoices = useQuery({ queryKey: ["portal-business-invoices", organizationId, dossierId], queryFn: () => api.get<BusinessInvoice[]>(`${base}/business-invoices`), enabled: Boolean(organizationId && dossierId) });
-  const fees = useQuery({ queryKey: ["portal-fees", organizationId, dossierId], queryFn: () => api.get<CabinetInvoice[]>(`${base}/invoices`), enabled: Boolean(organizationId && dossierId) });
-  const messages = useQuery({ queryKey: ["portal-messages", organizationId, dossierId], queryFn: () => api.get<PortalMessage[]>(`${base}/client-portal/messages`), enabled: Boolean(organizationId && dossierId) });
-  const contacts = useQuery({ queryKey: ["portal-contacts", organizationId, dossierId], queryFn: () => api.get<PortalContact[]>(`${base}/client-portal/contacts`), enabled: Boolean(organizationId && dossierId) });
-  const approvals = useQuery({ queryKey: ["portal-approvals", organizationId, dossierId], queryFn: () => api.get<ClientApproval[]>(`${base}/client-portal/approvals`), enabled: Boolean(organizationId && dossierId) });
-  const trend = useQuery({ queryKey: ["portal-financial-trend", organizationId, dossierId], queryFn: () => api.get<MonthlyTrendPoint[]>(`${base}/financial-statements/trend?months=12`), enabled: Boolean(organizationId && dossierId) });
+  const dossier = useQuery({
+    queryKey: ["portal-dossier", organizationId, dossierId],
+    queryFn: () => api.get<DossierSummary>(base),
+    enabled: Boolean(organizationId && dossierId),
+  });
+  const documents = useQuery({
+    queryKey: ["portal-documents", organizationId, dossierId],
+    queryFn: () => api.get<AccountingDocument[]>(`${base}/documents`),
+    enabled: Boolean(organizationId && dossierId),
+  });
+  const expectations = useQuery({
+    queryKey: ["portal-expectations", organizationId, dossierId, year, month],
+    queryFn: () =>
+      api.get<MissingDocumentExpectation[]>(
+        `${base}/documents/missing/${year}/${month}`,
+      ),
+    enabled: Boolean(organizationId && dossierId),
+  });
+  const obligations = useQuery({
+    queryKey: ["portal-obligations", organizationId, dossierId, year],
+    queryFn: () =>
+      api.get<FiscalObligation[]>(`${base}/obligations?year=${year}`),
+    enabled: Boolean(organizationId && dossierId),
+  });
+  const declarations = useQuery({
+    queryKey: ["portal-declarations", organizationId, dossierId, year],
+    queryFn: () =>
+      api.get<MonthlyTaxDeclaration[]>(
+        `${base}/monthly-declarations?year=${year}`,
+      ),
+    enabled: Boolean(organizationId && dossierId),
+  });
+  const businessInvoices = useQuery({
+    queryKey: ["portal-business-invoices", organizationId, dossierId],
+    queryFn: () => api.get<BusinessInvoice[]>(`${base}/business-invoices`),
+    enabled: Boolean(organizationId && dossierId),
+  });
+  const fees = useQuery({
+    queryKey: ["portal-fees", organizationId, dossierId],
+    queryFn: () => api.get<CabinetInvoice[]>(`${base}/invoices`),
+    enabled: Boolean(organizationId && dossierId),
+  });
+  const messages = useQuery({
+    queryKey: ["portal-messages", organizationId, dossierId],
+    queryFn: () => api.get<PortalMessage[]>(`${base}/client-portal/messages`),
+    enabled: Boolean(organizationId && dossierId),
+  });
+  const contacts = useQuery({
+    queryKey: ["portal-contacts", organizationId, dossierId],
+    queryFn: () => api.get<PortalContact[]>(`${base}/client-portal/contacts`),
+    enabled: Boolean(organizationId && dossierId),
+  });
+  const approvals = useQuery({
+    queryKey: ["portal-approvals", organizationId, dossierId],
+    queryFn: () => api.get<ClientApproval[]>(`${base}/client-portal/approvals`),
+    enabled: Boolean(organizationId && dossierId),
+  });
+  const trend = useQuery({
+    queryKey: ["portal-financial-trend", organizationId, dossierId],
+    queryFn: () =>
+      api.get<MonthlyTrendPoint[]>(
+        `${base}/financial-statements/trend?months=12`,
+      ),
+    enabled: Boolean(organizationId && dossierId),
+  });
 
   useEffect(() => {
     const expectationId = searchParams.get("expectationId");
     if (!expectationId || !expectations.data?.length) return;
-    const expectation = expectations.data.find((item) => item.id === expectationId && isOpenExpectation(item));
+    const expectation = expectations.data.find(
+      (item) => item.id === expectationId && isOpenExpectation(item),
+    );
     if (!expectation) return;
     setSelectedExpectation(expectation);
     setCategory(expectation.category);
@@ -132,53 +390,1174 @@ export function ClientPortalDossierPage() {
     setUploadOpen(true);
   };
 
-  const upload = useMutation({ mutationFn: async () => { if (!file) return; const form = new FormData(); form.append("file", file); form.append("category", selectedExpectation?.category ?? category); form.append("periodYear", String(selectedExpectation?.periodYear ?? year)); form.append("periodMonth", String(selectedExpectation?.periodMonth ?? month)); if (selectedExpectation) form.append("expectationId", selectedExpectation.id); return api.upload(`${base}/documents`, form); }, onSuccess: () => { setUploadOpen(false); setFile(null); setSelectedExpectation(null); void qc.invalidateQueries({ queryKey: ["portal-documents"] }); void qc.invalidateQueries({ queryKey: ["portal-expectations"] }); void qc.invalidateQueries({ queryKey: ["client-portal-action-center"] }); } });
-  const send = useMutation({ mutationFn: () => api.post(`${base}/client-portal/messages`, { body: message }), onSuccess: () => { setMessage(""); void qc.invalidateQueries({ queryKey: ["portal-messages"] }); } });
-  const approval = useMutation({
-    mutationFn: (input: { resourceType: string; resourceId: string; version: string; label: string; decision: "APPROUVE" | "REJETE"; comment?: string }) =>
-      api.post<ClientApproval>(`${base}/client-portal/approvals`, input),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["portal-approvals"] }),
+  const upload = useMutation({
+    mutationFn: async () => {
+      if (!file) return;
+      const form = new FormData();
+      form.append("file", file);
+      form.append("category", selectedExpectation?.category ?? category);
+      form.append(
+        "periodYear",
+        String(selectedExpectation?.periodYear ?? year),
+      );
+      form.append(
+        "periodMonth",
+        String(selectedExpectation?.periodMonth ?? month),
+      );
+      if (selectedExpectation)
+        form.append("expectationId", selectedExpectation.id);
+      return api.upload(`${base}/documents`, form);
+    },
+    onSuccess: () => {
+      setUploadOpen(false);
+      setFile(null);
+      setSelectedExpectation(null);
+      void qc.invalidateQueries({ queryKey: ["portal-documents"] });
+      void qc.invalidateQueries({ queryKey: ["portal-expectations"] });
+      void qc.invalidateQueries({ queryKey: ["client-portal-action-center"] });
+    },
   });
-  const showPreview = async (document: AccountingDocument) => setPreview(await api.get<DocumentPreview>(`${base}/documents/${document.id}/preview`));
-  const download = async (document: AccountingDocument) => { const result = await api.get<{ url: string }>(`${base}/documents/${document.id}/download`); window.open(result.url, "_blank", "noopener,noreferrer"); };
-  const overdue = useMemo(() => obligations.data?.filter((x) => x.isLate).length ?? 0, [obligations.data]);
-  const unpaid = useMemo(() => fees.data?.reduce((sum, item) => sum + Math.max(0, Number(item.totalAmount) - Number(item.paidAmount)), 0) ?? 0, [fees.data]);
-  const error = [dossier, documents, expectations, obligations, declarations, businessInvoices, fees, messages, contacts, approvals].some((q) => q.isError);
+  const send = useMutation({
+    mutationFn: () =>
+      api.post(`${base}/client-portal/messages`, { body: message }),
+    onSuccess: () => {
+      setMessage("");
+      void qc.invalidateQueries({ queryKey: ["portal-messages"] });
+    },
+  });
+  const approval = useMutation({
+    mutationFn: (input: {
+      resourceType: string;
+      resourceId: string;
+      version: string;
+      label: string;
+      decision: "APPROUVE" | "REJETE";
+      comment?: string;
+    }) => api.post<ClientApproval>(`${base}/client-portal/approvals`, input),
+    onSuccess: () =>
+      void qc.invalidateQueries({ queryKey: ["portal-approvals"] }),
+  });
+  const showPreview = async (document: AccountingDocument) =>
+    setPreview(
+      await api.get<DocumentPreview>(
+        `${base}/documents/${document.id}/preview`,
+      ),
+    );
+  const download = async (document: AccountingDocument) => {
+    const result = await api.get<{ url: string }>(
+      `${base}/documents/${document.id}/download`,
+    );
+    window.open(result.url, "_blank", "noopener,noreferrer");
+  };
+  const overdue = useMemo(
+    () => obligations.data?.filter((x) => x.isLate).length ?? 0,
+    [obligations.data],
+  );
+  const unpaid = useMemo(
+    () =>
+      fees.data?.reduce(
+        (sum, item) =>
+          sum + Math.max(0, Number(item.totalAmount) - Number(item.paidAmount)),
+        0,
+      ) ?? 0,
+    [fees.data],
+  );
+  const error = [
+    dossier,
+    documents,
+    expectations,
+    obligations,
+    declarations,
+    businessInvoices,
+    fees,
+    messages,
+    contacts,
+    approvals,
+  ].some((q) => q.isError);
 
-  if (dossier.isLoading) return <><Skeleton height={90} /><Skeleton height={500} /></>;
-  if (dossier.isError || !dossier.data) return <Alert severity="error">Ce dossier n’est pas accessible avec votre compte.</Alert>;
-  return <>
-    <Button component={RouterLink} to="/portail/dossiers" startIcon={<ArrowBackRounded />} sx={{ mb: 2 }}>Retour à mes dossiers</Button>
-    <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, justifyContent: "space-between", gap: 2, mb: 3 }}><Box><Typography variant="overline" color="primary" sx={{ fontWeight: 900 }}>Dossier client</Typography><Typography variant="h2" sx={{ fontSize: { xs: 34, md: 48 } }}>{dossier.data.legalName}</Typography><Typography color="text.secondary">{dossier.data.tradeName || dossier.data.activitySector}{dossier.data.taxIdentifier ? ` · MF ${dossier.data.taxIdentifier}` : ""}{dossier.data.rneNumber ? ` · RNE ${dossier.data.rneNumber}` : ""}</Typography></Box><Stack direction="row" spacing={1} sx={{ alignItems: "center" }}><Chip label={dossier.data.status === "ACTIF" ? "Dossier actif" : dossier.data.status} color="success" /><Button variant="contained" startIcon={<CloudUploadOutlined />} onClick={() => openGenericUpload(category)}>Déposer une pièce</Button></Stack></Box>
-    {error && <Alert severity="warning" sx={{ mb: 2 }}>Certaines rubriques ne sont pas encore disponibles pour ce dossier.</Alert>}
-    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", lg: "repeat(4,1fr)" }, gap: 2, mb: 3 }}>
-      {[ [documents.data?.length ?? 0, "Documents"], [expectations.data?.filter(isOpenExpectation).length ?? 0, "Pièces attendues"], [overdue, "Échéances en retard"], [money(String(unpaid)), "Honoraires à régler"] ].map(([value, label]) => <Card key={String(label)}><CardContent><Typography variant="h4">{value}</Typography><Typography variant="body2" color="text.secondary">{label}</Typography></CardContent></Card>)}
-    </Box>
+  if (dossier.isLoading)
+    return (
+      <>
+        <Skeleton height={90} />
+        <Skeleton height={500} />
+      </>
+    );
+  if (dossier.isError || !dossier.data)
+    return (
+      <Alert severity="error">
+        Ce dossier n’est pas accessible avec votre compte.
+      </Alert>
+    );
+  return (
+    <>
+      <Button
+        component={RouterLink}
+        to="/portail/dossiers"
+        startIcon={<ArrowBackRounded />}
+        sx={{ mb: 2 }}
+      >
+        Retour à mes dossiers
+      </Button>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        <Box>
+          <Typography
+            variant="overline"
+            color="primary"
+            sx={{ fontWeight: 700 }}
+          >
+            Dossier client
+          </Typography>
+          <Typography variant="h2" sx={{ fontSize: { xs: 34, md: 48 } }}>
+            {dossier.data.legalName}
+          </Typography>
+          <Typography color="text.secondary">
+            {dossier.data.tradeName || dossier.data.activitySector}
+            {dossier.data.taxIdentifier
+              ? ` · MF ${dossier.data.taxIdentifier}`
+              : ""}
+            {dossier.data.rneNumber ? ` · RNE ${dossier.data.rneNumber}` : ""}
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <Chip
+            label={
+              dossier.data.status === "ACTIF"
+                ? "Dossier actif"
+                : dossier.data.status
+            }
+            color="success"
+          />
+          <Button
+            variant="contained"
+            startIcon={<CloudUploadOutlined />}
+            onClick={() => openGenericUpload(category)}
+          >
+            Déposer une pièce
+          </Button>
+        </Stack>
+      </Box>
+      {error && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Certaines rubriques ne sont pas encore disponibles pour ce dossier.
+        </Alert>
+      )}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr 1fr", lg: "repeat(4,1fr)" },
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        {[
+          [documents.data?.length ?? 0, "Documents"],
+          [
+            expectations.data?.filter(isOpenExpectation).length ?? 0,
+            "Pièces attendues",
+          ],
+          [overdue, "Échéances en retard"],
+          [money(String(unpaid)), "Honoraires à régler"],
+        ].map(([value, label]) => (
+          <Card key={String(label)}>
+            <CardContent>
+              <Typography variant="h4">{value}</Typography>
+              <Typography variant="body2" color="text.secondary">
+                {label}
+              </Typography>
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
 
-    {trend.isLoading ? <Skeleton height={300} sx={{ mb: 3 }} /> : trend.data && <FinancialTrendCard points={trend.data} />}
+      {trend.isLoading ? (
+        <Skeleton height={300} sx={{ mb: 3 }} />
+      ) : (
+        trend.data && <FinancialTrendCard points={trend.data} />
+      )}
 
-    <Card><Box sx={{ overflowX: "auto" }}><Tabs value={tab} onChange={(_, value) => setTab(value)} variant="scrollable" scrollButtons="auto"><Tab label="Vue d’ensemble" /><Tab label="Documents" /><Tab label="Échéances" /><Tab label="Déclarations" /><Tab label="Factures" /><Tab label="Honoraires" /><Tab label="États financiers" /><Tab label="Messages" /></Tabs></Box><Divider /><CardContent sx={{ p: { xs: 2, md: 3 } }}>
-      {tab === 0 && <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.3fr .7fr" }, gap: 3 }}><Stack spacing={2}><Typography variant="h4">À faire ce mois-ci</Typography>{expectations.data?.filter(isOpenExpectation).map((item) => <Alert key={item.id} severity={item.status === "REJETEE" ? "warning" : "info"} action={<Button size="small" onClick={() => openExpectationUpload(item)}>Déposer</Button>}><b>{item.label}</b><br />{item.status === "REJETEE" ? "Correction demandée" : "Pièce demandée"} pour {String(item.periodMonth).padStart(2, "0")}/{item.periodYear}{item.dueOn ? ` · avant le ${formatDate(item.dueOn)}` : ""}{item.message ? <><br />{item.message}</> : null}{item.rejectionReason ? <><br />Correction : {item.rejectionReason}</> : null}</Alert>)}{!expectations.data?.some(isOpenExpectation) && <Alert severity="success">Aucune pièce manquante signalée ce mois-ci.</Alert>}<Typography variant="h4" sx={{ pt: 1 }}>Prochaines échéances</Typography>{obligations.data?.slice(0, 5).map((item) => <Box key={item.id} sx={{ display: "flex", gap: 2, alignItems: "center", py: 1 }}><Box sx={{ flex: 1 }}><Typography sx={{ fontWeight: 800 }}>{item.name}</Typography><Typography variant="body2" color="text.secondary">Échéance : {formatDate(item.dueOn)}</Typography></Box><Status value={item.status} /></Box>)}</Stack><Card variant="outlined"><CardContent><Typography variant="h4">Votre interlocuteur</Typography>{contacts.data?.length ? contacts.data.map((contact) => <Box key={contact.userId} sx={{ mt: 2 }}><Typography sx={{ fontWeight: 900 }}>{contact.fullName}</Typography><Typography variant="body2" color="text.secondary">{contact.role}</Typography><Typography variant="body2">{contact.email}</Typography></Box>) : <><Typography sx={{ mt: 2, fontWeight: 800 }}>{organization?.name}</Typography><Typography variant="body2" color="text.secondary">Votre demande sera transmise à l’équipe autorisée du cabinet.</Typography></>}<Button fullWidth variant="outlined" startIcon={<ForumOutlined />} sx={{ mt: 3 }} onClick={() => setTab(7)}>Écrire au cabinet</Button></CardContent></Card></Box>}
+      <Card>
+        <Box sx={{ overflowX: "auto" }}>
+          <Tabs
+            value={tab}
+            onChange={(_, value) => setTab(value)}
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            <Tab label="Vue d’ensemble" />
+            <Tab label="Documents" />
+            <Tab label="Échéances" />
+            <Tab label="Déclarations" />
+            <Tab label="Factures" />
+            <Tab label="Honoraires" />
+            <Tab label="États financiers" />
+            <Tab label="Messages" />
+          </Tabs>
+        </Box>
+        <Divider />
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          {tab === 0 && (
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", lg: "1.3fr .7fr" },
+                gap: 3,
+              }}
+            >
+              <Stack spacing={2}>
+                <Typography variant="h4">À faire ce mois-ci</Typography>
+                {expectations.data?.filter(isOpenExpectation).map((item) => (
+                  <Alert
+                    key={item.id}
+                    severity={item.status === "REJETEE" ? "warning" : "info"}
+                    action={
+                      <Button
+                        size="small"
+                        onClick={() => openExpectationUpload(item)}
+                      >
+                        Déposer
+                      </Button>
+                    }
+                  >
+                    <b>{item.label}</b>
+                    <br />
+                    {item.status === "REJETEE"
+                      ? "Correction demandée"
+                      : "Pièce demandée"}{" "}
+                    pour {String(item.periodMonth).padStart(2, "0")}/
+                    {item.periodYear}
+                    {item.dueOn ? ` · avant le ${formatDate(item.dueOn)}` : ""}
+                    {item.message ? (
+                      <>
+                        <br />
+                        {item.message}
+                      </>
+                    ) : null}
+                    {item.rejectionReason ? (
+                      <>
+                        <br />
+                        Correction : {item.rejectionReason}
+                      </>
+                    ) : null}
+                  </Alert>
+                ))}
+                {!expectations.data?.some(isOpenExpectation) && (
+                  <Alert severity="success">
+                    Aucune pièce manquante signalée ce mois-ci.
+                  </Alert>
+                )}
+                <Typography variant="h4" sx={{ pt: 1 }}>
+                  Prochaines échéances
+                </Typography>
+                {obligations.data?.slice(0, 5).map((item) => (
+                  <Box
+                    key={item.id}
+                    sx={{
+                      display: "flex",
+                      gap: 2,
+                      alignItems: "center",
+                      py: 1,
+                    }}
+                  >
+                    <Box sx={{ flex: 1 }}>
+                      <Typography sx={{ fontWeight: 700 }}>
+                        {item.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Échéance : {formatDate(item.dueOn)}
+                      </Typography>
+                    </Box>
+                    <Status value={item.status} />
+                  </Box>
+                ))}
+              </Stack>
+              <Card variant="outlined">
+                <CardContent>
+                  <Typography variant="h4">Votre interlocuteur</Typography>
+                  {contacts.data?.length ? (
+                    contacts.data.map((contact) => (
+                      <Box key={contact.userId} sx={{ mt: 2 }}>
+                        <Typography sx={{ fontWeight: 700 }}>
+                          {contact.fullName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {contact.role}
+                        </Typography>
+                        <Typography variant="body2">{contact.email}</Typography>
+                      </Box>
+                    ))
+                  ) : (
+                    <>
+                      <Typography sx={{ mt: 2, fontWeight: 700 }}>
+                        {organization?.name}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Votre demande sera transmise à l’équipe autorisée du
+                        cabinet.
+                      </Typography>
+                    </>
+                  )}
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    startIcon={<ForumOutlined />}
+                    sx={{ mt: 3 }}
+                    onClick={() => setTab(7)}
+                  >
+                    Écrire au cabinet
+                  </Button>
+                </CardContent>
+              </Card>
+            </Box>
+          )}
 
-      {tab === 1 && <><Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 2, justifyContent: "space-between", alignItems: { sm: "center" } }}><Box><Typography variant="h4">Documents partagés</Typography><Typography variant="body2" color="text.secondary">Consultez les pièces du dossier ou envoyez de nouveaux documents.</Typography></Box><Button variant="contained" startIcon={<CloudUploadOutlined />} onClick={() => openGenericUpload(category)}>Ajouter</Button></Stack>{expectations.data?.some(isOpenExpectation) && <Card variant="outlined" sx={{ mb: 2, bgcolor: "#fffaf0" }}><CardContent><Typography sx={{ fontWeight: 900, mb: 1 }}>Pièces demandées par le cabinet</Typography><Stack spacing={1}>{expectations.data.filter(isOpenExpectation).map((item) => <Box key={item.id} sx={{ display: "flex", gap: 2, alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}><Box><Typography sx={{ fontWeight: 800 }}>{item.label}</Typography><Typography variant="body2" color="text.secondary">{categories.find((x) => x[0] === item.category)?.[1] ?? item.category} · {String(item.periodMonth).padStart(2, "0")}/{item.periodYear}{item.dueOn ? ` · avant le ${formatDate(item.dueOn)}` : ""}</Typography>{item.message && <Typography variant="caption" color="text.secondary">{item.message}</Typography>}{item.rejectionReason && <Typography variant="caption" color="warning.main" sx={{ display: "block" }}>Correction : {item.rejectionReason}</Typography>}</Box><Button size="small" variant="contained" onClick={() => openExpectationUpload(item)}>{item.status === "REJETEE" ? "Redéposer" : "Répondre à cette demande"}</Button></Box>)}</Stack></CardContent></Card>}{!documents.data?.length ? <Empty text="Aucun document partagé." /> : <Table><TableHead><TableRow><TableCell>Document</TableCell><TableCell>Catégorie</TableCell><TableCell>Période</TableCell><TableCell>Statut</TableCell><TableCell align="right">Actions</TableCell></TableRow></TableHead><TableBody>{documents.data.map((item) => <TableRow key={item.id}><TableCell><Typography sx={{ fontWeight: 800 }}>{item.originalName}</Typography><Typography variant="caption" color="text.secondary">{(Number(item.sizeBytes) / 1024 / 1024).toFixed(2)} Mo · v{item.version}</Typography></TableCell><TableCell>{categories.find((x) => x[0] === item.category)?.[1] ?? item.category}</TableCell><TableCell>{item.periodMonth ? `${String(item.periodMonth).padStart(2, "0")}/` : ""}{item.periodYear ?? "—"}</TableCell><TableCell><Status value={item.processingStatus} /></TableCell><TableCell align="right"><Button size="small" startIcon={<OpenInNewRounded />} onClick={() => void showPreview(item)}>Aperçu</Button><Button size="small" startIcon={<DownloadOutlined />} onClick={() => void download(item)}>Télécharger</Button></TableCell></TableRow>)}</TableBody></Table>}</>}
+          {tab === 1 && (
+            <>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={2}
+                sx={{
+                  mb: 2,
+                  justifyContent: "space-between",
+                  alignItems: { sm: "center" },
+                }}
+              >
+                <Box>
+                  <Typography variant="h4">Documents partagés</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Consultez les pièces du dossier ou envoyez de nouveaux
+                    documents.
+                  </Typography>
+                </Box>
+                <Button
+                  variant="contained"
+                  startIcon={<CloudUploadOutlined />}
+                  onClick={() => openGenericUpload(category)}
+                >
+                  Ajouter
+                </Button>
+              </Stack>
+              {expectations.data?.some(isOpenExpectation) && (
+                <Card variant="outlined" sx={{ mb: 2, bgcolor: "#fffaf0" }}>
+                  <CardContent>
+                    <Typography sx={{ fontWeight: 700, mb: 1 }}>
+                      Pièces demandées par le cabinet
+                    </Typography>
+                    <Stack spacing={1}>
+                      {expectations.data
+                        .filter(isOpenExpectation)
+                        .map((item) => (
+                          <Box
+                            key={item.id}
+                            sx={{
+                              display: "flex",
+                              gap: 2,
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              flexWrap: "wrap",
+                            }}
+                          >
+                            <Box>
+                              <Typography sx={{ fontWeight: 700 }}>
+                                {item.label}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {categories.find(
+                                  (x) => x[0] === item.category,
+                                )?.[1] ?? item.category}{" "}
+                                · {String(item.periodMonth).padStart(2, "0")}/
+                                {item.periodYear}
+                                {item.dueOn
+                                  ? ` · avant le ${formatDate(item.dueOn)}`
+                                  : ""}
+                              </Typography>
+                              {item.message && (
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  {item.message}
+                                </Typography>
+                              )}
+                              {item.rejectionReason && (
+                                <Typography
+                                  variant="caption"
+                                  color="warning.main"
+                                  sx={{ display: "block" }}
+                                >
+                                  Correction : {item.rejectionReason}
+                                </Typography>
+                              )}
+                            </Box>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              onClick={() => openExpectationUpload(item)}
+                            >
+                              {item.status === "REJETEE"
+                                ? "Redéposer"
+                                : "Répondre à cette demande"}
+                            </Button>
+                          </Box>
+                        ))}
+                    </Stack>
+                  </CardContent>
+                </Card>
+              )}
+              {!documents.data?.length ? (
+                <Empty text="Aucun document partagé." />
+              ) : (
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Document</TableCell>
+                      <TableCell>Catégorie</TableCell>
+                      <TableCell>Période</TableCell>
+                      <TableCell>Statut</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {documents.data.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <Typography sx={{ fontWeight: 700 }}>
+                            {item.originalName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {(Number(item.sizeBytes) / 1024 / 1024).toFixed(2)}{" "}
+                            Mo · v{item.version}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          {categories.find(
+                            (x) => x[0] === item.category,
+                          )?.[1] ?? item.category}
+                        </TableCell>
+                        <TableCell>
+                          {item.periodMonth
+                            ? `${String(item.periodMonth).padStart(2, "0")}/`
+                            : ""}
+                          {item.periodYear ?? "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Status value={item.processingStatus} />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Button
+                            size="small"
+                            startIcon={<OpenInNewRounded />}
+                            onClick={() => void showPreview(item)}
+                          >
+                            Aperçu
+                          </Button>
+                          <Button
+                            size="small"
+                            startIcon={<DownloadOutlined />}
+                            onClick={() => void download(item)}
+                          >
+                            Télécharger
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </>
+          )}
 
-      {tab === 2 && <><Typography variant="h4" sx={{ mb: 2 }}>Calendrier fiscal {year}</Typography>{!obligations.data?.length ? <Empty text="Aucune obligation générée pour cette année." /> : <Table><TableHead><TableRow><TableCell>Obligation</TableCell><TableCell>Période</TableCell><TableCell>Échéance</TableCell><TableCell>Montant</TableCell><TableCell>Statut</TableCell></TableRow></TableHead><TableBody>{obligations.data.map((item) => <TableRow key={item.id}><TableCell><Typography sx={{ fontWeight: 800 }}>{item.name}</Typography><Typography variant="caption" color="text.secondary">{item.code}</Typography></TableCell><TableCell>{item.periodMonth ? `${String(item.periodMonth).padStart(2, "0")}/${item.periodYear}` : item.periodQuarter ? `T${item.periodQuarter} ${item.periodYear}` : item.periodYear}</TableCell><TableCell sx={{ color: item.isLate ? "error.main" : "inherit", fontWeight: item.isLate ? 800 : 400 }}>{formatDate(item.dueOn)}</TableCell><TableCell>{item.amountDue ? money(item.amountDue) : "—"}</TableCell><TableCell><Status value={item.status} /></TableCell></TableRow>)}</TableBody></Table>}</>}
+          {tab === 2 && (
+            <>
+              <Typography variant="h4" sx={{ mb: 2 }}>
+                Calendrier fiscal {year}
+              </Typography>
+              {!obligations.data?.length ? (
+                <Empty text="Aucune obligation générée pour cette année." />
+              ) : (
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Obligation</TableCell>
+                      <TableCell>Période</TableCell>
+                      <TableCell>Échéance</TableCell>
+                      <TableCell>Montant</TableCell>
+                      <TableCell>Statut</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {obligations.data.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <Typography sx={{ fontWeight: 700 }}>
+                            {item.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {item.code}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          {item.periodMonth
+                            ? `${String(item.periodMonth).padStart(2, "0")}/${item.periodYear}`
+                            : item.periodQuarter
+                              ? `T${item.periodQuarter} ${item.periodYear}`
+                              : item.periodYear}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            color: item.isLate ? "error.main" : "inherit",
+                            fontWeight: item.isLate ? 800 : 400,
+                          }}
+                        >
+                          {formatDate(item.dueOn)}
+                        </TableCell>
+                        <TableCell>
+                          {item.amountDue ? money(item.amountDue) : "—"}
+                        </TableCell>
+                        <TableCell>
+                          <Status value={item.status} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </>
+          )}
 
-      {tab === 3 && <><Typography variant="h4" sx={{ mb: 1 }}>Déclarations mensuelles {year}</Typography><Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Le bouton de validation atteste votre prise de connaissance. Il ne remplace ni la signature électronique qualifiée ni le dépôt officiel.</Typography>{!declarations.data?.length ? <Empty text="Aucune déclaration préparée." /> : <Table><TableHead><TableRow><TableCell>Période</TableCell><TableCell>TVA due</TableCell><TableCell>Retenues</TableCell><TableCell>Total à payer</TableCell><TableCell>Référence</TableCell><TableCell>Statut</TableCell><TableCell align="right">Votre validation</TableCell></TableRow></TableHead><TableBody>{declarations.data.map((item) => { const accepted = approvals.data?.find((x) => x.resourceType === "DECLARATION_FISCALE" && x.resourceId === item.id && x.decision === "APPROUVE"); const version = `${item.periodYear}-${item.periodMonth}-${item.status}`; const label = `Déclaration ${String(item.periodMonth).padStart(2, "0")}/${item.periodYear}`; return <TableRow key={item.id}><TableCell>{String(item.periodMonth).padStart(2, "0")}/{item.periodYear}</TableCell><TableCell>{money(item.vatDue)}</TableCell><TableCell>{money(item.withholdingTax)}</TableCell><TableCell><b>{money(item.totalDue)}</b></TableCell><TableCell>{item.filingReference || "—"}</TableCell><TableCell><Status value={item.status} /></TableCell><TableCell align="right">{accepted ? <Chip color="success" size="small" icon={<DoneAllRounded />} label="Prise de connaissance confirmée" /> : ["VALIDEE", "DEPOSEE"].includes(item.status) ? <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}><Button size="small" variant="outlined" disabled={approval.isPending} onClick={() => approval.mutate({ resourceType: "DECLARATION_FISCALE", resourceId: item.id, version, label, decision: "APPROUVE" })}>Confirmer</Button><Button size="small" color="warning" onClick={() => setReviewTarget({ resourceType: "DECLARATION_FISCALE", resourceId: item.id, version, label })}>Signaler</Button></Stack> : <Typography variant="caption" color="text.secondary">En préparation</Typography>}</TableCell></TableRow>; })}</TableBody></Table>}{approval.isError && <Alert severity="error" sx={{ mt: 2 }}>{approval.error.message}</Alert>}</>}
+          {tab === 3 && (
+            <>
+              <Typography variant="h4" sx={{ mb: 1 }}>
+                Déclarations mensuelles {year}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Le bouton de validation atteste votre prise de connaissance. Il
+                ne remplace ni la signature électronique qualifiée ni le dépôt
+                officiel.
+              </Typography>
+              {!declarations.data?.length ? (
+                <Empty text="Aucune déclaration préparée." />
+              ) : (
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Période</TableCell>
+                      <TableCell>TVA due</TableCell>
+                      <TableCell>Retenues</TableCell>
+                      <TableCell>Total à payer</TableCell>
+                      <TableCell>Référence</TableCell>
+                      <TableCell>Statut</TableCell>
+                      <TableCell align="right">Votre validation</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {declarations.data.map((item) => {
+                      const accepted = approvals.data?.find(
+                        (x) =>
+                          x.resourceType === "DECLARATION_FISCALE" &&
+                          x.resourceId === item.id &&
+                          x.decision === "APPROUVE",
+                      );
+                      const version = `${item.periodYear}-${item.periodMonth}-${item.status}`;
+                      const label = `Déclaration ${String(item.periodMonth).padStart(2, "0")}/${item.periodYear}`;
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            {String(item.periodMonth).padStart(2, "0")}/
+                            {item.periodYear}
+                          </TableCell>
+                          <TableCell>{money(item.vatDue)}</TableCell>
+                          <TableCell>{money(item.withholdingTax)}</TableCell>
+                          <TableCell>
+                            <b>{money(item.totalDue)}</b>
+                          </TableCell>
+                          <TableCell>{item.filingReference || "—"}</TableCell>
+                          <TableCell>
+                            <Status value={item.status} />
+                          </TableCell>
+                          <TableCell align="right">
+                            {accepted ? (
+                              <Chip
+                                color="success"
+                                size="small"
+                                icon={<DoneAllRounded />}
+                                label="Prise de connaissance confirmée"
+                              />
+                            ) : ["VALIDEE", "DEPOSEE"].includes(item.status) ? (
+                              <Stack
+                                direction="row"
+                                spacing={1}
+                                sx={{ justifyContent: "flex-end" }}
+                              >
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  disabled={approval.isPending}
+                                  onClick={() =>
+                                    approval.mutate({
+                                      resourceType: "DECLARATION_FISCALE",
+                                      resourceId: item.id,
+                                      version,
+                                      label,
+                                      decision: "APPROUVE",
+                                    })
+                                  }
+                                >
+                                  Confirmer
+                                </Button>
+                                <Button
+                                  size="small"
+                                  color="warning"
+                                  onClick={() =>
+                                    setReviewTarget({
+                                      resourceType: "DECLARATION_FISCALE",
+                                      resourceId: item.id,
+                                      version,
+                                      label,
+                                    })
+                                  }
+                                >
+                                  Signaler
+                                </Button>
+                              </Stack>
+                            ) : (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                En préparation
+                              </Typography>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+              {approval.isError && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {approval.error.message}
+                </Alert>
+              )}
+            </>
+          )}
 
-      {tab === 4 && <><Typography variant="h4" sx={{ mb: 2 }}>Factures d’achat et de vente</Typography>{!businessInvoices.data?.length ? <Empty text="Aucune facture comptabilisée." /> : <Table><TableHead><TableRow><TableCell>Numéro</TableCell><TableCell>Type</TableCell><TableCell>Tiers</TableCell><TableCell>Date</TableCell><TableCell>Total TTC</TableCell><TableCell>Solde</TableCell><TableCell>Statut</TableCell></TableRow></TableHead><TableBody>{businessInvoices.data.map((item) => <TableRow key={item.id}><TableCell><b>{item.number}</b></TableCell><TableCell>{item.type === "ACHAT" ? "Achat" : "Vente"}</TableCell><TableCell>{item.thirdPartyName}</TableCell><TableCell>{formatDate(item.invoiceDate)}</TableCell><TableCell>{money(item.grossAmount)}</TableCell><TableCell>{money(item.outstandingAmount)}</TableCell><TableCell><Status value={item.settlementStatus} /></TableCell></TableRow>)}</TableBody></Table>}</>}
+          {tab === 4 && (
+            <>
+              <Typography variant="h4" sx={{ mb: 2 }}>
+                Factures d’achat et de vente
+              </Typography>
+              {!businessInvoices.data?.length ? (
+                <Empty text="Aucune facture comptabilisée." />
+              ) : (
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Numéro</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell>Tiers</TableCell>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Total TTC</TableCell>
+                      <TableCell>Solde</TableCell>
+                      <TableCell>Statut</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {businessInvoices.data.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <b>{item.number}</b>
+                        </TableCell>
+                        <TableCell>
+                          {item.type === "ACHAT" ? "Achat" : "Vente"}
+                        </TableCell>
+                        <TableCell>{item.thirdPartyName}</TableCell>
+                        <TableCell>{formatDate(item.invoiceDate)}</TableCell>
+                        <TableCell>{money(item.grossAmount)}</TableCell>
+                        <TableCell>{money(item.outstandingAmount)}</TableCell>
+                        <TableCell>
+                          <Status value={item.settlementStatus} />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </>
+          )}
 
-      {tab === 5 && <><Typography variant="h4" sx={{ mb: 2 }}>Honoraires du cabinet</Typography>{!fees.data?.length ? <Empty text="Aucune facture d’honoraires." /> : <Table><TableHead><TableRow><TableCell>Facture</TableCell><TableCell>Description</TableCell><TableCell>Émission</TableCell><TableCell>Échéance</TableCell><TableCell>Total</TableCell><TableCell>Payé</TableCell><TableCell>Statut</TableCell><TableCell align="right">Actions</TableCell></TableRow></TableHead><TableBody>{fees.data.map((item) => <TableRow key={item.id}><TableCell><b>{item.number}</b></TableCell><TableCell>{item.description}</TableCell><TableCell>{formatDate(item.issueDate)}</TableCell><TableCell>{formatDate(item.dueDate)}</TableCell><TableCell>{money(item.totalAmount)}</TableCell><TableCell>{money(item.paidAmount)}</TableCell><TableCell><Status value={item.status} /></TableCell><TableCell align="right"><Button size="small" startIcon={<DownloadOutlined />} onClick={() => void downloadApiFile(`${base}/invoices/${item.id}/pdf`, `${item.number}.pdf`)}>PDF</Button>{!["PAYEE", "ANNULEE"].includes(item.status) && <Button size="small" startIcon={<CloudUploadOutlined />} onClick={() => openGenericUpload("DIVERS")}>Justificatif</Button>}</TableCell></TableRow>)}</TableBody></Table>}</>}
+          {tab === 5 && (
+            <>
+              <Typography variant="h4" sx={{ mb: 2 }}>
+                Honoraires du cabinet
+              </Typography>
+              {!fees.data?.length ? (
+                <Empty text="Aucune facture d’honoraires." />
+              ) : (
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Facture</TableCell>
+                      <TableCell>Description</TableCell>
+                      <TableCell>Émission</TableCell>
+                      <TableCell>Échéance</TableCell>
+                      <TableCell>Total</TableCell>
+                      <TableCell>Payé</TableCell>
+                      <TableCell>Statut</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {fees.data.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>
+                          <b>{item.number}</b>
+                        </TableCell>
+                        <TableCell>{item.description}</TableCell>
+                        <TableCell>{formatDate(item.issueDate)}</TableCell>
+                        <TableCell>{formatDate(item.dueDate)}</TableCell>
+                        <TableCell>{money(item.totalAmount)}</TableCell>
+                        <TableCell>{money(item.paidAmount)}</TableCell>
+                        <TableCell>
+                          <Status value={item.status} />
+                        </TableCell>
+                        <TableCell align="right">
+                          <Button
+                            size="small"
+                            startIcon={<DownloadOutlined />}
+                            onClick={() =>
+                              void downloadApiFile(
+                                `${base}/invoices/${item.id}/pdf`,
+                                `${item.number}.pdf`,
+                              )
+                            }
+                          >
+                            PDF
+                          </Button>
+                          {!["PAYEE", "ANNULEE"].includes(item.status) && (
+                            <Button
+                              size="small"
+                              startIcon={<CloudUploadOutlined />}
+                              onClick={() => openGenericUpload("DIVERS")}
+                            >
+                              Justificatif
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </>
+          )}
 
-      {tab === 6 && <Box sx={{ maxWidth: 900 }}><Typography variant="h4">États financiers</Typography><Typography color="text.secondary" sx={{ mt: 1, mb: 3 }}>Téléchargez le bilan, l’état de résultat, le tableau des flux et les notes préparés par le cabinet.</Typography><Card variant="outlined"><CardContent><Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: { sm: "center" } }}><DescriptionOutlined color="primary" sx={{ fontSize: 40 }} /><Box sx={{ flex: 1 }}><Typography sx={{ fontWeight: 900 }}>États financiers {year}</Typography><Typography variant="body2" color="text.secondary">La génération reste disponible lorsque les écritures de l’exercice sont prêtes.</Typography></Box><Button variant="contained" startIcon={<DownloadOutlined />} onClick={() => void downloadApiFile(`${base}/financial-statements/statements/${year}/export?format=pdf`, `etats-financiers-${year}.pdf`)}>PDF</Button><Button variant="outlined" startIcon={<DownloadOutlined />} onClick={() => void downloadApiFile(`${base}/financial-statements/statements/${year}/export?format=xlsx`, `etats-financiers-${year}.xlsx`)}>Excel</Button></Stack><Divider sx={{ my: 2 }} />{approvals.data?.some((x) => x.resourceType === "ETATS_FINANCIERS" && x.resourceId === String(year) && x.decision === "APPROUVE") ? <Alert severity="success" icon={<DoneAllRounded />}>Vous avez confirmé la prise de connaissance des états financiers {year}.</Alert> : <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ alignItems: { sm: "center" }, justifyContent: "space-between" }}><Typography variant="body2" color="text.secondary">Après lecture du PDF, vous pouvez confirmer sa réception.</Typography><Button variant="outlined" disabled={approval.isPending} onClick={() => approval.mutate({ resourceType: "ETATS_FINANCIERS", resourceId: String(year), version: String(year), label: `États financiers ${year}`, decision: "APPROUVE" })}>Confirmer la prise de connaissance</Button></Stack>}</CardContent></Card></Box>}
+          {tab === 6 && (
+            <Box sx={{ maxWidth: 900 }}>
+              <Typography variant="h4">États financiers</Typography>
+              <Typography color="text.secondary" sx={{ mt: 1, mb: 3 }}>
+                Téléchargez le bilan, l’état de résultat, le tableau des flux et
+                les notes préparés par le cabinet.
+              </Typography>
+              <Card variant="outlined">
+                <CardContent>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={2}
+                    sx={{ alignItems: { sm: "center" } }}
+                  >
+                    <DescriptionOutlined
+                      color="primary"
+                      sx={{ fontSize: 40 }}
+                    />
+                    <Box sx={{ flex: 1 }}>
+                      <Typography sx={{ fontWeight: 700 }}>
+                        États financiers {year}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        La génération reste disponible lorsque les écritures de
+                        l’exercice sont prêtes.
+                      </Typography>
+                    </Box>
+                    <Button
+                      variant="contained"
+                      startIcon={<DownloadOutlined />}
+                      onClick={() =>
+                        void downloadApiFile(
+                          `${base}/financial-statements/statements/${year}/export?format=pdf`,
+                          `etats-financiers-${year}.pdf`,
+                        )
+                      }
+                    >
+                      PDF
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      startIcon={<DownloadOutlined />}
+                      onClick={() =>
+                        void downloadApiFile(
+                          `${base}/financial-statements/statements/${year}/export?format=xlsx`,
+                          `etats-financiers-${year}.xlsx`,
+                        )
+                      }
+                    >
+                      Excel
+                    </Button>
+                  </Stack>
+                  <Divider sx={{ my: 2 }} />
+                  {approvals.data?.some(
+                    (x) =>
+                      x.resourceType === "ETATS_FINANCIERS" &&
+                      x.resourceId === String(year) &&
+                      x.decision === "APPROUVE",
+                  ) ? (
+                    <Alert severity="success" icon={<DoneAllRounded />}>
+                      Vous avez confirmé la prise de connaissance des états
+                      financiers {year}.
+                    </Alert>
+                  ) : (
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={2}
+                      sx={{
+                        alignItems: { sm: "center" },
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        Après lecture du PDF, vous pouvez confirmer sa
+                        réception.
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        disabled={approval.isPending}
+                        onClick={() =>
+                          approval.mutate({
+                            resourceType: "ETATS_FINANCIERS",
+                            resourceId: String(year),
+                            version: String(year),
+                            label: `États financiers ${year}`,
+                            decision: "APPROUVE",
+                          })
+                        }
+                      >
+                        Confirmer la prise de connaissance
+                      </Button>
+                    </Stack>
+                  )}
+                </CardContent>
+              </Card>
+            </Box>
+          )}
 
-      {tab === 7 && <Box sx={{ maxWidth: 900, mx: "auto" }}><Typography variant="h4">Conversation avec le cabinet</Typography><Typography color="text.secondary" sx={{ mb: 3 }}>Ces messages sont visibles uniquement par vous et les personnes autorisées sur ce dossier.</Typography><Box sx={{ bgcolor: "#f5f4ef", borderRadius: 3, p: 2, minHeight: 320, maxHeight: 520, overflowY: "auto" }}>{!messages.data?.length && <Empty text="Aucun message. Commencez la conversation." />}{messages.data?.map((item) => { const mine = item.senderUserId === session?.user.id; return <Box key={item.id} sx={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start", mb: 1.5 }}><Box sx={{ maxWidth: "78%", bgcolor: mine ? "primary.main" : "white", color: mine ? "white" : "text.primary", px: 2, py: 1.5, borderRadius: mine ? "18px 18px 4px 18px" : "18px 18px 18px 4px", boxShadow: "0 4px 15px rgba(0,0,0,.06)" }}><Typography variant="caption" sx={{ color: mine ? "rgba(255,255,255,.72)" : "primary.main", fontWeight: 800 }}>{mine ? "Vous" : item.senderName}</Typography><Typography sx={{ whiteSpace: "pre-wrap" }}>{item.body}</Typography><Typography variant="caption" sx={{ color: mine ? "rgba(255,255,255,.55)" : "text.disabled" }}>{new Intl.DateTimeFormat("fr-TN", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.createdAtUtc))}</Typography></Box></Box>; })}</Box><Stack direction="row" spacing={1.5} sx={{ mt: 2 }}><TextField fullWidth multiline maxRows={5} placeholder="Écrivez votre message…" value={message} onChange={(e) => setMessage(e.target.value)} /><Button variant="contained" endIcon={<SendRounded />} disabled={!message.trim() || send.isPending} onClick={() => send.mutate()}>Envoyer</Button></Stack>{send.isError && <Alert severity="error" sx={{ mt: 1 }}>Le message n’a pas pu être envoyé.</Alert>}</Box>}
-    </CardContent></Card>
+          {tab === 7 && (
+            <Box sx={{ maxWidth: 900, mx: "auto" }}>
+              <Typography variant="h4">Conversation avec le cabinet</Typography>
+              <Typography color="text.secondary" sx={{ mb: 3 }}>
+                Ces messages sont visibles uniquement par vous et les personnes
+                autorisées sur ce dossier.
+              </Typography>
+              <Box
+                sx={{
+                  bgcolor: "#f5f4ef",
+                  borderRadius: 3,
+                  p: 2,
+                  minHeight: 320,
+                  maxHeight: 520,
+                  overflowY: "auto",
+                }}
+              >
+                {!messages.data?.length && (
+                  <Empty text="Aucun message. Commencez la conversation." />
+                )}
+                {messages.data?.map((item) => {
+                  const mine = item.senderUserId === session?.user.id;
+                  return (
+                    <Box
+                      key={item.id}
+                      sx={{
+                        display: "flex",
+                        justifyContent: mine ? "flex-end" : "flex-start",
+                        mb: 1.5,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          maxWidth: "78%",
+                          bgcolor: mine ? "primary.main" : "white",
+                          color: mine ? "white" : "text.primary",
+                          px: 2,
+                          py: 1.5,
+                          borderRadius: mine
+                            ? "18px 18px 4px 18px"
+                            : "18px 18px 18px 4px",
+                          boxShadow: "0 4px 15px rgba(0,0,0,.06)",
+                        }}
+                      >
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: mine
+                              ? "rgba(255,255,255,.72)"
+                              : "primary.main",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {mine ? "Vous" : item.senderName}
+                        </Typography>
+                        <Typography sx={{ whiteSpace: "pre-wrap" }}>
+                          {item.body}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: mine
+                              ? "rgba(255,255,255,.55)"
+                              : "text.disabled",
+                          }}
+                        >
+                          {new Intl.DateTimeFormat("fr-TN", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          }).format(new Date(item.createdAtUtc))}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+              <Stack direction="row" spacing={1.5} sx={{ mt: 2 }}>
+                <TextField
+                  fullWidth
+                  multiline
+                  maxRows={5}
+                  placeholder="Écrivez votre message…"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                />
+                <Button
+                  variant="contained"
+                  endIcon={<SendRounded />}
+                  disabled={!message.trim() || send.isPending}
+                  onClick={() => send.mutate()}
+                >
+                  Envoyer
+                </Button>
+              </Stack>
+              {send.isError && (
+                <Alert severity="error" sx={{ mt: 1 }}>
+                  Le message n’a pas pu être envoyé.
+                </Alert>
+              )}
+            </Box>
+          )}
+        </CardContent>
+      </Card>
 
-    <Dialog open={uploadOpen} onClose={() => { setUploadOpen(false); setSelectedExpectation(null); }} fullWidth maxWidth="sm"><DialogTitle>{selectedExpectation ? "Répondre à une demande du cabinet" : "Déposer un document"}</DialogTitle><DialogContent><Stack spacing={2.5} sx={{ pt: 1 }}>{selectedExpectation ? <Alert severity="warning"><b>{selectedExpectation.label}</b><br />Ce fichier sera rattaché à la demande du cabinet pour {String(selectedExpectation.periodMonth).padStart(2, "0")}/{selectedExpectation.periodYear}.</Alert> : <Alert severity="info">PDF, image, CSV ou Excel · 20 Mo maximum.</Alert>}<Button component="label" variant="outlined" startIcon={<CloudUploadOutlined />}>{file?.name || "Choisir un fichier"}<input hidden type="file" accept=".pdf,.png,.jpg,.jpeg,.csv,.xls,.xlsx,.xml" onChange={(e) => setFile(e.target.files?.[0] ?? null)} /></Button><FormControl fullWidth><InputLabel>Catégorie</InputLabel><Select label="Catégorie" value={selectedExpectation?.category ?? category} disabled={Boolean(selectedExpectation)} onChange={(e) => setCategory(e.target.value)}>{categories.map(([value, label]) => <MenuItem key={value} value={value}>{label}</MenuItem>)}</Select></FormControl><Stack direction="row" spacing={2}><TextField fullWidth label="Année" value={selectedExpectation?.periodYear ?? year} disabled /><TextField fullWidth label="Mois" value={String(selectedExpectation?.periodMonth ?? month).padStart(2, "0")} disabled /></Stack>{upload.isError && <Alert severity="error">Le document n’a pas pu être envoyé.</Alert>}</Stack></DialogContent><DialogActions><Button onClick={() => { setUploadOpen(false); setSelectedExpectation(null); }}>Annuler</Button><Button variant="contained" disabled={!file || upload.isPending} onClick={() => upload.mutate()}>{upload.isPending ? "Envoi…" : selectedExpectation ? "Envoyer au cabinet" : "Déposer"}</Button></DialogActions></Dialog>
+      <Dialog
+        open={uploadOpen}
+        onClose={() => {
+          setUploadOpen(false);
+          setSelectedExpectation(null);
+        }}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>
+          {selectedExpectation
+            ? "Répondre à une demande du cabinet"
+            : "Déposer un document"}
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2.5} sx={{ pt: 1 }}>
+            {selectedExpectation ? (
+              <Alert severity="warning">
+                <b>{selectedExpectation.label}</b>
+                <br />
+                Ce fichier sera rattaché à la demande du cabinet pour{" "}
+                {String(selectedExpectation.periodMonth).padStart(2, "0")}/
+                {selectedExpectation.periodYear}.
+              </Alert>
+            ) : (
+              <Alert severity="info">
+                PDF, image, CSV ou Excel · 20 Mo maximum.
+              </Alert>
+            )}
+            <Button
+              component="label"
+              variant="outlined"
+              startIcon={<CloudUploadOutlined />}
+            >
+              {file?.name || "Choisir un fichier"}
+              <input
+                hidden
+                type="file"
+                accept=".pdf,.png,.jpg,.jpeg,.csv,.xls,.xlsx,.xml"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              />
+            </Button>
+            <FormControl fullWidth>
+              <InputLabel>Catégorie</InputLabel>
+              <Select
+                label="Catégorie"
+                value={selectedExpectation?.category ?? category}
+                disabled={Boolean(selectedExpectation)}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                {categories.map(([value, label]) => (
+                  <MenuItem key={value} value={value}>
+                    {label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Stack direction="row" spacing={2}>
+              <TextField
+                fullWidth
+                label="Année"
+                value={selectedExpectation?.periodYear ?? year}
+                disabled
+              />
+              <TextField
+                fullWidth
+                label="Mois"
+                value={String(
+                  selectedExpectation?.periodMonth ?? month,
+                ).padStart(2, "0")}
+                disabled
+              />
+            </Stack>
+            {upload.isError && (
+              <Alert severity="error">
+                Le document n’a pas pu être envoyé.
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setUploadOpen(false);
+              setSelectedExpectation(null);
+            }}
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!file || upload.isPending}
+            onClick={() => upload.mutate()}
+          >
+            {upload.isPending
+              ? "Envoi…"
+              : selectedExpectation
+                ? "Envoyer au cabinet"
+                : "Déposer"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-    <Dialog open={Boolean(preview)} onClose={() => setPreview(null)} fullWidth maxWidth="lg"><DialogTitle>{preview?.originalName}</DialogTitle><DialogContent dividers sx={{ minHeight: 560, bgcolor: "#f3f3f3" }}>{preview?.kind === "pdf" && preview.url && <Box component="iframe" title={preview.originalName} src={preview.url} sx={{ width: "100%", height: 650, border: 0, bgcolor: "white" }} />}{preview?.kind === "image" && preview.url && <Box component="img" src={preview.url} alt={preview.originalName} sx={{ maxWidth: "100%", maxHeight: 650, display: "block", mx: "auto" }} />}{preview?.kind === "text" && <Box component="pre" sx={{ whiteSpace: "pre-wrap", bgcolor: "white", p: 2 }}>{preview.content}</Box>}{preview?.kind === "unsupported" && <Alert severity="info">{preview.message}</Alert>}</DialogContent><DialogActions><Button onClick={() => setPreview(null)}>Fermer</Button></DialogActions></Dialog>
+      <Dialog
+        open={Boolean(preview)}
+        onClose={() => setPreview(null)}
+        fullWidth
+        maxWidth="lg"
+      >
+        <DialogTitle>{preview?.originalName}</DialogTitle>
+        <DialogContent dividers sx={{ minHeight: 560, bgcolor: "#f3f3f3" }}>
+          {preview?.kind === "pdf" && preview.url && (
+            <Box
+              component="iframe"
+              title={preview.originalName}
+              src={preview.url}
+              sx={{ width: "100%", height: 650, border: 0, bgcolor: "white" }}
+            />
+          )}
+          {preview?.kind === "image" && preview.url && (
+            <Box
+              component="img"
+              src={preview.url}
+              alt={preview.originalName}
+              sx={{
+                maxWidth: "100%",
+                maxHeight: 650,
+                display: "block",
+                mx: "auto",
+              }}
+            />
+          )}
+          {preview?.kind === "text" && (
+            <Box
+              component="pre"
+              sx={{ whiteSpace: "pre-wrap", bgcolor: "white", p: 2 }}
+            >
+              {preview.content}
+            </Box>
+          )}
+          {preview?.kind === "unsupported" && (
+            <Alert severity="info">{preview.message}</Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPreview(null)}>Fermer</Button>
+        </DialogActions>
+      </Dialog>
 
-    <Dialog open={Boolean(reviewTarget)} onClose={() => setReviewTarget(null)} fullWidth maxWidth="sm"><DialogTitle>Signaler une anomalie</DialogTitle><DialogContent><Alert severity="warning" sx={{ mb: 2 }}>Votre remarque sera historisée avec la déclaration et visible par le cabinet.</Alert><TextField fullWidth multiline minRows={4} label="Expliquez ce qui doit être vérifié" value={reviewComment} onChange={(event) => setReviewComment(event.target.value)} /></DialogContent><DialogActions><Button onClick={() => setReviewTarget(null)}>Annuler</Button><Button color="warning" variant="contained" disabled={!reviewComment.trim() || approval.isPending} onClick={() => { if (!reviewTarget) return; approval.mutate({ ...reviewTarget, decision: "REJETE", comment: reviewComment }, { onSuccess: () => { setReviewTarget(null); setReviewComment(""); } }); }}>Envoyer au cabinet</Button></DialogActions></Dialog>
-  </>;
+      <Dialog
+        open={Boolean(reviewTarget)}
+        onClose={() => setReviewTarget(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Signaler une anomalie</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Votre remarque sera historisée avec la déclaration et visible par le
+            cabinet.
+          </Alert>
+          <TextField
+            fullWidth
+            multiline
+            minRows={4}
+            label="Expliquez ce qui doit être vérifié"
+            value={reviewComment}
+            onChange={(event) => setReviewComment(event.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReviewTarget(null)}>Annuler</Button>
+          <Button
+            color="warning"
+            variant="contained"
+            disabled={!reviewComment.trim() || approval.isPending}
+            onClick={() => {
+              if (!reviewTarget) return;
+              approval.mutate(
+                { ...reviewTarget, decision: "REJETE", comment: reviewComment },
+                {
+                  onSuccess: () => {
+                    setReviewTarget(null);
+                    setReviewComment("");
+                  },
+                },
+              );
+            }}
+          >
+            Envoyer au cabinet
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
 }
