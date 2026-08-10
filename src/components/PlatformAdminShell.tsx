@@ -1,4 +1,7 @@
-import { AdminPanelSettingsOutlined, ArrowBackRounded } from "@mui/icons-material";
+import {
+  AdminPanelSettingsOutlined,
+  ArrowBackRounded,
+} from "@mui/icons-material";
 import {
   AppBar,
   Avatar,
@@ -42,12 +45,8 @@ export function PlatformAdminShell() {
             <AdminPanelSettingsOutlined />
           </Box>
           <Box>
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ alignItems: "center" }}
-            >
-              <Typography sx={{ color: "#fff", fontWeight: 800 }}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <Typography sx={{ color: "#fff", fontWeight: 700 }}>
                 Fiscora
               </Typography>
               <Chip
@@ -60,7 +59,10 @@ export function PlatformAdminShell() {
                 }}
               />
             </Stack>
-            <Typography variant="caption" sx={{ color: "rgba(255,255,255,.6)" }}>
+            <Typography
+              variant="caption"
+              sx={{ color: "rgba(255,255,255,.6)" }}
+            >
               Pilotage interne du service
             </Typography>
           </Box>
@@ -87,7 +89,10 @@ export function PlatformAdminShell() {
           </Avatar>
         </Toolbar>
       </AppBar>
-      <Container maxWidth={false} sx={{ maxWidth: 1580, py: { xs: 2.5, md: 4 } }}>
+      <Container
+        maxWidth={false}
+        sx={{ maxWidth: 1580, py: { xs: 2.5, md: 4 } }}
+      >
         <Outlet />
       </Container>
     </Box>

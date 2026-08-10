@@ -71,12 +71,19 @@ type SubscriptionForm = {
 
 type InvoiceAction =
   | { kind: "create"; subscription: OrganizationSubscription; reason: string }
-  | { kind: "pay"; invoice: SaasSubscriptionInvoice; reference: string; reason: string };
+  | {
+      kind: "pay";
+      invoice: SaasSubscriptionInvoice;
+      reference: string;
+      reason: string;
+    };
 
 export function PlatformSubscriptionsPanel() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<SubscriptionForm | null>(null);
-  const [invoiceAction, setInvoiceAction] = useState<InvoiceAction | null>(null);
+  const [invoiceAction, setInvoiceAction] = useState<InvoiceAction | null>(
+    null,
+  );
   const plans = useQuery({
     queryKey: ["platform-admin", "subscription-plans"],
     queryFn: () =>
@@ -148,12 +155,10 @@ export function PlatformSubscriptionsPanel() {
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h3" sx={{ fontSize: 25 }}>
-          Offres et abonnements des cabinets
-        </Typography>
+        <Typography variant="h3">Offres et abonnements des cabinets</Typography>
         <Typography color="text.secondary">
-          Fiscora facture le cabinet. Les honoraires que le cabinet facture à ses
-          propres clients restent dans un module séparé.
+          Fiscora facture le cabinet. Les honoraires que le cabinet facture à
+          ses propres clients restent dans un module séparé.
         </Typography>
       </Box>
 
@@ -174,7 +179,7 @@ export function PlatformSubscriptionsPanel() {
                 sx={{ justifyContent: "space-between" }}
               >
                 <Box>
-                  <Typography sx={{ fontWeight: 800 }}>{plan.name}</Typography>
+                  <Typography sx={{ fontWeight: 700 }}>{plan.name}</Typography>
                   <Typography variant="caption" color="text.secondary">
                     {plan.code}
                   </Typography>
@@ -188,16 +193,17 @@ export function PlatformSubscriptionsPanel() {
               <Typography variant="h4" sx={{ my: 1.5 }}>
                 {money(plan.monthlyPriceTnd)}
                 <Typography component="span" variant="body2">
-                  {" "}/ mois
+                  {" "}
+                  / mois
                 </Typography>
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {plan.maxCollaborators} collaborateurs · {plan.maxActiveDossiers}{" "}
-                dossiers · {plan.maxStorageGb} Go
+                {plan.maxCollaborators} collaborateurs ·{" "}
+                {plan.maxActiveDossiers} dossiers · {plan.maxStorageGb} Go
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {plan.monthlyOcrDocuments} OCR · {plan.monthlyTtnSubmissions} TTN
-                par mois
+                {plan.monthlyOcrDocuments} OCR · {plan.monthlyTtnSubmissions}{" "}
+                TTN par mois
               </Typography>
             </CardContent>
           </Card>
@@ -207,7 +213,9 @@ export function PlatformSubscriptionsPanel() {
       <Typography variant="h4" sx={{ mb: 1.5 }}>
         Cabinets abonnés
       </Typography>
-      <TableContainer sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+      <TableContainer
+        sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+      >
         <Table>
           <TableHead>
             <TableRow>
@@ -231,11 +239,13 @@ export function PlatformSubscriptionsPanel() {
               return (
                 <TableRow key={subscription.id} hover>
                   <TableCell>
-                    <Typography sx={{ fontWeight: 750 }}>
+                    <Typography sx={{ fontWeight: 600 }}>
                       {subscription.organizationName}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {subscription.billingCycle === "ANNUEL" ? "Annuel" : "Mensuel"}
+                      {subscription.billingCycle === "ANNUEL"
+                        ? "Annuel"
+                        : "Mensuel"}
                     </Typography>
                   </TableCell>
                   <TableCell>{subscription.plan.name}</TableCell>
@@ -308,15 +318,13 @@ export function PlatformSubscriptionsPanel() {
       </TableContainer>
 
       <Divider sx={{ my: 3 }} />
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{ mb: 1.5, alignItems: "center" }}
-      >
+      <Stack direction="row" spacing={1} sx={{ mb: 1.5, alignItems: "center" }}>
         <ReceiptLongOutlined color="primary" />
         <Typography variant="h4">Factures Fiscora</Typography>
       </Stack>
-      <TableContainer sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
+      <TableContainer
+        sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+      >
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -373,13 +381,20 @@ export function PlatformSubscriptionsPanel() {
         </Table>
       </TableContainer>
 
-      <Dialog open={Boolean(form)} onClose={() => setForm(null)} fullWidth maxWidth="sm">
+      <Dialog
+        open={Boolean(form)}
+        onClose={() => setForm(null)}
+        fullWidth
+        maxWidth="sm"
+      >
         <DialogTitle>Gérer l’abonnement</DialogTitle>
         {form && (
           <>
             <DialogContent>
               <Stack spacing={2} sx={{ pt: 1 }}>
-                <Alert severity="info">{form.subscription.organizationName}</Alert>
+                <Alert severity="info">
+                  {form.subscription.organizationName}
+                </Alert>
                 <FormControl fullWidth>
                   <InputLabel>Offre</InputLabel>
                   <Select
@@ -407,7 +422,8 @@ export function PlatformSubscriptionsPanel() {
                       onChange={(event) =>
                         setForm({
                           ...form,
-                          status: event.target.value as SubscriptionForm["status"],
+                          status: event.target
+                            .value as SubscriptionForm["status"],
                         })
                       }
                     >
@@ -443,7 +459,9 @@ export function PlatformSubscriptionsPanel() {
                   multiline
                   minRows={2}
                   value={form.reason}
-                  onChange={(event) => setForm({ ...form, reason: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, reason: event.target.value })
+                  }
                   helperText="Minimum 8 caractères, conservée dans l’audit."
                 />
                 {error && <Alert severity="error">{error}</Alert>}
@@ -453,7 +471,9 @@ export function PlatformSubscriptionsPanel() {
               <Button onClick={() => setForm(null)}>Annuler</Button>
               <Button
                 variant="contained"
-                disabled={form.reason.trim().length < 8 || updateSubscription.isPending}
+                disabled={
+                  form.reason.trim().length < 8 || updateSubscription.isPending
+                }
                 onClick={() => updateSubscription.mutate(form)}
               >
                 Enregistrer

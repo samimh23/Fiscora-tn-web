@@ -5,7 +5,15 @@ import {
   QueryStatsOutlined,
   WarningAmberRounded,
 } from "@mui/icons-material";
-import { Alert, Box, Card, CardContent, LinearProgress, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Card,
+  CardContent,
+  LinearProgress,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { api } from "../../api/client";
 import { MetricCard } from "../../components/MetricCard";
 import type { SaasAnalytics } from "../../types/api";
@@ -20,8 +28,7 @@ const money = (value: number) =>
 export function PlatformSaasAnalyticsPanel() {
   const analytics = useQuery({
     queryKey: ["platform-admin", "saas-analytics"],
-    queryFn: () =>
-      api.get<SaasAnalytics>("/api/platform-admin/saas-analytics"),
+    queryFn: () => api.get<SaasAnalytics>("/api/platform-admin/saas-analytics"),
   });
   const data = analytics.data;
   const total =
@@ -33,9 +40,7 @@ export function PlatformSaasAnalyticsPanel() {
 
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
-      <Typography variant="h3" sx={{ fontSize: 25 }}>
-        Analytics SaaS
-      </Typography>
+      <Typography variant="h3">Analytics SaaS</Typography>
       <Typography color="text.secondary" sx={{ mb: 3 }}>
         Revenus et cycle de vie des cabinets, sans consulter leurs données
         comptables ni celles de leurs clients.
@@ -98,7 +103,7 @@ export function PlatformSaasAnalyticsPanel() {
               <Box key={String(label)} sx={{ mb: 1.5 }}>
                 <Stack direction="row" sx={{ justifyContent: "space-between" }}>
                   <Typography variant="body2">{label}</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 750 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
                     {count}
                   </Typography>
                 </Stack>

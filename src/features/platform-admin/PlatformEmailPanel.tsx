@@ -73,7 +73,9 @@ export function PlatformEmailPanel() {
   });
 
   const sendDisabled =
-    !recipient.trim() || testEmail.isPending || status.data?.configured === false;
+    !recipient.trim() ||
+    testEmail.isPending ||
+    status.data?.configured === false;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -86,15 +88,15 @@ export function PlatformEmailPanel() {
           <CardContent>
             <Stack direction="row" spacing={1.2} sx={{ alignItems: "center" }}>
               <MailOutlineRounded sx={{ color: "#145a46" }} />
-              <Typography variant="h3" sx={{ fontSize: 24 }}>
-                E-mails transactionnels
-              </Typography>
+              <Typography variant="h3">E-mails transactionnels</Typography>
               {status.isLoading ? (
                 <CircularProgress size={18} />
               ) : (
                 <Chip
                   size="small"
-                  label={status.data?.configured ? "Configuré" : "Non configuré"}
+                  label={
+                    status.data?.configured ? "Configuré" : "Non configuré"
+                  }
                   color={status.data?.configured ? "success" : "warning"}
                   variant="outlined"
                 />
@@ -115,7 +117,7 @@ export function PlatformEmailPanel() {
                 <Typography variant="caption" color="text.secondary">
                   Fournisseur
                 </Typography>
-                <Typography sx={{ fontWeight: 800 }}>
+                <Typography sx={{ fontWeight: 700 }}>
                   {status.data?.provider ?? "—"}
                 </Typography>
               </Box>
@@ -123,7 +125,7 @@ export function PlatformEmailPanel() {
                 <Typography variant="caption" color="text.secondary">
                   Expéditeur
                 </Typography>
-                <Typography sx={{ fontWeight: 800 }}>
+                <Typography sx={{ fontWeight: 700 }}>
                   {status.data?.from ?? "—"}
                 </Typography>
               </Box>
@@ -131,7 +133,7 @@ export function PlatformEmailPanel() {
                 <Typography variant="caption" color="text.secondary">
                   Envoyés / 24h
                 </Typography>
-                <Typography sx={{ fontWeight: 800 }}>
+                <Typography sx={{ fontWeight: 700 }}>
                   {status.data?.sentLast24h ?? 0}
                 </Typography>
               </Box>
@@ -141,7 +143,7 @@ export function PlatformEmailPanel() {
                 </Typography>
                 <Typography
                   sx={{
-                    fontWeight: 800,
+                    fontWeight: 700,
                     color:
                       (status.data?.failedLast24h ?? 0) > 0
                         ? "error.main"
@@ -152,7 +154,11 @@ export function PlatformEmailPanel() {
                 </Typography>
               </Box>
             </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: "block" }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 2, display: "block" }}
+            >
               Hôte SMTP : {status.data?.host ?? "—"} · port{" "}
               {status.data?.port ?? "—"} · dernier succès :{" "}
               {formatDate(status.data?.lastSuccessAtUtc ?? null)}
@@ -207,9 +213,7 @@ export function PlatformEmailPanel() {
             sx={{ justifyContent: "space-between", mb: 2 }}
           >
             <Box>
-              <Typography variant="h3" sx={{ fontSize: 24 }}>
-                Journal des e-mails
-              </Typography>
+              <Typography variant="h3">Journal des e-mails</Typography>
               <Typography color="text.secondary">
                 Les 100 derniers envois transactionnels.
               </Typography>
@@ -245,7 +249,7 @@ export function PlatformEmailPanel() {
                       <TableCell>{formatDate(item.createdAtUtc)}</TableCell>
                       <TableCell>{categoryLabel[item.category]}</TableCell>
                       <TableCell>
-                        <Typography sx={{ fontWeight: 750 }}>
+                        <Typography sx={{ fontWeight: 600 }}>
                           {item.recipient}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -272,7 +276,9 @@ export function PlatformEmailPanel() {
                       <TableCell>
                         <Typography variant="caption" color="text.secondary">
                           {item.status === "ENVOYE"
-                            ? item.providerMessageId || item.smtpResponse || "Accepté par le SMTP"
+                            ? item.providerMessageId ||
+                              item.smtpResponse ||
+                              "Accepté par le SMTP"
                             : item.errorMessage || "Erreur non détaillée"}
                         </Typography>
                       </TableCell>

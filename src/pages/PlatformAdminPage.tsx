@@ -149,8 +149,7 @@ export function PlatformAdminPage() {
   });
   const jobs = useQuery({
     queryKey: ["platform-admin", "jobs"],
-    queryFn: () =>
-      api.get<PlatformJobsOverview>("/api/platform-admin/jobs"),
+    queryFn: () => api.get<PlatformJobsOverview>("/api/platform-admin/jobs"),
   });
   const audit = useQuery({
     queryKey: ["platform-admin", "audit"],
@@ -241,11 +240,14 @@ export function PlatformAdminPage() {
         <Box>
           <Typography
             variant="overline"
-            sx={{ color: "#6672d8", fontWeight: 800, letterSpacing: ".13em" }}
+            sx={{ color: "#6672d8", fontWeight: 700, letterSpacing: ".13em" }}
           >
             Administration Fiscora
           </Typography>
-          <Typography variant="h2" sx={{ fontSize: { xs: 34, md: 46 }, mt: 0.4 }}>
+          <Typography
+            variant="h2"
+            sx={{ fontSize: { xs: 34, md: 46 }, mt: 0.4 }}
+          >
             Vue de la plateforme
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 0.7 }}>
@@ -320,9 +322,7 @@ export function PlatformAdminPage() {
               sx={{ mb: 2, alignItems: "center" }}
             >
               <CheckCircleOutlineRounded sx={{ color: "#6672d8" }} />
-              <Typography variant="h3" sx={{ fontSize: 24 }}>
-                État des services
-              </Typography>
+              <Typography variant="h3">État des services</Typography>
             </Stack>
             {overview.isLoading && <CircularProgress size={28} />}
             <Stack divider={<Divider flexItem />} spacing={0}>
@@ -334,7 +334,9 @@ export function PlatformAdminPage() {
                   sx={{ py: 1.6, justifyContent: "space-between" }}
                 >
                   <Box>
-                    <Typography sx={{ fontWeight: 750 }}>{service.label}</Typography>
+                    <Typography sx={{ fontWeight: 600 }}>
+                      {service.label}
+                    </Typography>
                     <Typography variant="body2" color="text.secondary">
                       {service.detail}
                     </Typography>
@@ -365,9 +367,7 @@ export function PlatformAdminPage() {
               sx={{ mb: 2, alignItems: "center" }}
             >
               <WarningAmberRounded color="warning" />
-              <Typography variant="h3" sx={{ fontSize: 24 }}>
-                Alertes opérationnelles
-              </Typography>
+              <Typography variant="h3">Alertes opérationnelles</Typography>
               <Chip label={overview.data?.alerts.length ?? 0} size="small" />
             </Stack>
             {!overview.isLoading && !overview.data?.alerts.length && (
@@ -414,7 +414,9 @@ export function PlatformAdminPage() {
               size="small"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder={tab === 0 ? "Rechercher un cabinet" : "Rechercher un compte"}
+              placeholder={
+                tab === 0 ? "Rechercher un cabinet" : "Rechercher un compte"
+              }
               sx={{ minWidth: { md: 260 }, my: 1 }}
               slotProps={{
                 input: {
@@ -447,11 +449,12 @@ export function PlatformAdminPage() {
                 {filteredOrganizations.map((organization) => (
                   <TableRow key={organization.id} hover>
                     <TableCell>
-                      <Typography sx={{ fontWeight: 750 }}>
+                      <Typography sx={{ fontWeight: 600 }}>
                         {organization.name}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {organization.slug} · {formatBytes(organization.storageBytes)}
+                        {organization.slug} ·{" "}
+                        {formatBytes(organization.storageBytes)}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -461,17 +464,29 @@ export function PlatformAdminPage() {
                           size="small"
                           color={organization.isActive ? "success" : "default"}
                         />
-                        {!organization.isActive && organization.suspensionReason && (
-                          <Typography variant="caption" color="text.secondary">
-                            {organization.suspensionReason}
-                          </Typography>
-                        )}
+                        {!organization.isActive &&
+                          organization.suspensionReason && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {organization.suspensionReason}
+                            </Typography>
+                          )}
                       </Stack>
                     </TableCell>
-                    <TableCell align="right">{organization.membersCount}</TableCell>
-                    <TableCell align="right">{organization.dossiersCount}</TableCell>
-                    <TableCell align="right">{organization.documentsCount}</TableCell>
-                    <TableCell>{formatDate(organization.lastActivityAtUtc)}</TableCell>
+                    <TableCell align="right">
+                      {organization.membersCount}
+                    </TableCell>
+                    <TableCell align="right">
+                      {organization.dossiersCount}
+                    </TableCell>
+                    <TableCell align="right">
+                      {organization.documentsCount}
+                    </TableCell>
+                    <TableCell>
+                      {formatDate(organization.lastActivityAtUtc)}
+                    </TableCell>
                     <TableCell align="right">
                       <Button
                         size="small"
@@ -527,7 +542,9 @@ export function PlatformAdminPage() {
                 {filteredUsers.map((user) => (
                   <TableRow key={user.id} hover>
                     <TableCell>
-                      <Typography sx={{ fontWeight: 750 }}>{user.fullName}</Typography>
+                      <Typography sx={{ fontWeight: 600 }}>
+                        {user.fullName}
+                      </Typography>
                       <Typography variant="caption" color="text.secondary">
                         {user.email}
                       </Typography>
@@ -557,7 +574,9 @@ export function PlatformAdminPage() {
                       </Stack>
                     </TableCell>
                     <TableCell align="right">{user.membershipsCount}</TableCell>
-                    <TableCell align="right">{user.activeSessionsCount}</TableCell>
+                    <TableCell align="right">
+                      {user.activeSessionsCount}
+                    </TableCell>
                     <TableCell>{formatDate(user.lastLoginAtUtc)}</TableCell>
                     <TableCell align="right">
                       <Stack
@@ -639,9 +658,7 @@ export function PlatformAdminPage() {
               sx={{ mb: 2.5, justifyContent: "space-between" }}
             >
               <Box>
-                <Typography variant="h3" sx={{ fontSize: 24 }}>
-                  Traitements de fond
-                </Typography>
+                <Typography variant="h3">Traitements de fond</Typography>
                 <Typography color="text.secondary">
                   Suivi technique des extractions, invitations et transmissions.
                 </Typography>
@@ -671,7 +688,7 @@ export function PlatformAdminPage() {
                       spacing={1}
                       sx={{ justifyContent: "space-between", mb: 2 }}
                     >
-                      <Typography sx={{ fontWeight: 800 }}>
+                      <Typography sx={{ fontWeight: 700 }}>
                         {pipeline.label}
                       </Typography>
                       <Chip
@@ -692,7 +709,9 @@ export function PlatformAdminPage() {
                         <Typography variant="caption">En attente</Typography>
                       </Box>
                       <Box>
-                        <Typography variant="h4">{pipeline.processing}</Typography>
+                        <Typography variant="h4">
+                          {pipeline.processing}
+                        </Typography>
                         <Typography variant="caption">En cours</Typography>
                       </Box>
                       <Box>
@@ -743,7 +762,9 @@ export function PlatformAdminPage() {
                       </Typography>
                     </TableCell>
                     <TableCell>{item.actorName ?? "Système"}</TableCell>
-                    <TableCell>{item.organizationName ?? "Plateforme"}</TableCell>
+                    <TableCell>
+                      {item.organizationName ?? "Plateforme"}
+                    </TableCell>
                     <TableCell>
                       {item.entityType} · {item.entityId.slice(0, 8)}
                     </TableCell>
