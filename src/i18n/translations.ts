@@ -119,7 +119,8 @@ export const arabicTranslations: Record<string, string> = {
     "دورك لا يتيح الوصول إلى قائمة العمل. اطلب من مالك المكتب إضافة صلاحية الاطلاع على المهام.",
   "Impossible d’actualiser la file de travail. Vérifiez que le backend est démarré.":
     "تعذّر تحديث قائمة العمل. تحقّق من أن الخادم يعمل.",
-  "Travaux arrivés à échéance et non terminés.": "أعمال بلغت أجلها ولم تُنجز بعد.",
+  "Travaux arrivés à échéance et non terminés.":
+    "أعمال بلغت أجلها ولم تُنجز بعد.",
   "Prêt pour révision": "جاهز للمراجعة",
   "Ouvrir les tâches": "فتح المهام",
   "Revoir les validations": "مراجعة المصادقات",
@@ -413,7 +414,8 @@ export const arabicTranslations: Record<string, string> = {
   "Début de période": "بداية الفترة",
   "Déclaration douanière": "التصريح الديواني",
   "Déclaration mensuelle": "التصريح الشهري",
-  "Déclaration CNSS trimestrielle": "التصريح الفصلي للصندوق الوطني للضمان الاجتماعي",
+  "Déclaration CNSS trimestrielle":
+    "التصريح الفصلي للصندوق الوطني للضمان الاجتماعي",
   "Déclaration ou paiement à préparer": "تصريح أو دفع للتحضير",
   "Description de l’écriture": "وصف القيد",
   Désignation: "البيان",

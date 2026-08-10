@@ -35,28 +35,43 @@ function preserveWhitespace(source: string, translated: string) {
 function translateValue(value: string, language: Language) {
   const text = value.trim();
   if (!text) return value;
-  const dictionary = language === "ar" ? arabicTranslations : frenchTranslations;
+  const dictionary =
+    language === "ar" ? arabicTranslations : frenchTranslations;
   const translated = dictionary[text];
   if (translated) return preserveWhitespace(value, translated);
 
   if (language === "ar") {
     if (text.startsWith("Bonjour ")) {
-      return preserveWhitespace(value, `مرحباً ${text.slice("Bonjour ".length)}`);
+      return preserveWhitespace(
+        value,
+        `مرحباً ${text.slice("Bonjour ".length)}`,
+      );
     }
     if (text.startsWith("E-mail envoyé à ")) {
-      return preserveWhitespace(value, `تم إرسال البريد الإلكتروني إلى ${text.slice("E-mail envoyé à ".length)}`);
+      return preserveWhitespace(
+        value,
+        `تم إرسال البريد الإلكتروني إلى ${text.slice("E-mail envoyé à ".length)}`,
+      );
     }
     if (text.startsWith("Ma journée, ")) {
-      return preserveWhitespace(value, `يومي، ${text.slice("Ma journée, ".length)}`);
+      return preserveWhitespace(
+        value,
+        `يومي، ${text.slice("Ma journée, ".length)}`,
+      );
     }
-    if (text.startsWith("Un seul écran pour savoir quoi traiter maintenant dans ")) {
+    if (
+      text.startsWith("Un seul écran pour savoir quoi traiter maintenant dans ")
+    ) {
       return preserveWhitespace(
         value,
         `شاشة واحدة لمعرفة ما يجب معالجته الآن في ${text.slice("Un seul écran pour savoir quoi traiter maintenant dans ".length)}`,
       );
     }
     if (text.startsWith("Déclaration mensuelle — ")) {
-      return preserveWhitespace(value, `التصريح الشهري — ${text.slice("Déclaration mensuelle — ".length)}`);
+      return preserveWhitespace(
+        value,
+        `التصريح الشهري — ${text.slice("Déclaration mensuelle — ".length)}`,
+      );
     }
     if (text.startsWith("Déclaration CNSS trimestrielle — ")) {
       return preserveWhitespace(
@@ -74,12 +89,16 @@ function localizeElement(root: ParentNode, language: Language) {
   while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
   for (const node of textNodes) {
     const parent = node.parentElement;
-    if (!parent || parent.closest("script, style, [data-i18n-ignore='true']")) continue;
+    if (!parent || parent.closest("script, style, [data-i18n-ignore='true']"))
+      continue;
     const next = translateValue(node.data, language);
     if (next !== node.data) node.data = next;
   }
 
-  const elements = root instanceof Element ? [root, ...root.querySelectorAll("*")] : [...root.querySelectorAll("*")];
+  const elements =
+    root instanceof Element
+      ? [root, ...root.querySelectorAll("*")]
+      : [...root.querySelectorAll("*")];
   for (const element of elements) {
     for (const attribute of ["placeholder", "title", "aria-label", "alt"]) {
       const value = element.getAttribute(attribute);
@@ -109,7 +128,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   );
 
   const t = useCallback(
-    (text: string) => (language === "ar" ? arabicTranslations[text] ?? text : text),
+    (text: string) =>
+      language === "ar" ? (arabicTranslations[text] ?? text) : text,
     [language],
   );
 
@@ -129,13 +149,18 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
           }
           for (const node of mutation.addedNodes) {
             if (node instanceof Element) localizeElement(node, language);
-            else if (node.parentNode) localizeElement(node.parentNode, language);
+            else if (node.parentNode)
+              localizeElement(node.parentNode, language);
           }
         }
         applying.current = false;
       });
     });
-    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
     return () => observer.disconnect();
   }, [direction, language]);
 
@@ -144,12 +169,17 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     [direction, language, setLanguage, t, toggleLanguage],
   );
 
-  return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
+  return (
+    <LanguageContext.Provider value={value}>
+      {children}
+    </LanguageContext.Provider>
+  );
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useLanguage() {
   const value = useContext(LanguageContext);
-  if (!value) throw new Error("useLanguage must be used inside LanguageProvider");
+  if (!value)
+    throw new Error("useLanguage must be used inside LanguageProvider");
   return value;
 }

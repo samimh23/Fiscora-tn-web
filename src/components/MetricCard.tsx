@@ -13,7 +13,7 @@ export function MetricCard({
   value,
   hint,
   icon: Icon,
-  color = "#145a46",
+  color = "#17624c",
   loading = false,
 }: {
   label: string;
@@ -26,45 +26,38 @@ export function MetricCard({
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", gap: 2 }}>
-          <Box>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontWeight: 650 }}
-            >
-              {label}
-            </Typography>
-            {loading ? (
-              <Skeleton width={90} height={39} />
-            ) : (
-              <Typography
-                sx={{
-                  fontSize: 27,
-                  fontWeight: 760,
-                  mt: 0.35,
-                  lineHeight: 1.2,
-                }}
-              >
-                {value}
-              </Typography>
-            )}
-          </Box>
-          <Box
-            sx={{
-              width: 38,
-              height: 38,
-              borderRadius: 2,
-              display: "grid",
-              placeItems: "center",
-              bgcolor: `${color}14`,
-              color,
-            }}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            color: "text.secondary",
+            mb: 1.25,
+          }}
+        >
+          <Icon sx={{ fontSize: 17, color }} />
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 600, minWidth: 0 }}
+            noWrap
           >
-            <Icon fontSize="small" />
-          </Box>
+            {label}
+          </Typography>
         </Box>
-        <Typography variant="caption" color="text.secondary">
+        {loading ? (
+          <Skeleton width={82} height={34} />
+        ) : (
+          <Typography sx={{ fontSize: 26, fontWeight: 700, lineHeight: 1.15 }}>
+            {value}
+          </Typography>
+        )}
+        <Typography
+          className="metric-hint"
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", mt: 0.5 }}
+          noWrap
+        >
           {hint}
         </Typography>
       </CardContent>

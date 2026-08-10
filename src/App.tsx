@@ -4,6 +4,7 @@ import {
   Navigate,
   Outlet,
   RouterProvider,
+  useLocation,
 } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
 import { AppShell } from "./components/AppShell";
@@ -31,7 +32,9 @@ const DossierDetailPage = lazy(() =>
   })),
 );
 const AccountingPage = lazy(() =>
-  import("./pages/AccountingPage").then((module) => ({ default: module.AccountingPage })),
+  import("./pages/AccountingPage").then((module) => ({
+    default: module.AccountingPage,
+  })),
 );
 const MigrationAssistantPage = lazy(() =>
   import("./pages/MigrationAssistantPage").then((module) => ({
@@ -39,7 +42,9 @@ const MigrationAssistantPage = lazy(() =>
   })),
 );
 const DossierWorkspacePage = lazy(() =>
-  import("./pages/DossierWorkspacePage").then((module) => ({ default: module.DossierWorkspacePage })),
+  import("./pages/DossierWorkspacePage").then((module) => ({
+    default: module.DossierWorkspacePage,
+  })),
 );
 const FinancialStatementsPage = lazy(() =>
   import("./pages/FinancialStatementsPage").then((module) => ({
@@ -117,19 +122,29 @@ const PasswordResetConfirmPage = lazy(() =>
   })),
 );
 const ClientPortalDashboardPage = lazy(() =>
-  import("./pages/ClientPortalDashboardPage").then((module) => ({ default: module.ClientPortalDashboardPage })),
+  import("./pages/ClientPortalDashboardPage").then((module) => ({
+    default: module.ClientPortalDashboardPage,
+  })),
 );
 const ClientPortalDossierPage = lazy(() =>
-  import("./pages/ClientPortalDossierPage").then((module) => ({ default: module.ClientPortalDossierPage })),
+  import("./pages/ClientPortalDossierPage").then((module) => ({
+    default: module.ClientPortalDossierPage,
+  })),
 );
 const ClientPortalDossiersPage = lazy(() =>
-  import("./pages/ClientPortalDossiersPage").then((module) => ({ default: module.ClientPortalDossiersPage })),
+  import("./pages/ClientPortalDossiersPage").then((module) => ({
+    default: module.ClientPortalDossiersPage,
+  })),
 );
 const ClientPortalSettingsPage = lazy(() =>
-  import("./pages/ClientPortalSettingsPage").then((module) => ({ default: module.ClientPortalSettingsPage })),
+  import("./pages/ClientPortalSettingsPage").then((module) => ({
+    default: module.ClientPortalSettingsPage,
+  })),
 );
 const ClientPortalNotificationsPage = lazy(() =>
-  import("./pages/ClientPortalNotificationsPage").then((module) => ({ default: module.ClientPortalNotificationsPage })),
+  import("./pages/ClientPortalNotificationsPage").then((module) => ({
+    default: module.ClientPortalNotificationsPage,
+  })),
 );
 const PlatformAdminPage = lazy(() =>
   import("./pages/PlatformAdminPage").then((module) => ({
@@ -148,14 +163,29 @@ const lazyPage = (page: ReactNode) => (
 
 function ProtectedRoute() {
   const { isAuthenticated, isBooting } = useAuth();
+  const location = useLocation();
   if (isBooting) return <LoadingScreen />;
-  return isAuthenticated ? <Outlet /> : <Navigate to="/connexion" replace />;
+  // On mémorise la page demandée : après une session expirée, la reconnexion
+  // doit ramener le comptable où il travaillait, pas sur l'accueil.
+  return isAuthenticated ? (
+    <Outlet />
+  ) : (
+    <Navigate to="/connexion" replace state={{ from: location }} />
+  );
 }
 
 function PublicOnlyRoute() {
   const { isAuthenticated, isBooting } = useAuth();
+  const location = useLocation();
   if (isBooting) return <LoadingScreen />;
-  return isAuthenticated ? <Navigate to="/" replace /> : <Outlet />;
+  // Cette redirection se déclenche dès que la session devient valide, donc
+  // avant le navigate() de la page de connexion. Elle doit reprendre la page
+  // demandée, sinon la destination mémorisée est perdue au profit de l'accueil.
+  const from = (
+    location.state as { from?: { pathname: string; search?: string } } | null
+  )?.from;
+  const target = from ? `${from.pathname}${from.search ?? ""}` : "/";
+  return isAuthenticated ? <Navigate to={target} replace /> : <Outlet />;
 }
 
 function isClientRole(role?: string) {
@@ -182,12 +212,20 @@ function HomePage() {
 
 function CabinetOnlyRoute() {
   const { organization } = useAuth();
-  return isClientRole(organization?.role) ? <Navigate to="/portail" replace /> : <Outlet />;
+  return isClientRole(organization?.role) ? (
+    <Navigate to="/portail" replace />
+  ) : (
+    <Outlet />
+  );
 }
 
 function ClientOnlyRoute() {
   const { organization } = useAuth();
-  return isClientRole(organization?.role) ? <Outlet /> : <Navigate to="/" replace />;
+  return isClientRole(organization?.role) ? (
+    <Outlet />
+  ) : (
+    <Navigate to="/" replace />
+  );
 }
 
 function PlatformAdminOnlyRoute() {
@@ -206,8 +244,14 @@ const router = createBrowserRouter([
     children: [
       { path: "/connexion", element: lazyPage(<AuthPage mode="login" />) },
       { path: "/inscription", element: lazyPage(<AuthPage mode="register" />) },
-      { path: "/mot-de-passe-oublie", element: lazyPage(<PasswordResetRequestPage />) },
-      { path: "/reinitialiser-mot-de-passe/:token", element: lazyPage(<PasswordResetConfirmPage />) },
+      {
+        path: "/mot-de-passe-oublie",
+        element: lazyPage(<PasswordResetRequestPage />),
+      },
+      {
+        path: "/reinitialiser-mot-de-passe/:token",
+        element: lazyPage(<PasswordResetConfirmPage />),
+      },
     ],
   },
   {
@@ -232,42 +276,97 @@ const router = createBrowserRouter([
           {
             element: <CabinetOnlyRoute />,
             children: [
-          { path: "/dossiers", element: lazyPage(<DossiersPage />) },
-          { path: "/dossiers/:dossierId", element: lazyPage(<DossierDetailPage />) },
-          {
-            path: "/etats-financiers",
-            element: lazyPage(<FinancialStatementsPage />),
-          },
-          { path: "/paie", element: lazyPage(<PayrollPage />) },
-          { path: "/fiscal-annuel", element: lazyPage(<AnnualTaxPage />) },
-          { path: "/immobilisations", element: lazyPage(<FixedAssetsPage />) },
-          { path: "/fiscalite", element: lazyPage(<FiscalSettingsPage />) },
-          { path: "/honoraires", element: lazyPage(<BillingPage />) },
-          { path: "/temps", element: lazyPage(<TimeTrackingPage />) },
-          { path: "/rentabilite", element: lazyPage(<ProfitabilityPage />) },
-          { path: "/qualite", element: lazyPage(<QualityAssurancePage />) },
-          { path: "/equipe", element: lazyPage(<TeamAdminPage />) },
-          { path: "/abonnement", element: lazyPage(<SubscriptionPage />) },
-          { path: "/taches", element: lazyPage(<DossierWorkspacePage module="tasks" />) },
-          { path: "/obligations", element: lazyPage(<DossierWorkspacePage module="obligations" />) },
-          { path: "/documents", element: lazyPage(<DossierWorkspacePage module="documents" />) },
-          { path: "/factures", element: lazyPage(<DossierWorkspacePage module="commercial" />) },
-          { path: "/comptabilite", element: lazyPage(<AccountingPage />) },
-          { path: "/migration", element: lazyPage(<MigrationAssistantPage />) },
-          { path: "/banque", element: lazyPage(<DossierWorkspacePage module="banking" />) },
-          { path: "/commerce-exterieur", element: lazyPage(<ForeignTradePage />) },
-          { path: "/facturation-electronique", element: lazyPage(<ElectronicInvoicesPage />) },
-          { path: "/declarations", element: lazyPage(<DossierWorkspacePage module="declarations" />) },
+              { path: "/dossiers", element: lazyPage(<DossiersPage />) },
+              {
+                path: "/dossiers/:dossierId",
+                element: lazyPage(<DossierDetailPage />),
+              },
+              {
+                path: "/etats-financiers",
+                element: lazyPage(<FinancialStatementsPage />),
+              },
+              { path: "/paie", element: lazyPage(<PayrollPage />) },
+              { path: "/fiscal-annuel", element: lazyPage(<AnnualTaxPage />) },
+              {
+                path: "/immobilisations",
+                element: lazyPage(<FixedAssetsPage />),
+              },
+              { path: "/fiscalite", element: lazyPage(<FiscalSettingsPage />) },
+              { path: "/honoraires", element: lazyPage(<BillingPage />) },
+              { path: "/temps", element: lazyPage(<TimeTrackingPage />) },
+              {
+                path: "/rentabilite",
+                element: lazyPage(<ProfitabilityPage />),
+              },
+              { path: "/qualite", element: lazyPage(<QualityAssurancePage />) },
+              { path: "/equipe", element: lazyPage(<TeamAdminPage />) },
+              { path: "/abonnement", element: lazyPage(<SubscriptionPage />) },
+              {
+                path: "/taches",
+                element: lazyPage(<DossierWorkspacePage module="tasks" />),
+              },
+              {
+                path: "/obligations",
+                element: lazyPage(
+                  <DossierWorkspacePage module="obligations" />,
+                ),
+              },
+              {
+                path: "/documents",
+                element: lazyPage(<DossierWorkspacePage module="documents" />),
+              },
+              {
+                path: "/factures",
+                element: lazyPage(<DossierWorkspacePage module="commercial" />),
+              },
+              { path: "/comptabilite", element: lazyPage(<AccountingPage />) },
+              {
+                path: "/migration",
+                element: lazyPage(<MigrationAssistantPage />),
+              },
+              {
+                path: "/banque",
+                element: lazyPage(<DossierWorkspacePage module="banking" />),
+              },
+              {
+                path: "/commerce-exterieur",
+                element: lazyPage(<ForeignTradePage />),
+              },
+              {
+                path: "/facturation-electronique",
+                element: lazyPage(<ElectronicInvoicesPage />),
+              },
+              {
+                path: "/declarations",
+                element: lazyPage(
+                  <DossierWorkspacePage module="declarations" />,
+                ),
+              },
             ],
           },
           {
             element: <ClientOnlyRoute />,
             children: [
-              { path: "/portail", element: lazyPage(<ClientPortalDashboardPage />) },
-              { path: "/portail/dossiers", element: lazyPage(<ClientPortalDossiersPage />) },
-              { path: "/portail/dossiers/:dossierId", element: lazyPage(<ClientPortalDossierPage />) },
-              { path: "/portail/notifications", element: lazyPage(<ClientPortalNotificationsPage />) },
-              { path: "/portail/parametres", element: lazyPage(<ClientPortalSettingsPage />) },
+              {
+                path: "/portail",
+                element: lazyPage(<ClientPortalDashboardPage />),
+              },
+              {
+                path: "/portail/dossiers",
+                element: lazyPage(<ClientPortalDossiersPage />),
+              },
+              {
+                path: "/portail/dossiers/:dossierId",
+                element: lazyPage(<ClientPortalDossierPage />),
+              },
+              {
+                path: "/portail/notifications",
+                element: lazyPage(<ClientPortalNotificationsPage />),
+              },
+              {
+                path: "/portail/parametres",
+                element: lazyPage(<ClientPortalSettingsPage />),
+              },
             ],
           },
         ],

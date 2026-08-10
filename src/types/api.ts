@@ -316,6 +316,25 @@ export interface DossierSummary {
   updatedAtUtc?: string;
 }
 
+export interface DossierSetupStep {
+  key: string;
+  label: string;
+  description: string;
+  done: boolean;
+  count: number;
+  blocking: boolean;
+  space: string;
+}
+
+export interface DossierSetupStatus {
+  dossierId: string;
+  isComplete: boolean;
+  canRecordInvoices: boolean;
+  completedCount: number;
+  totalCount: number;
+  steps: DossierSetupStep[];
+}
+
 export interface DossierContact {
   id: string;
   fullName: string;
@@ -989,10 +1008,20 @@ export interface AccountingYearClosing {
   closedAtUtc: string;
 }
 
+export interface Bank {
+  id: string;
+  name: string;
+  normalizedName: string;
+  bankCode: string | null;
+  bic: string | null;
+  isActive: boolean;
+}
+
 export interface BankAccount {
   id: string;
   name: string;
-  bankName: string;
+  bankId: string;
+  bank: Bank;
   iban: string | null;
   ledgerAccountId: string;
   ledgerAccount: LedgerAccount;
@@ -1021,6 +1050,20 @@ export interface BankTransaction {
   journalEntryId: string | null;
   journalEntry: JournalEntry | null;
   ruleSuggestion?: BankRuleSuggestion | null;
+  paymentSuggestions?: BankPaymentSuggestion[];
+}
+
+export interface BankPaymentSuggestion {
+  paymentId: string;
+  reference: string | null;
+  method: string;
+  paymentDate: string;
+  amount: string;
+  thirdPartyName: string | null;
+  journalEntryId: string | null;
+  confidence: number;
+  exactAmount: boolean;
+  reasons: string[];
 }
 
 export interface BankRuleSuggestion {

@@ -89,10 +89,12 @@ a {
   font-size: 18px;
 }
 
+/* One gap value across every layout grid. The previous mix of
+   12/16/18/20/24/28px was the main source of uneven visual rhythm. */
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 16px;
 }
 
 .dashboard-grid {
@@ -126,19 +128,26 @@ a {
 .info-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px 18px;
+  gap: 20px 24px;
 }
 
 .task-detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.7fr);
-  gap: 28px;
+  gap: 16px;
 }
 
 .documents-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.65fr);
-  gap: 20px;
+  gap: 16px;
+}
+
+/* Keyboard users get a visible, on-brand focus ring instead of the default. */
+:focus-visible {
+  outline: 2px solid #17624c;
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 @media (max-width: 1050px) {
@@ -174,9 +183,17 @@ a {
   .auth-visual-copy {
     display: none;
   }
-  .metric-grid,
   .module-grid {
     grid-template-columns: 1fr;
+  }
+  /* Keep KPIs as a compact 2x2 block on phones; a single column pushed the
+     actual work queues entirely below the fold. */
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .metric-grid .metric-hint {
+    display: none;
   }
   .info-grid {
     grid-template-columns: 1fr;

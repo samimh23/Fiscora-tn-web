@@ -29,17 +29,16 @@ import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { useLanguage } from "../i18n/LanguageContext";
 import type { AuthResponse, InvitationPreview } from "../types/api";
 
-const schema = z
-  .object({
-    fullName: z.string().trim().optional(),
-    password: z
-      .string()
-      .min(10, "Au moins 10 caractères.")
-      .regex(/[A-Z]/, "Ajoutez une majuscule.")
-      .regex(/[a-z]/, "Ajoutez une minuscule.")
-      .regex(/[0-9]/, "Ajoutez un chiffre."),
-    confirmation: z.string().optional(),
-  });
+const schema = z.object({
+  fullName: z.string().trim().optional(),
+  password: z
+    .string()
+    .min(10, "Au moins 10 caractères.")
+    .regex(/[A-Z]/, "Ajoutez une majuscule.")
+    .regex(/[a-z]/, "Ajoutez une minuscule.")
+    .regex(/[0-9]/, "Ajoutez un chiffre."),
+  confirmation: z.string().optional(),
+});
 
 type FormValues = z.infer<typeof schema>;
 
@@ -99,13 +98,16 @@ export function AcceptInvitationPage() {
     }
 
     try {
-      const session = await api.post<AuthResponse>("/api/auth/accept-invitation", {
-        token,
-        fullName: isExistingAccount
-          ? preview.existingFullName ?? preview.email
-          : values.fullName?.trim(),
-        password: values.password,
-      });
+      const session = await api.post<AuthResponse>(
+        "/api/auth/accept-invitation",
+        {
+          token,
+          fullName: isExistingAccount
+            ? (preview.existingFullName ?? preview.email)
+            : values.fullName?.trim(),
+          password: values.password,
+        },
+      );
       saveSession(session);
       navigate("/", { replace: true });
     } catch (error) {
@@ -135,7 +137,9 @@ export function AcceptInvitationPage() {
         position: "relative",
       }}
     >
-      <Box sx={{ position: "absolute", insetBlockStart: 24, insetInlineEnd: 24 }}>
+      <Box
+        sx={{ position: "absolute", insetBlockStart: 24, insetInlineEnd: 24 }}
+      >
         <LanguageSwitcher />
       </Box>
       <Card sx={{ width: "min(680px, 100%)", overflow: "hidden" }}>
@@ -146,7 +150,7 @@ export function AcceptInvitationPage() {
           <Typography
             variant="overline"
             color="secondary.main"
-            sx={{ fontWeight: 800, letterSpacing: ".14em" }}
+            sx={{ fontWeight: 700, letterSpacing: ".14em" }}
           >
             {t("Invitation sécurisée")}
           </Typography>
@@ -163,7 +167,11 @@ export function AcceptInvitationPage() {
             </Alert>
           )}
           {invitation.isLoading && (
-            <Stack direction="row" spacing={1.5} sx={{ alignItems: "center", mb: 3 }}>
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{ alignItems: "center", mb: 3 }}
+            >
               <CircularProgress size={20} />
               <Typography>{t("Vérification de l’invitation…")}</Typography>
             </Stack>
@@ -191,13 +199,19 @@ export function AcceptInvitationPage() {
                 }}
               >
                 <Stack spacing={2}>
-                  <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                  <Stack
+                    direction="row"
+                    spacing={1.5}
+                    sx={{ alignItems: "center" }}
+                  >
                     <MailOutlineRounded color="primary" />
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         {t("Adresse invitée")}
                       </Typography>
-                      <Typography sx={{ fontWeight: 800 }}>{preview.email}</Typography>
+                      <Typography sx={{ fontWeight: 700 }}>
+                        {preview.email}
+                      </Typography>
                     </Box>
                   </Stack>
                   <Divider />
@@ -210,19 +224,25 @@ export function AcceptInvitationPage() {
                       <Typography variant="caption" color="text.secondary">
                         {t("Cabinet")}
                       </Typography>
-                      <Typography sx={{ fontWeight: 800 }}>{preview.organizationName}</Typography>
+                      <Typography sx={{ fontWeight: 700 }}>
+                        {preview.organizationName}
+                      </Typography>
                     </Box>
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         {t("Rôle")}
                       </Typography>
-                      <Typography sx={{ fontWeight: 800 }}>{preview.roleName}</Typography>
+                      <Typography sx={{ fontWeight: 700 }}>
+                        {preview.roleName}
+                      </Typography>
                     </Box>
                     <Box>
                       <Typography variant="caption" color="text.secondary">
                         {t("Expire le")}
                       </Typography>
-                      <Typography sx={{ fontWeight: 800 }}>{formatDate(preview.expiresAtUtc)}</Typography>
+                      <Typography sx={{ fontWeight: 700 }}>
+                        {formatDate(preview.expiresAtUtc)}
+                      </Typography>
                     </Box>
                   </Stack>
                   <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
@@ -268,11 +288,15 @@ export function AcceptInvitationPage() {
                         : t("Mot de passe")
                     }
                     type="password"
-                    autoComplete={isExistingAccount ? "current-password" : "new-password"}
+                    autoComplete={
+                      isExistingAccount ? "current-password" : "new-password"
+                    }
                     error={Boolean(errors.password)}
                     helperText={
                       errors.password?.message ??
-                      t("10 caractères minimum avec majuscule, minuscule et chiffre.")
+                      t(
+                        "10 caractères minimum avec majuscule, minuscule et chiffre.",
+                      )
                     }
                     {...register("password")}
                   />

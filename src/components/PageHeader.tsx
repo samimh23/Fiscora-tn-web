@@ -20,24 +20,21 @@ export function PageHeader({
         alignItems: { xs: "flex-start", sm: "center" },
         justifyContent: "space-between",
         flexDirection: { xs: "column", sm: "row" },
-        mb: 2.5,
+        mb: 3,
       }}
     >
-      <Box>
+      <Box sx={{ minWidth: 0 }}>
         <Typography
           variant="overline"
-          color="primary.main"
-          sx={{ fontWeight: 800, letterSpacing: ".11em", fontSize: 10 }}
+          color="text.secondary"
+          sx={{ display: "block" }}
         >
           {eyebrow}
         </Typography>
-        <Typography
-          variant="h2"
-          sx={{ fontSize: { xs: 28, md: 34 }, mt: 0.15, lineHeight: 1.2 }}
-        >
+        <Typography variant="h2" sx={{ mt: 0.25 }}>
           {title}
         </Typography>
-        <Typography color="text.secondary" sx={{ mt: 0.45, fontSize: 14 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
           {description}
         </Typography>
       </Box>

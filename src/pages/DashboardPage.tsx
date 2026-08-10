@@ -202,9 +202,7 @@ export function DashboardPage() {
             }}
           >
             <Box>
-              <Typography variant="h3" sx={{ fontSize: 20 }}>
-                File de travail
-              </Typography>
+              <Typography variant="h3">File de travail</Typography>
               <Typography variant="body2" color="text.secondary">
                 Commencez par les éléments qui demandent une action.
               </Typography>
@@ -243,7 +241,7 @@ export function DashboardPage() {
           {!selectedLoading && !selectedTasks?.length && (
             <Box sx={{ p: 5, textAlign: "center" }}>
               <TaskAltOutlined sx={{ color: "success.main", fontSize: 34 }} />
-              <Typography sx={{ mt: 1, fontWeight: 750 }}>
+              <Typography sx={{ mt: 1, fontWeight: 600 }}>
                 Rien à traiter dans cette file
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -384,7 +382,7 @@ export function DashboardPage() {
                   <Typography variant="body2" sx={{ fontWeight: 700 }}>
                     Encaissement
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 750 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
                     {money(billing.data?.paid)}
                   </Typography>
                 </Box>
@@ -464,7 +462,7 @@ export function DashboardPage() {
                   "&:hover": { bgcolor: "#f8faf8" },
                 }}
               >
-                <Typography sx={{ fontWeight: 750 }} noWrap>
+                <Typography sx={{ fontWeight: 600 }} noWrap>
                   {item.legalName}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" noWrap>

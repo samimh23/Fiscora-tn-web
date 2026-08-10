@@ -6,11 +6,16 @@ import {
   useMemo,
   useState,
   type ReactNode,
-} from 'react';
-import { api, readSession, saveSession, SESSION_CHANGED_EVENT } from '../api/client';
-import type { AuthResponse, OrganizationSummary } from '../types/api';
+} from "react";
+import {
+  api,
+  readSession,
+  saveSession,
+  SESSION_CHANGED_EVENT,
+} from "../api/client";
+import type { AuthResponse, OrganizationSummary } from "../types/api";
 
-const ORGANIZATION_KEY = 'compta-tn.organization';
+const ORGANIZATION_KEY = "compta-tn.organization";
 
 interface LoginInput {
   email: string;
@@ -37,8 +42,12 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSessionState] = useState<AuthResponse | null>(() => readSession());
-  const [organizationId, setOrganizationId] = useState(() => localStorage.getItem(ORGANIZATION_KEY));
+  const [session, setSessionState] = useState<AuthResponse | null>(() =>
+    readSession(),
+  );
+  const [organizationId, setOrganizationId] = useState(() =>
+    localStorage.getItem(ORGANIZATION_KEY),
+  );
   const [isBooting, setIsBooting] = useState(Boolean(readSession()));
 
   const setSession = useCallback((next: AuthResponse | null) => {
@@ -59,13 +68,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     api
-      .get<{ id: string; email: string; fullName: string; organizations: OrganizationSummary[] }>('/api/auth/me')
+      .get<{
+        id: string;
+        email: string;
+        fullName: string;
+        organizations: OrganizationSummary[];
+      }>("/api/auth/me")
       .then((me) => {
         const latest = readSession();
         if (!latest) return;
         setSession({
           ...latest,
-          user: { ...latest.user, id: me.id, email: me.email, fullName: me.fullName },
+          user: {
+            ...latest.user,
+            id: me.id,
+            email: me.email,
+            fullName: me.fullName,
+          },
           organizations: me.organizations,
         });
       })
@@ -75,7 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!session?.organizations.length) return;
-    const stillExists = session.organizations.some((item) => item.id === organizationId);
+    const stillExists = session.organizations.some(
+      (item) => item.id === organizationId,
+    );
     if (!stillExists) {
       const first = session.organizations[0].id;
       setOrganizationId(first);
@@ -84,7 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [organizationId, session]);
 
   const organization = useMemo(
-    () => session?.organizations.find((item) => item.id === organizationId) ?? session?.organizations[0] ?? null,
+    () =>
+      session?.organizations.find((item) => item.id === organizationId) ??
+      session?.organizations[0] ??
+      null,
     [organizationId, session],
   );
 
@@ -93,21 +117,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(ORGANIZATION_KEY, id);
   }, []);
 
-  const login = useCallback(async (input: LoginInput) => {
-    const response = await api.post<AuthResponse>('/api/auth/login', input);
-    setSession(response);
-  }, [setSession]);
+  const login = useCallback(
+    async (input: LoginInput) => {
+      const response = await api.post<AuthResponse>("/api/auth/login", input);
+      setSession(response);
+    },
+    [setSession],
+  );
 
-  const register = useCallback(async (input: RegisterInput) => {
-    const response = await api.post<AuthResponse>('/api/auth/register', input);
-    setSession(response);
-  }, [setSession]);
+  const register = useCallback(
+    async (input: RegisterInput) => {
+      const response = await api.post<AuthResponse>(
+        "/api/auth/register",
+        input,
+      );
+      setSession(response);
+    },
+    [setSession],
+  );
 
   const logout = useCallback(async () => {
     const current = readSession();
     if (current?.refreshToken) {
       try {
-        await api.post<void>('/api/auth/revoke', { refreshToken: current.refreshToken });
+        await api.post<void>("/api/auth/revoke", {
+          refreshToken: current.refreshToken,
+        });
       } catch {
         // Local logout must still work if the API is temporarily unavailable.
       }
@@ -115,17 +150,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   }, [setSession]);
 
-  const value = useMemo<AuthContextValue>(() => ({
-    session,
-    isAuthenticated: Boolean(session),
-    isBooting,
-    organization,
-    selectOrganization,
-    can: (permission: string) => Boolean(organization?.permissions.includes(permission)),
-    login,
-    register,
-    logout,
-  }), [isBooting, login, logout, organization, register, selectOrganization, session]);
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      session,
+      isAuthenticated: Boolean(session),
+      isBooting,
+      organization,
+      selectOrganization,
+      can: (permission: string) =>
+        Boolean(organization?.permissions.includes(permission)),
+      login,
+      register,
+      logout,
+    }),
+    [
+      isBooting,
+      login,
+      logout,
+      organization,
+      register,
+      selectOrganization,
+      session,
+    ],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
@@ -134,6 +181,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 // eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth doit être utilisé dans AuthProvider.');
+  if (!context) throw new Error("useAuth doit être utilisé dans AuthProvider.");
   return context;
 }
