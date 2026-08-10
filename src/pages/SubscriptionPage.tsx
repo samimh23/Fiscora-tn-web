@@ -56,7 +56,9 @@ function UsageCard({
   bytes?: boolean;
 }) {
   const format = (value: number) =>
-    bytes ? `${(value / 1024 ** 3).toFixed(2)} Go` : value.toLocaleString("fr-TN");
+    bytes
+      ? `${(value / 1024 ** 3).toFixed(2)} Go`
+      : value.toLocaleString("fr-TN");
   return (
     <Card variant="outlined">
       <CardContent>
@@ -64,13 +66,14 @@ function UsageCard({
           direction="row"
           sx={{ justifyContent: "space-between", alignItems: "center" }}
         >
-          <Typography sx={{ fontWeight: 750 }}>{label}</Typography>
+          <Typography sx={{ fontWeight: 600 }}>{label}</Typography>
           <Icon color="primary" />
         </Stack>
         <Typography variant="h4" sx={{ mt: 1.5 }}>
           {format(metric.used)}
           <Typography component="span" variant="body2" color="text.secondary">
-            {" "}/ {format(metric.limit)}
+            {" "}
+            / {format(metric.limit)}
           </Typography>
         </Typography>
         <LinearProgress
@@ -110,7 +113,7 @@ export function SubscriptionPage() {
     <>
       <Typography
         variant="overline"
-        sx={{ color: "primary.main", fontWeight: 800, letterSpacing: ".13em" }}
+        sx={{ color: "primary.main", fontWeight: 700, letterSpacing: ".13em" }}
       >
         Gestion du cabinet
       </Typography>
@@ -238,7 +241,7 @@ export function SubscriptionPage() {
       >
         <Card>
           <CardContent>
-            <Typography variant="h3" sx={{ fontSize: 24, mb: 2 }}>
+            <Typography variant="h3" sx={{ mb: 2 }}>
               Factures d’abonnement
             </Typography>
             <Box sx={{ overflowX: "auto" }}>
@@ -256,11 +259,15 @@ export function SubscriptionPage() {
                     <TableRow key={invoice.id}>
                       <TableCell>{invoice.number}</TableCell>
                       <TableCell>{date(invoice.dueAtUtc)}</TableCell>
-                      <TableCell align="right">{money(invoice.amountTnd)}</TableCell>
+                      <TableCell align="right">
+                        {money(invoice.amountTnd)}
+                      </TableCell>
                       <TableCell>
                         <Chip
                           size="small"
-                          color={invoice.status === "PAYEE" ? "success" : "default"}
+                          color={
+                            invoice.status === "PAYEE" ? "success" : "default"
+                          }
                           label={invoice.status.replace("_", " ")}
                         />
                       </TableCell>
@@ -286,7 +293,9 @@ export function SubscriptionPage() {
               </Typography>
               <Stack
                 divider={
-                  <Box sx={{ borderTop: "1px solid", borderColor: "divider" }} />
+                  <Box
+                    sx={{ borderTop: "1px solid", borderColor: "divider" }}
+                  />
                 }
               >
                 {plans.data?.map((plan) => (
@@ -295,8 +304,12 @@ export function SubscriptionPage() {
                       direction="row"
                       sx={{ justifyContent: "space-between" }}
                     >
-                      <Typography sx={{ fontWeight: 750 }}>{plan.name}</Typography>
-                      <Typography>{money(plan.monthlyPriceTnd)}/mois</Typography>
+                      <Typography sx={{ fontWeight: 600 }}>
+                        {plan.name}
+                      </Typography>
+                      <Typography>
+                        {money(plan.monthlyPriceTnd)}/mois
+                      </Typography>
                     </Stack>
                     <Typography variant="caption" color="text.secondary">
                       {plan.maxCollaborators} collaborateurs ·{" "}

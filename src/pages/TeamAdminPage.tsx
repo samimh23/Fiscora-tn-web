@@ -54,7 +54,8 @@ interface Invitation {
   email: string;
   roleId: string;
   role: string;
-  status: "EN_ATTENTE" | "ENVOYEE" | "ECHEC" | "ACCEPTEE" | "REVOQUEE" | "EXPIREE";
+  status:
+    "EN_ATTENTE" | "ENVOYEE" | "ECHEC" | "ACCEPTEE" | "REVOQUEE" | "EXPIREE";
   deliveryStatus: string;
   deliveryAttempts: number;
   deliveryError: string | null;
@@ -70,7 +71,9 @@ export function TeamAdminPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
   const [invite, setInvite] = useState({ email: "", roleId: "" });
-  const [invitationResult, setInvitationResult] = useState<Invitation | null>(null);
+  const [invitationResult, setInvitationResult] = useState<Invitation | null>(
+    null,
+  );
   const [role, setRole] = useState({ name: "", permissions: [] as string[] });
   const base = organization?.id ? `/api/organizations/${organization.id}` : "";
   const members = useQuery({
@@ -111,12 +114,19 @@ export function TeamAdminPage() {
     },
   });
   const invitationAction = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: "resend" | "revoke" }) =>
+    mutationFn: ({
+      id,
+      action,
+    }: {
+      id: string;
+      action: "resend" | "revoke";
+    }) =>
       action === "resend"
         ? api.post<Invitation>(`${base}/invitations/${id}/resend`)
         : api.delete(`${base}/invitations/${id}`),
     onSuccess: (result, variables) => {
-      if (variables.action === "resend") setInvitationResult(result as Invitation);
+      if (variables.action === "resend")
+        setInvitationResult(result as Invitation);
       refresh();
     },
   });
@@ -140,7 +150,11 @@ export function TeamAdminPage() {
       api.patch(`${base}/members/${member.membershipId}`, { roleId, isActive }),
     onSuccess: refresh,
   });
-  const error = inviteMember.error ?? invitationAction.error ?? createRole.error ?? update.error;
+  const error =
+    inviteMember.error ??
+    invitationAction.error ??
+    createRole.error ??
+    update.error;
   return (
     <>
       <PageHeader
@@ -194,20 +208,99 @@ export function TeamAdminPage() {
                 <Card variant="outlined" sx={{ mb: 3 }}>
                   <CardContent>
                     <Typography variant="h6">Invitations</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                      Suivi des e-mails envoyés et des invitations encore actives.
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 1.5 }}
+                    >
+                      Suivi des e-mails envoyés et des invitations encore
+                      actives.
                     </Typography>
                     <Table size="small">
-                      <TableHead><TableRow><TableCell>Destinataire</TableCell><TableCell>Rôle</TableCell><TableCell>Expiration</TableCell><TableCell>Statut</TableCell><TableCell>Actions</TableCell></TableRow></TableHead>
-                      <TableBody>{invitations.data.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell>{item.email}{item.deliveryError && <Typography variant="caption" color="error" sx={{ display: "block" }}>{item.deliveryError}</Typography>}</TableCell>
-                          <TableCell>{item.role}</TableCell>
-                          <TableCell>{new Date(item.expiresAtUtc).toLocaleString("fr-TN")}</TableCell>
-                          <TableCell><Chip size="small" label={item.status} color={item.status === "ACCEPTEE" ? "success" : item.status === "ECHEC" ? "error" : item.status === "ENVOYEE" ? "info" : "default"} /></TableCell>
-                          <TableCell><Stack direction="row" spacing={1}>{!["ACCEPTEE", "REVOQUEE"].includes(item.status) && can("users.manage") && <><Button size="small" disabled={invitationAction.isPending} onClick={() => invitationAction.mutate({ id: item.id, action: "resend" })}>Renvoyer</Button><Button size="small" color="error" disabled={invitationAction.isPending} onClick={() => invitationAction.mutate({ id: item.id, action: "revoke" })}>Révoquer</Button></>}</Stack></TableCell>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell>Destinataire</TableCell>
+                          <TableCell>Rôle</TableCell>
+                          <TableCell>Expiration</TableCell>
+                          <TableCell>Statut</TableCell>
+                          <TableCell>Actions</TableCell>
                         </TableRow>
-                      ))}</TableBody>
+                      </TableHead>
+                      <TableBody>
+                        {invitations.data.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              {item.email}
+                              {item.deliveryError && (
+                                <Typography
+                                  variant="caption"
+                                  color="error"
+                                  sx={{ display: "block" }}
+                                >
+                                  {item.deliveryError}
+                                </Typography>
+                              )}
+                            </TableCell>
+                            <TableCell>{item.role}</TableCell>
+                            <TableCell>
+                              {new Date(item.expiresAtUtc).toLocaleString(
+                                "fr-TN",
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                size="small"
+                                label={item.status}
+                                color={
+                                  item.status === "ACCEPTEE"
+                                    ? "success"
+                                    : item.status === "ECHEC"
+                                      ? "error"
+                                      : item.status === "ENVOYEE"
+                                        ? "info"
+                                        : "default"
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Stack direction="row" spacing={1}>
+                                {!["ACCEPTEE", "REVOQUEE"].includes(
+                                  item.status,
+                                ) &&
+                                  can("users.manage") && (
+                                    <>
+                                      <Button
+                                        size="small"
+                                        disabled={invitationAction.isPending}
+                                        onClick={() =>
+                                          invitationAction.mutate({
+                                            id: item.id,
+                                            action: "resend",
+                                          })
+                                        }
+                                      >
+                                        Renvoyer
+                                      </Button>
+                                      <Button
+                                        size="small"
+                                        color="error"
+                                        disabled={invitationAction.isPending}
+                                        onClick={() =>
+                                          invitationAction.mutate({
+                                            id: item.id,
+                                            action: "revoke",
+                                          })
+                                        }
+                                      >
+                                        Révoquer
+                                      </Button>
+                                    </>
+                                  )}
+                              </Stack>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
                     </Table>
                   </CardContent>
                 </Card>
@@ -295,7 +388,11 @@ export function TeamAdminPage() {
               {roles.data?.map((r) => (
                 <Card variant="outlined" key={r.id} sx={{ mb: 1.5 }}>
                   <CardContent>
-                    <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{ alignItems: "center" }}
+                    >
                       <Typography variant="h6">{r.name}</Typography>
                       {r.isSystem && <Chip size="small" label="Système" />}
                     </Stack>
@@ -369,61 +466,97 @@ export function TeamAdminPage() {
           )}
         </CardContent>
       </Card>
-      <Dialog open={inviteOpen} onClose={() => { setInviteOpen(false); setInvitationResult(null); }}>
+      <Dialog
+        open={inviteOpen}
+        onClose={() => {
+          setInviteOpen(false);
+          setInvitationResult(null);
+        }}
+      >
         <DialogTitle>Inviter un collaborateur</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1, minWidth: 360 }}>
             {invitationResult && (
-              <Alert severity={invitationResult.deliveryStatus === "ENVOYEE" ? "success" : "warning"}>
+              <Alert
+                severity={
+                  invitationResult.deliveryStatus === "ENVOYEE"
+                    ? "success"
+                    : "warning"
+                }
+              >
                 {invitationResult.deliveryStatus === "ENVOYEE"
                   ? `E-mail envoyé à ${invitationResult.email}.`
                   : `Invitation créée, mais l’e-mail n’a pas été envoyé : ${invitationResult.deliveryError ?? "erreur SMTP"}`}
               </Alert>
             )}
             {invitationResult?.invitationUrl && (
-              <Button component="a" href={invitationResult.invitationUrl} target="_blank" rel="noreferrer" variant="outlined">
+              <Button
+                component="a"
+                href={invitationResult.invitationUrl}
+                target="_blank"
+                rel="noreferrer"
+                variant="outlined"
+              >
                 Ouvrir le lien d’invitation
               </Button>
             )}
             {invitationResult && (
-              <Button component="a" href="http://localhost:8025" target="_blank" rel="noreferrer">
+              <Button
+                component="a"
+                href="http://localhost:8025"
+                target="_blank"
+                rel="noreferrer"
+              >
                 Ouvrir la boîte Mailpit
               </Button>
             )}
-            {!invitationResult && <>
-            <TextField
-              type="email"
-              label="E-mail"
-              value={invite.email}
-              onChange={(e) => setInvite({ ...invite, email: e.target.value })}
-            />
-            <TextField
-              select
-              label="Rôle"
-              value={invite.roleId}
-              onChange={(e) => setInvite({ ...invite, roleId: e.target.value })}
-            >
-              {roles.data?.map((r) => (
-                <MenuItem key={r.id} value={r.id}>
-                  {r.name}
-                </MenuItem>
-              ))}
-            </TextField>
-            </>}
+            {!invitationResult && (
+              <>
+                <TextField
+                  type="email"
+                  label="E-mail"
+                  value={invite.email}
+                  onChange={(e) =>
+                    setInvite({ ...invite, email: e.target.value })
+                  }
+                />
+                <TextField
+                  select
+                  label="Rôle"
+                  value={invite.roleId}
+                  onChange={(e) =>
+                    setInvite({ ...invite, roleId: e.target.value })
+                  }
+                >
+                  {roles.data?.map((r) => (
+                    <MenuItem key={r.id} value={r.id}>
+                      {r.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => { setInviteOpen(false); setInvitationResult(null); }}>
+          <Button
+            onClick={() => {
+              setInviteOpen(false);
+              setInvitationResult(null);
+            }}
+          >
             {invitationResult ? "Fermer" : "Annuler"}
           </Button>
           {!invitationResult && (
-          <Button
-            variant="contained"
-            disabled={!invite.email || !invite.roleId || inviteMember.isPending}
-            onClick={() => inviteMember.mutate()}
-          >
-            Envoyer l’invitation
-          </Button>
+            <Button
+              variant="contained"
+              disabled={
+                !invite.email || !invite.roleId || inviteMember.isPending
+              }
+              onClick={() => inviteMember.mutate()}
+            >
+              Envoyer l’invitation
+            </Button>
           )}
         </DialogActions>
       </Dialog>

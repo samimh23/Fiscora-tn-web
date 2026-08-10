@@ -34,6 +34,7 @@ import {
 } from "../components/WorkspaceTools";
 import { PageHeader } from "../components/PageHeader";
 import type { BillingSummary } from "../types/api";
+import { useDossierSelection } from "../hooks/useDossierSelection";
 interface Invoice {
   id: string;
   number: string;
@@ -51,7 +52,7 @@ interface Invoice {
 export function BillingPage() {
   const { organization, can } = useAuth();
   const qc = useQueryClient();
-  const [dossierId, setDossierId] = useState("");
+  const [dossierId, setDossierId] = useDossierSelection();
   const [createOpen, setCreateOpen] = useState(false);
   const [paymentFor, setPaymentFor] = useState<Invoice | null>(null);
   const today = new Date().toISOString().slice(0, 10);

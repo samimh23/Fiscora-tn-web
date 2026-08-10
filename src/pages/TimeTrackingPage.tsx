@@ -26,6 +26,7 @@ import {
 import {
   AddRounded,
   CheckRounded,
+  EditRounded,
   PlayArrowRounded,
   SendRounded,
   TimerOutlined,
@@ -37,6 +38,7 @@ import { DossierSelector, QueryState } from "../components/WorkspaceTools";
 import { PageHeader } from "../components/PageHeader";
 import { useWorkSession } from "../time-tracking/WorkSessionContext";
 import type { PagedResponse, TimeEntry, WorkTask } from "../types/api";
+import { useDossierSelection } from "../hooks/useDossierSelection";
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -51,8 +53,11 @@ export function TimeTrackingPage() {
   const { organization, can } = useAuth();
   const workSession = useWorkSession();
   const queryClient = useQueryClient();
-  const [dossierId, setDossierId] = useState("");
+  const [dossierId, setDossierId] = useDossierSelection();
   const [manualOpen, setManualOpen] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editingEntryOriginalMinutes, setEditingEntryOriginalMinutes] =
+    useState<number | null>(null);
   const [status, setStatus] = useState("");
   const [trackingForm, setTrackingForm] = useState({
     taskId: "",
@@ -65,6 +70,7 @@ export function TimeTrackingPage() {
     billable: true,
     description: "",
     taskId: "",
+    correctionReason: "",
   });
 
   const base =
@@ -98,13 +104,25 @@ export function TimeTrackingPage() {
 
   const createManual = useMutation({
     mutationFn: () =>
-      api.post(base, {
-        ...manualForm,
-        taskId: manualForm.taskId || null,
-      }),
+      editingEntryId
+        ? api.put(`${base}/${editingEntryId}`, {
+            ...manualForm,
+            taskId: manualForm.taskId || null,
+            correctionReason: manualForm.correctionReason || undefined,
+          })
+        : api.post(base, {
+            ...manualForm,
+            taskId: manualForm.taskId || null,
+          }),
     onSuccess: () => {
       setManualOpen(false);
-      setManualForm((current) => ({ ...current, description: "" }));
+      setEditingEntryId(null);
+      setEditingEntryOriginalMinutes(null);
+      setManualForm((current) => ({
+        ...current,
+        description: "",
+        correctionReason: "",
+      }));
       refresh();
     },
   });
@@ -122,8 +140,7 @@ export function TimeTrackingPage() {
 
   const startAutomatic = async () => {
     if (!dossierId) return;
-    const description =
-      selectedTask?.title || trackingForm.description.trim();
+    const description = selectedTask?.title || trackingForm.description.trim();
     if (!description) return;
     await workSession.start({
       dossierId,
@@ -132,6 +149,48 @@ export function TimeTrackingPage() {
       billable: trackingForm.billable,
     });
   };
+  const closeManualDialog = () => {
+    setManualOpen(false);
+    setEditingEntryId(null);
+    setEditingEntryOriginalMinutes(null);
+    setManualForm({
+      workDate: today,
+      durationMinutes: 60,
+      billable: true,
+      description: "",
+      taskId: "",
+      correctionReason: "",
+    });
+  };
+  const openManualEntry = () => {
+    setEditingEntryId(null);
+    setEditingEntryOriginalMinutes(null);
+    setManualForm({
+      workDate: today,
+      durationMinutes: 60,
+      billable: true,
+      description: "",
+      taskId: "",
+      correctionReason: "",
+    });
+    setManualOpen(true);
+  };
+  const openEditEntry = (entry: TimeEntry) => {
+    setEditingEntryId(entry.id);
+    setEditingEntryOriginalMinutes(entry.durationMinutes);
+    setManualForm({
+      workDate: entry.workDate,
+      durationMinutes: entry.durationMinutes,
+      billable: entry.billable,
+      description: entry.description,
+      taskId: entry.taskId ?? "",
+      correctionReason: entry.correctionReason ?? "",
+    });
+    setManualOpen(true);
+  };
+  const durationChanged =
+    editingEntryOriginalMinutes !== null &&
+    manualForm.durationMinutes !== editingEntryOriginalMinutes;
 
   const error = createManual.error ?? action.error;
 
@@ -148,7 +207,7 @@ export function TimeTrackingPage() {
               variant="outlined"
               startIcon={<AddRounded />}
               disabled={!base || !can("time_tracking.manage")}
-              onClick={() => setManualOpen(true)}
+              onClick={openManualEntry}
             >
               Saisie manuelle
             </Button>
@@ -185,7 +244,7 @@ export function TimeTrackingPage() {
               <TimerOutlined />
             </Box>
             <Box sx={{ minWidth: 230 }}>
-              <Typography sx={{ fontWeight: 800 }}>
+              <Typography sx={{ fontWeight: 700 }}>
                 Suivi automatique dans Fiscora
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -210,7 +269,9 @@ export function TimeTrackingPage() {
             >
               <MenuItem value="">Travail hors tâche</MenuItem>
               {tasks.data?.items
-                .filter((task) => !["TERMINEE", "ANNULEE"].includes(task.status))
+                .filter(
+                  (task) => !["TERMINEE", "ANNULEE"].includes(task.status),
+                )
                 .map((task) => (
                   <MenuItem key={task.id} value={task.id}>
                     {task.title}
@@ -305,7 +366,9 @@ export function TimeTrackingPage() {
                     <Chip
                       size="small"
                       variant="outlined"
-                      color={entry.source === "AUTOMATIQUE" ? "success" : "default"}
+                      color={
+                        entry.source === "AUTOMATIQUE" ? "success" : "default"
+                      }
                       label={
                         entry.source === "AUTOMATIQUE"
                           ? "Activité Fiscora"
@@ -331,6 +394,16 @@ export function TimeTrackingPage() {
                     <Chip size="small" label={entry.status} />
                   </TableCell>
                   <TableCell>
+                    {["BROUILLON", "REJETE"].includes(entry.status) && (
+                      <Button
+                        size="small"
+                        startIcon={<EditRounded />}
+                        disabled={!can("time_tracking.manage")}
+                        onClick={() => openEditEntry(entry)}
+                      >
+                        Modifier
+                      </Button>
+                    )}
                     {entry.status === "BROUILLON" && (
                       <Button
                         size="small"
@@ -377,15 +450,18 @@ export function TimeTrackingPage() {
 
       <Dialog
         open={manualOpen}
-        onClose={() => setManualOpen(false)}
+        onClose={closeManualDialog}
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>Saisir un temps exceptionnel</DialogTitle>
+        <DialogTitle>
+          {editingEntryId ? "Modifier le temps" : "Saisir un temps exceptionnel"}
+        </DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mt: 1, mb: 2 }}>
-            Cette saisie sera identifiée comme manuelle et devra être validée par
-            un responsable avant d’entrer dans la rentabilité.
+            {editingEntryId
+              ? "La correction repasse le temps en brouillon et conserve la trace de modification."
+              : "Cette saisie sera identifiée comme manuelle et devra être validée par un responsable avant d’entrer dans la rentabilité."}
           </Alert>
           <Stack spacing={2}>
             <TextField
@@ -426,7 +502,11 @@ export function TimeTrackingPage() {
             <TextField
               multiline
               minRows={3}
-              label="Travail effectué et raison de la saisie manuelle"
+              label={
+                editingEntryId
+                  ? "Travail effectué"
+                  : "Travail effectué et raison de la saisie manuelle"
+              }
               value={manualForm.description}
               onChange={(event) =>
                 setManualForm({
@@ -435,6 +515,21 @@ export function TimeTrackingPage() {
                 })
               }
             />
+            {editingEntryId && durationChanged && (
+              <TextField
+                multiline
+                minRows={2}
+                label="Motif de correction de la durée"
+                value={manualForm.correctionReason}
+                onChange={(event) =>
+                  setManualForm({
+                    ...manualForm,
+                    correctionReason: event.target.value,
+                  })
+                }
+                helperText="Obligatoire si vous changez la durée enregistrée."
+              />
+            )}
             <FormControlLabel
               control={
                 <Checkbox
@@ -452,13 +547,17 @@ export function TimeTrackingPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setManualOpen(false)}>Annuler</Button>
+          <Button onClick={closeManualDialog}>Annuler</Button>
           <Button
             variant="contained"
-            disabled={!manualForm.description.trim() || createManual.isPending}
+            disabled={
+              !manualForm.description.trim() ||
+              (durationChanged && !manualForm.correctionReason.trim()) ||
+              createManual.isPending
+            }
             onClick={() => createManual.mutate()}
           >
-            Enregistrer
+            {editingEntryId ? "Enregistrer la correction" : "Enregistrer"}
           </Button>
         </DialogActions>
       </Dialog>

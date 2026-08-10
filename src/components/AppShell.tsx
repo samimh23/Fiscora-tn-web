@@ -72,7 +72,11 @@ import {
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
-import type { DossierSummary, NotificationItem, PagedResponse } from "../types/api";
+import type {
+  DossierSummary,
+  NotificationItem,
+  PagedResponse,
+} from "../types/api";
 import { Brand } from "./Brand";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
@@ -257,21 +261,34 @@ export function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null);
   const [createAnchor, setCreateAnchor] = useState<HTMLElement | null>(null);
-  const [notificationsAnchor, setNotificationsAnchor] = useState<HTMLElement | null>(null);
+  const [notificationsAnchor, setNotificationsAnchor] =
+    useState<HTMLElement | null>(null);
   const notifications = useQuery({
     queryKey: ["cabinet-notifications", organization?.id],
-    queryFn: () => api.get<NotificationItem[]>(`/api/organizations/${organization?.id}/notifications`),
+    queryFn: () =>
+      api.get<NotificationItem[]>(
+        `/api/organizations/${organization?.id}/notifications`,
+      ),
     enabled: Boolean(organization?.id && can("notifications.view")),
     refetchInterval: 60_000,
   });
-  const unreadCount = notifications.data?.filter((item) => !item.readAtUtc).length ?? 0;
+  const unreadCount =
+    notifications.data?.filter((item) => !item.readAtUtc).length ?? 0;
   const markNotificationRead = useMutation({
-    mutationFn: (notificationId: string) => api.patch(`/api/organizations/${organization?.id}/notifications/${notificationId}/read`),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["cabinet-notifications"] }),
+    mutationFn: (notificationId: string) =>
+      api.patch(
+        `/api/organizations/${organization?.id}/notifications/${notificationId}/read`,
+      ),
+    onSuccess: () =>
+      void qc.invalidateQueries({ queryKey: ["cabinet-notifications"] }),
   });
   const markAllNotificationsRead = useMutation({
-    mutationFn: () => api.patch(`/api/organizations/${organization?.id}/notifications/read-all`),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["cabinet-notifications"] }),
+    mutationFn: () =>
+      api.patch(
+        `/api/organizations/${organization?.id}/notifications/read-all`,
+      ),
+    onSuccess: () =>
+      void qc.invalidateQueries({ queryKey: ["cabinet-notifications"] }),
   });
   const theme = useTheme();
   const desktop = useMediaQuery(theme.breakpoints.up("lg"));
@@ -372,7 +389,7 @@ export function AppShell() {
         </ListItemIcon>
         <ListItemText
           primary={
-            <Typography sx={{ fontSize: nested ? 13 : 14, fontWeight: 650 }}>
+            <Typography sx={{ fontSize: nested ? 13 : 14, fontWeight: 600 }}>
               {t(item.label)}
             </Typography>
           }
@@ -399,6 +416,41 @@ export function AppShell() {
         <List disablePadding>
           {visiblePrimary.map((item) => navItem(item))}
         </List>
+        {can("tasks.view") && (
+          <Box
+            component={RouterLink}
+            to="/"
+            onClick={() => setMobileOpen(false)}
+            sx={{
+              display: "block",
+              mt: 1.25,
+              px: 1.5,
+              py: 1.25,
+              borderRadius: 2,
+              color: "#fff",
+              textDecoration: "none",
+              bgcolor: "rgba(242,197,107,.14)",
+              border: "1px solid rgba(242,197,107,.22)",
+              "&:hover": { bgcolor: "rgba(242,197,107,.18)" },
+            }}
+          >
+            <Typography
+              variant="overline"
+              sx={{ color: "#f2c56b", letterSpacing: ".08em" }}
+            >
+              Priorité du jour
+            </Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: 14 }}>
+              Traiter la file de travail
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ display: "block", mt: 0.35, color: "rgba(255,255,255,.65)" }}
+            >
+              Retards, pièces, validation, banque — dans le bon ordre.
+            </Typography>
+          </Box>
+        )}
         <Divider sx={{ my: 1.5, borderColor: "rgba(255,255,255,.08)" }} />
         {visibleSections.map((section) => {
           const SectionIcon = section.icon;
@@ -621,7 +673,9 @@ export function AppShell() {
             <>
               <Tooltip title={t("Notifications")}>
                 <IconButton
-                  onClick={(event) => setNotificationsAnchor(event.currentTarget)}
+                  onClick={(event) =>
+                    setNotificationsAnchor(event.currentTarget)
+                  }
                 >
                   <Badge badgeContent={unreadCount} color="secondary">
                     <NotificationsNoneOutlined />
@@ -634,12 +688,24 @@ export function AppShell() {
                 onClose={() => setNotificationsAnchor(null)}
                 slotProps={{ paper: { sx: { width: 380, maxHeight: 480 } } }}
               >
-                <Box sx={{ px: 2, py: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Typography sx={{ fontWeight: 700 }}>Notifications</Typography>
+                <Box
+                  sx={{
+                    px: 2,
+                    py: 1.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 700 }}>
+                    Notifications
+                  </Typography>
                   <Button
                     size="small"
                     startIcon={<DoneAllRounded />}
-                    disabled={!unreadCount || markAllNotificationsRead.isPending}
+                    disabled={
+                      !unreadCount || markAllNotificationsRead.isPending
+                    }
                     onClick={() => markAllNotificationsRead.mutate()}
                   >
                     Tout marquer comme lu
@@ -648,13 +714,21 @@ export function AppShell() {
                 <Divider />
                 {notifications.isLoading && (
                   <Box sx={{ p: 3, textAlign: "center" }}>
-                    <Typography variant="body2" color="text.secondary">Chargement…</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Chargement…
+                    </Typography>
                   </Box>
                 )}
                 {!notifications.isLoading && !notifications.data?.length && (
                   <Box sx={{ p: 4, textAlign: "center" }}>
-                    <NotificationsNoneOutlined sx={{ fontSize: 32, color: "text.disabled" }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    <NotificationsNoneOutlined
+                      sx={{ fontSize: 32, color: "text.disabled" }}
+                    />
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 1 }}
+                    >
                       Aucune notification
                     </Typography>
                   </Box>
@@ -683,11 +757,25 @@ export function AppShell() {
                       }}
                     />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>{item.title}</Typography>
-                        {!item.readAtUtc && <Chip label="Nouveau" size="small" color="secondary" />}
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{ alignItems: "center" }}
+                      >
+                        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
+                          {item.title}
+                        </Typography>
+                        {!item.readAtUtc && (
+                          <Chip
+                            label="Nouveau"
+                            size="small"
+                            color="secondary"
+                          />
+                        )}
                       </Stack>
-                      <Typography variant="body2" color="text.secondary">{item.message}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.message}
+                      </Typography>
                     </Box>
                   </MenuItem>
                 ))}

@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Card,
+  CardActions,
   CardContent,
   Chip,
   Divider,
@@ -17,10 +18,13 @@ import {
   AccountBalanceOutlined,
   ArrowForwardRounded,
   AssignmentTurnedInOutlined,
+  CheckCircleOutlineRounded,
   DescriptionOutlined,
   FolderOutlined,
   PaidOutlined,
+  PlayArrowRounded,
   RefreshRounded,
+  ScheduleRounded,
   TaskAltOutlined,
   WarningAmberRounded,
 } from "@mui/icons-material";
@@ -29,6 +33,7 @@ import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { MetricCard } from "../components/MetricCard";
 import { PageHeader } from "../components/PageHeader";
+import { humanizeEnum, humanizeText } from "../utils/labels";
 import type { CabinetCockpit, CockpitItem, CockpitLane } from "../types/api";
 
 const todayLabel = new Intl.DateTimeFormat("fr-TN", {
@@ -59,6 +64,13 @@ const severityColor: Record<CockpitLane["severity"], string> = {
   error: "#bd4f4f",
 };
 
+const severityRank: Record<CockpitLane["severity"], number> = {
+  error: 0,
+  warning: 1,
+  info: 2,
+  success: 3,
+};
+
 const laneIcons: Record<string, ElementType<SvgIconProps>> = {
   overdue_tasks: WarningAmberRounded,
   review_tasks: AssignmentTurnedInOutlined,
@@ -75,128 +87,248 @@ function LaneCard({ lane }: { lane: CockpitLane }) {
   const color = severityColor[lane.severity];
 
   return (
-    <Card sx={{ height: "100%" }}>
-      <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-        <Box sx={{ p: 2.25, display: "flex", gap: 1.5, alignItems: "start" }}>
-          <Box
-            sx={{
-              width: 42,
-              height: 42,
-              borderRadius: 2.5,
-              display: "grid",
-              placeItems: "center",
-              bgcolor: `${color}14`,
-              color,
-              flex: "0 0 auto",
-            }}
-          >
-            <Icon fontSize="small" />
-          </Box>
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Stack
-              direction="row"
-              spacing={1}
-              sx={{ alignItems: "center", justifyContent: "space-between", gap: 1 }}
-            >
-              <Typography variant="h3" sx={{ fontSize: 19 }}>
-                {lane.title}
-              </Typography>
-              <Chip
-                label={lane.count}
-                size="small"
-                sx={{
-                  bgcolor: `${color}18`,
-                  color,
-                  fontWeight: 800,
-                  minWidth: 36,
-                }}
-              />
-            </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              {lane.description}
-            </Typography>
-          </Box>
+    <Card
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        borderColor: lane.count > 0 ? `${color}55` : "divider",
+      }}
+    >
+      <Box
+        sx={{
+          px: 2.5,
+          py: 1.75,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.25,
+        }}
+      >
+        <Box
+          sx={{
+            width: 30,
+            height: 30,
+            borderRadius: 2,
+            display: "grid",
+            placeItems: "center",
+            bgcolor: `${color}14`,
+            color,
+            flex: "0 0 auto",
+          }}
+        >
+          <Icon sx={{ fontSize: 17 }} />
         </Box>
-        <Divider />
-        {lane.items.length === 0 ? (
-          <Box sx={{ p: 3.5, textAlign: "center" }}>
-            <TaskAltOutlined sx={{ color: "success.main", fontSize: 34 }} />
-            <Typography sx={{ mt: 1, fontWeight: 800 }}>File vide</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Rien à traiter ici pour le moment.
-            </Typography>
-          </Box>
-        ) : (
-          <Stack divider={<Divider />}>
-            {lane.items.map((item) => (
-              <CockpitRow key={`${lane.key}-${item.id}`} item={item} />
-            ))}
-          </Stack>
+        <Typography variant="h3" sx={{ flex: 1, minWidth: 0 }} noWrap>
+          {lane.title}
+        </Typography>
+        {lane.count > 0 && (
+          <Chip
+            label={lane.count}
+            size="small"
+            sx={{ bgcolor: `${color}16`, color, fontWeight: 700 }}
+          />
         )}
-        <Box sx={{ px: 2, py: 1.5, borderTop: "1px solid", borderColor: "divider" }}>
-          <Button
-            component={RouterLink}
-            to={lane.actionPath}
-            endIcon={<ArrowForwardRounded />}
-            fullWidth
-          >
-            {lane.actionLabel}
-          </Button>
+      </Box>
+      <Divider />
+      {lane.items.length === 0 ? (
+        <Box sx={{ px: 2.5, py: 3, flex: 1, textAlign: "center" }}>
+          <CheckCircleOutlineRounded
+            sx={{ color: "success.main", fontSize: 30, mb: 0.75 }}
+          />
+          <Typography variant="body2" color="text.secondary">
+            Rien à traiter ici.
+          </Typography>
         </Box>
-      </CardContent>
+      ) : (
+        <Stack divider={<Divider />} sx={{ flex: 1 }}>
+          {lane.items.map((item) => (
+            <CockpitRow key={`${lane.key}-${item.id}`} item={item} />
+          ))}
+        </Stack>
+      )}
+      <Divider />
+      <Box sx={{ px: 1.5, py: 0.75 }}>
+        <Button
+          component={RouterLink}
+          to={lane.actionPath}
+          size="small"
+          endIcon={<ArrowForwardRounded />}
+        >
+          Ouvrir la file
+        </Button>
+      </Box>
     </Card>
   );
 }
 
 function CockpitRow({ item }: { item: CockpitItem }) {
   const due = shortDate(item.dueOn);
+  // One muted meta line instead of a wrapping row of competing chips.
+  const meta = [
+    item.dossierName,
+    humanizeText(item.subtitle),
+    due && `Échéance ${due}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
-    <Box sx={{ p: 2 }}>
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1.5}
+    <Box
+      component={RouterLink}
+      to={item.actionPath}
+      title={item.actionLabel}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.25,
+        px: 2.5,
+        py: 1.375,
+        color: "inherit",
+        textDecoration: "none",
+        "&:hover": { bgcolor: "grey.50" },
+      }}
+    >
+      <Box sx={{ minWidth: 0, flex: 1 }}>
+        <Typography sx={{ fontWeight: 600, fontSize: 14 }} noWrap>
+          {item.title}
+        </Typography>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          noWrap
+          sx={{ display: "block" }}
+        >
+          {meta}
+        </Typography>
+      </Box>
+      {item.amount && (
+        <Typography
+          sx={{ fontSize: 13.5, fontWeight: 600, whiteSpace: "nowrap" }}
+        >
+          {money(item.amount)}
+        </Typography>
+      )}
+      <Chip label={humanizeEnum(item.status)} size="small" variant="outlined" />
+      <ArrowForwardRounded sx={{ fontSize: 16, color: "text.disabled" }} />
+    </Box>
+  );
+}
+
+function NextWorkCard({ lanes }: { lanes: CockpitLane[] }) {
+  const ordered = [...lanes].sort(
+    (a, b) =>
+      severityRank[a.severity] - severityRank[b.severity] || b.count - a.count,
+  );
+  const nextLane = ordered.find((lane) => lane.count > 0);
+  const nextItem = ordered.flatMap((lane) => lane.items)[0];
+
+  if (!nextLane) {
+    return (
+      <Card sx={{ mb: 2, borderColor: "success.light", bgcolor: "#fbfdfa" }}>
+        <CardContent>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 3,
+                display: "grid",
+                placeItems: "center",
+                bgcolor: "success.light",
+                color: "success.main",
+                flex: "0 0 auto",
+              }}
+            >
+              <CheckCircleOutlineRounded />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h3">Tout est à jour</Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                Aucune urgence détectée. C’est le bon moment pour préparer les
+                prochaines demandes clients, vérifier les dossiers incomplets ou
+                avancer les travaux du mois.
+              </Typography>
+            </Box>
+            <Button
+              component={RouterLink}
+              to="/dossiers"
+              variant="outlined"
+              endIcon={<ArrowForwardRounded />}
+              sx={{ alignSelf: { xs: "stretch", md: "center" } }}
+            >
+              Voir les dossiers
+            </Button>
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const color = severityColor[nextLane.severity];
+  return (
+    <Card sx={{ mb: 2, overflow: "hidden", borderColor: `${color}66` }}>
+      <Box
         sx={{
-          alignItems: { xs: "stretch", sm: "center" },
-          justifyContent: "space-between",
+          px: 2.5,
+          py: 1,
+          bgcolor: `${color}12`,
+          borderBottom: "1px solid",
+          borderColor: `${color}25`,
         }}
       >
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 800 }}>
-            {item.dossierName}
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+          <ScheduleRounded sx={{ color, fontSize: 18 }} />
+          <Typography variant="overline" sx={{ color }}>
+            Prochaine meilleure action
           </Typography>
-          <Typography sx={{ fontWeight: 800 }} noWrap>
-            {item.title}
-          </Typography>
-          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap", mt: 0.5 }}>
-            <Chip label={item.status} size="small" variant="outlined" />
-            <Typography variant="caption" color="text.secondary">
-              {item.subtitle}
-            </Typography>
-            {due && (
-              <Typography variant="caption" color="text.secondary">
-                Échéance {due}
-              </Typography>
-            )}
-            {item.amount && (
-              <Typography variant="caption" sx={{ fontWeight: 850, color: "primary.main" }}>
-                {money(item.amount)}
-              </Typography>
-            )}
-          </Stack>
-        </Box>
-        <Button
-          component={RouterLink}
-          to={item.actionPath}
-          size="small"
-          variant="outlined"
-          endIcon={<ArrowForwardRounded />}
-          sx={{ flex: "0 0 auto" }}
+        </Stack>
+      </Box>
+      <CardContent>
+        <Stack
+          direction={{ xs: "column", lg: "row" }}
+          spacing={2}
+          sx={{ alignItems: { lg: "center" } }}
         >
-          {item.actionLabel}
-        </Button>
-      </Stack>
-    </Box>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="h2" sx={{ mb: 0.75 }}>
+              {nextLane.title}
+            </Typography>
+            <Typography color="text.secondary">
+              {nextItem
+                ? `${nextItem.title}${
+                    nextItem.dossierName ? ` · ${nextItem.dossierName}` : ""
+                  }`
+                : `${nextLane.count} action(s) à traiter dans cette file.`}
+            </Typography>
+          </Box>
+          <Button
+            component={RouterLink}
+            to={nextItem?.actionPath ?? nextLane.actionPath}
+            variant="contained"
+            size="large"
+            startIcon={<PlayArrowRounded />}
+            endIcon={<ArrowForwardRounded />}
+            sx={{ alignSelf: { xs: "stretch", lg: "center" } }}
+          >
+            Traiter maintenant
+          </Button>
+        </Stack>
+      </CardContent>
+      <CardActions
+        sx={{
+          px: 2.5,
+          py: 1.25,
+          bgcolor: "grey.50",
+          borderTop: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <Typography variant="body2" color="text.secondary">
+          Conseil produit : terminer une file critique avant d’ouvrir un autre
+          module garde le cabinet lisible et évite les oublis.
+        </Typography>
+      </CardActions>
+    </Card>
   );
 }
 
@@ -222,7 +354,12 @@ export function AccountantCockpitPage() {
           organization?.name ?? "votre cabinet"
         }.`}
         action={
-          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            useFlexGap
+            sx={{ flexWrap: "wrap" }}
+          >
             <Button
               onClick={() => cockpit.refetch()}
               variant="outlined"
@@ -232,7 +369,12 @@ export function AccountantCockpitPage() {
               Actualiser
             </Button>
             {can("dossiers.create") && (
-              <Button component={RouterLink} to="/dossiers?nouveau=1" variant="contained" startIcon={<FolderOutlined />}>
+              <Button
+                component={RouterLink}
+                to="/dossiers?nouveau=1"
+                variant="contained"
+                startIcon={<FolderOutlined />}
+              >
                 Nouveau dossier
               </Button>
             )}
@@ -242,15 +384,19 @@ export function AccountantCockpitPage() {
 
       {!can("tasks.view") && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Votre rôle n’a pas accès à la file de travail. Demandez au propriétaire du cabinet
-          d’ajouter la permission de consultation des tâches.
+          Votre rôle n’a pas accès à la file de travail. Demandez au
+          propriétaire du cabinet d’ajouter la permission de consultation des
+          tâches.
         </Alert>
       )}
       {cockpit.isError && (
         <Alert severity="warning" sx={{ mb: 2 }}>
-          Impossible d’actualiser la file de travail. Vérifiez que le backend est démarré.
+          Impossible d’actualiser la file de travail. Vérifiez que le backend
+          est démarré.
         </Alert>
       )}
+
+      {!cockpit.isLoading && can("tasks.view") && <NextWorkCard lanes={lanes} />}
 
       <div className="metric-grid">
         <MetricCard

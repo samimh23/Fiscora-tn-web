@@ -46,6 +46,7 @@ import { PageHeader } from "../components/PageHeader";
 import { AssignmentDialog } from "../features/dossiers/AssignmentDialog";
 import { ContactDialog } from "../features/dossiers/ContactDialog";
 import { DossierFormDialog } from "../features/dossiers/DossierFormDialog";
+import { DossierSetupChecklist } from "../features/dossiers/DossierSetupChecklist";
 import { DossierTasksPanel } from "../features/operations/DossierTasksPanel";
 import { DossierObligationsPanel } from "../features/operations/DossierObligationsPanel";
 import { DossierDocumentsPanel } from "../features/operations/DossierDocumentsPanel";
@@ -377,192 +378,205 @@ export function DossierDetailPage() {
       </Card>
 
       {tab === "overview" && (
-        <Box className="dossier-detail-grid">
-          <Stack spacing={2.5}>
-            <Card>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h3" sx={{ fontSize: 24, mb: 2.5 }}>
-                  Identité et fiscalité
-                </Typography>
-                <Box className="info-grid">
-                  <InfoItem label="Raison sociale" value={item.legalName} />
-                  <InfoItem label="Nom commercial" value={item.tradeName} />
-                  <InfoItem
-                    label="Matricule fiscal"
-                    value={item.taxIdentifier}
-                  />
-                  <InfoItem label="Numéro RNE" value={item.rneNumber} />
-                  <InfoItem
-                    label="Forme juridique"
-                    value={legalFormLabel(item.legalForm)}
-                  />
-                  <InfoItem
-                    label="Régime fiscal"
-                    value={taxRegimeLabel(item.taxRegime)}
-                  />
-                  <InfoItem label="Code TVA" value={item.vatCode} />
-                  <InfoItem label="Code en douane" value={item.customsCode} />
-                  <InfoItem
-                    label="Matricule employeur CNSS"
-                    value={item.cnssEmployerNumber}
-                  />
-                  <InfoItem
-                    label="Effectif déclaré"
-                    value={item.employeeCount}
-                  />
-                </Box>
-                <Divider sx={{ my: 2.5 }} />
-                <Stack
-                  direction="row"
-                  spacing={1}
-                  useFlexGap
-                  sx={{ flexWrap: "wrap" }}
-                >
-                  <Chip
-                    label={
-                      item.isVatSubject ? "Assujetti TVA" : "Non assujetti TVA"
-                    }
-                    color={item.isVatSubject ? "success" : "default"}
-                    variant="outlined"
-                  />
-                  {item.hasVatSuspension && (
+        <>
+          <DossierSetupChecklist
+            organizationId={organizationId}
+            dossierId={dossierId}
+            dossier={item}
+            canManage={can("dossiers.manage")}
+            onGoToProduction={() => setTab("commercial")}
+          />
+          <Box className="dossier-detail-grid">
+            <Stack spacing={2.5}>
+              <Card>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h3" sx={{ mb: 2.5 }}>
+                    Identité et fiscalité
+                  </Typography>
+                  <Box className="info-grid">
+                    <InfoItem label="Raison sociale" value={item.legalName} />
+                    <InfoItem label="Nom commercial" value={item.tradeName} />
+                    <InfoItem
+                      label="Matricule fiscal"
+                      value={item.taxIdentifier}
+                    />
+                    <InfoItem label="Numéro RNE" value={item.rneNumber} />
+                    <InfoItem
+                      label="Forme juridique"
+                      value={legalFormLabel(item.legalForm)}
+                    />
+                    <InfoItem
+                      label="Régime fiscal"
+                      value={taxRegimeLabel(item.taxRegime)}
+                    />
+                    <InfoItem label="Code TVA" value={item.vatCode} />
+                    <InfoItem label="Code en douane" value={item.customsCode} />
+                    <InfoItem
+                      label="Matricule employeur CNSS"
+                      value={item.cnssEmployerNumber}
+                    />
+                    <InfoItem
+                      label="Effectif déclaré"
+                      value={item.employeeCount}
+                    />
+                  </Box>
+                  <Divider sx={{ my: 2.5 }} />
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    useFlexGap
+                    sx={{ flexWrap: "wrap" }}
+                  >
                     <Chip
-                      label="Suspension de TVA"
-                      color="warning"
+                      label={
+                        item.isVatSubject
+                          ? "Assujetti TVA"
+                          : "Non assujetti TVA"
+                      }
+                      color={item.isVatSubject ? "success" : "default"}
                       variant="outlined"
                     />
-                  )}
-                  {item.isTotallyExporting && (
-                    <Chip
-                      label="Totalement exportateur"
-                      color="info"
-                      variant="outlined"
+                    {item.hasVatSuspension && (
+                      <Chip
+                        label="Suspension de TVA"
+                        color="warning"
+                        variant="outlined"
+                      />
+                    )}
+                    {item.isTotallyExporting && (
+                      <Chip
+                        label="Totalement exportateur"
+                        color="info"
+                        variant="outlined"
+                      />
+                    )}
+                    {item.tags.map((tag) => (
+                      <Chip key={tag} label={tag} size="small" />
+                    ))}
+                  </Stack>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h3" sx={{ mb: 2.5 }}>
+                    Organisation comptable
+                  </Typography>
+                  <Box className="info-grid">
+                    <InfoItem
+                      label="Début de l’exercice"
+                      value={`${String(item.fiscalYearStartDay ?? 1).padStart(2, "0")}/${String(item.fiscalYearStartMonth ?? 1).padStart(2, "0")}`}
                     />
-                  )}
-                  {item.tags.map((tag) => (
-                    <Chip key={tag} label={tag} size="small" />
-                  ))}
-                </Stack>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h3" sx={{ fontSize: 24, mb: 2.5 }}>
-                  Organisation comptable
-                </Typography>
-                <Box className="info-grid">
-                  <InfoItem
-                    label="Début de l’exercice"
-                    value={`${String(item.fiscalYearStartDay ?? 1).padStart(2, "0")}/${String(item.fiscalYearStartMonth ?? 1).padStart(2, "0")}`}
-                  />
-                  <InfoItem
-                    label="Secteur d’activité"
-                    value={item.activitySector}
-                  />
-                  <InfoItem
-                    label="Honoraires mensuels"
-                    value={money(item.monthlyFee)}
-                  />
-                  <InfoItem
-                    label="Honoraires annuels"
-                    value={money(item.annualFee)}
-                  />
-                  <InfoItem
-                    label="Facturation"
-                    value={billingFrequencyLabel(item.billingFrequency)}
-                  />
-                </Box>
-                {item.internalNotes && (
-                  <>
-                    <Divider sx={{ my: 2.5 }} />
-                    <Typography variant="caption" color="text.secondary">
-                      Notes internes
-                    </Typography>
-                    <Typography sx={{ whiteSpace: "pre-wrap", mt: 0.5 }}>
-                      {item.internalNotes}
-                    </Typography>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </Stack>
-
-          <Stack spacing={2.5}>
-            <Card>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h3" sx={{ fontSize: 22, mb: 2 }}>
-                  Accès rapides
-                </Typography>
-                <Stack spacing={1}>
-                  <Button
-                    component={RouterLink}
-                    to="/documents"
-                    variant="outlined"
-                    startIcon={<ReceiptLongOutlined />}
-                    fullWidth
-                  >
-                    Documents du client
-                  </Button>
-                  <Button
-                    component={RouterLink}
-                    to="/obligations"
-                    variant="outlined"
-                    startIcon={<ScheduleOutlined />}
-                    fullWidth
-                  >
-                    Obligations fiscales
-                  </Button>
-                  <Button
-                    component={RouterLink}
-                    to="/factures"
-                    variant="outlined"
-                    startIcon={<LanguageOutlined />}
-                    fullWidth
-                  >
-                    Factures d’achat et vente
-                  </Button>
-                </Stack>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h3" sx={{ fontSize: 22, mb: 2 }}>
-                  Contact principal
-                </Typography>
-                {contacts.isLoading && <Skeleton height={80} />}
-                {!contacts.isLoading &&
-                  !contacts.data?.find(
-                    (contact) => contact.isPrimary && contact.isActive,
-                  ) && (
-                    <Typography variant="body2" color="text.secondary">
-                      Aucun contact principal défini.
-                    </Typography>
-                  )}
-                {contacts.data
-                  ?.filter((contact) => contact.isPrimary && contact.isActive)
-                  .map((contact) => (
-                    <Box key={contact.id}>
-                      <Typography sx={{ fontWeight: 800 }}>
-                        {contact.fullName}
+                    <InfoItem
+                      label="Secteur d’activité"
+                      value={item.activitySector}
+                    />
+                    <InfoItem
+                      label="Honoraires mensuels"
+                      value={money(item.monthlyFee)}
+                    />
+                    <InfoItem
+                      label="Honoraires annuels"
+                      value={money(item.annualFee)}
+                    />
+                    <InfoItem
+                      label="Facturation"
+                      value={billingFrequencyLabel(item.billingFrequency)}
+                    />
+                  </Box>
+                  {item.internalNotes && (
+                    <>
+                      <Divider sx={{ my: 2.5 }} />
+                      <Typography variant="caption" color="text.secondary">
+                        Notes internes
                       </Typography>
+                      <Typography sx={{ whiteSpace: "pre-wrap", mt: 0.5 }}>
+                        {item.internalNotes}
+                      </Typography>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </Stack>
+
+            <Stack spacing={2.5}>
+              <Card>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h3" sx={{ mb: 2 }}>
+                    Accès rapides
+                  </Typography>
+                  <Stack spacing={1}>
+                    <Button
+                      component={RouterLink}
+                      to="/documents"
+                      variant="outlined"
+                      startIcon={<ReceiptLongOutlined />}
+                      fullWidth
+                    >
+                      Documents du client
+                    </Button>
+                    <Button
+                      component={RouterLink}
+                      to="/obligations"
+                      variant="outlined"
+                      startIcon={<ScheduleOutlined />}
+                      fullWidth
+                    >
+                      Obligations fiscales
+                    </Button>
+                    <Button
+                      component={RouterLink}
+                      to="/factures"
+                      variant="outlined"
+                      startIcon={<LanguageOutlined />}
+                      fullWidth
+                    >
+                      Factures d’achat et vente
+                    </Button>
+                  </Stack>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h3" sx={{ mb: 2 }}>
+                    Contact principal
+                  </Typography>
+                  {contacts.isLoading && <Skeleton height={80} />}
+                  {!contacts.isLoading &&
+                    !contacts.data?.find(
+                      (contact) => contact.isPrimary && contact.isActive,
+                    ) && (
                       <Typography variant="body2" color="text.secondary">
-                        {contact.role || "Contact client"}
+                        Aucun contact principal défini.
                       </Typography>
-                      {contact.phone && (
-                        <Typography variant="body2" sx={{ mt: 1 }}>
-                          {contact.phone}
+                    )}
+                  {contacts.data
+                    ?.filter((contact) => contact.isPrimary && contact.isActive)
+                    .map((contact) => (
+                      <Box key={contact.id}>
+                        <Typography sx={{ fontWeight: 700 }}>
+                          {contact.fullName}
                         </Typography>
-                      )}
-                      {contact.email && (
-                        <Typography variant="body2">{contact.email}</Typography>
-                      )}
-                    </Box>
-                  ))}
-              </CardContent>
-            </Card>
-          </Stack>
-        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {contact.role || "Contact client"}
+                        </Typography>
+                        {contact.phone && (
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            {contact.phone}
+                          </Typography>
+                        )}
+                        {contact.email && (
+                          <Typography variant="body2">
+                            {contact.email}
+                          </Typography>
+                        )}
+                      </Box>
+                    ))}
+                </CardContent>
+              </Card>
+            </Stack>
+          </Box>
+        </>
       )}
 
       {tab === "contacts" && (
@@ -578,9 +592,7 @@ export function DossierDetailPage() {
               }}
             >
               <Box>
-                <Typography variant="h3" sx={{ fontSize: 24 }}>
-                  Contacts du client
-                </Typography>
+                <Typography variant="h3">Contacts du client</Typography>
                 <Typography variant="body2" color="text.secondary">
                   Dirigeants et interlocuteurs administratifs.
                 </Typography>
@@ -612,7 +624,7 @@ export function DossierDetailPage() {
             {!contacts.isLoading && !contacts.data?.length && (
               <Box sx={{ p: 6, textAlign: "center" }}>
                 <PhoneOutlined sx={{ fontSize: 40, color: "text.disabled" }} />
-                <Typography sx={{ fontWeight: 800, mt: 1 }}>
+                <Typography sx={{ fontWeight: 700, mt: 1 }}>
                   Aucun contact
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -645,7 +657,7 @@ export function DossierDetailPage() {
                     borderRadius: 3,
                     display: "grid",
                     placeItems: "center",
-                    fontWeight: 800,
+                    fontWeight: 700,
                   }}
                 >
                   {contact.fullName
@@ -657,7 +669,7 @@ export function DossierDetailPage() {
                 </Box>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Typography sx={{ fontWeight: 800 }}>
+                    <Typography sx={{ fontWeight: 700 }}>
                       {contact.fullName}
                     </Typography>
                     {contact.isPrimary && (
@@ -742,9 +754,7 @@ export function DossierDetailPage() {
               }}
             >
               <Box>
-                <Typography variant="h3" sx={{ fontSize: 24 }}>
-                  Équipe affectée
-                </Typography>
+                <Typography variant="h3">Équipe affectée</Typography>
                 <Typography variant="body2" color="text.secondary">
                   Responsabilités et budget mensuel par collaborateur.
                 </Typography>
@@ -776,7 +786,7 @@ export function DossierDetailPage() {
             {!assignments.isLoading && !assignments.data?.length && (
               <Box sx={{ p: 6, textAlign: "center" }}>
                 <GroupsOutlined sx={{ fontSize: 42, color: "text.disabled" }} />
-                <Typography sx={{ fontWeight: 800, mt: 1 }}>
+                <Typography sx={{ fontWeight: 700, mt: 1 }}>
                   Aucun collaborateur affecté
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -808,7 +818,7 @@ export function DossierDetailPage() {
                     borderRadius: 3,
                     display: "grid",
                     placeItems: "center",
-                    fontWeight: 800,
+                    fontWeight: 700,
                   }}
                 >
                   {assignment.fullName
@@ -819,7 +829,7 @@ export function DossierDetailPage() {
                     .toUpperCase()}
                 </Box>
                 <Box sx={{ flex: 1 }}>
-                  <Typography sx={{ fontWeight: 800 }}>
+                  <Typography sx={{ fontWeight: 700 }}>
                     {assignment.fullName}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">

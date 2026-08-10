@@ -59,7 +59,8 @@ const malwareStatus = (document: AccountingDocument) => {
   }
 };
 const requestStatus = (entry: MissingDocumentExpectation) => {
-  const status = entry.status ?? (entry.receivedDocumentId ? "RECUE" : "DEMANDEE");
+  const status =
+    entry.status ?? (entry.receivedDocumentId ? "RECUE" : "DEMANDEE");
   const labels: Record<string, string> = {
     DEMANDEE: "Demandée",
     RECUE: "Reçue",
@@ -305,8 +306,7 @@ export function DossierDocumentsPanel({
   };
   const missing =
     expectations.data?.filter(
-      (entry) =>
-        !["VALIDEE", "ANNULEE"].includes(entry.status ?? "DEMANDEE"),
+      (entry) => !["VALIDEE", "ANNULEE"].includes(entry.status ?? "DEMANDEE"),
     ) ?? [];
 
   return (
@@ -324,9 +324,7 @@ export function DossierDocumentsPanel({
             }}
           >
             <Box>
-              <Typography variant="h3" sx={{ fontSize: 24 }}>
-                Pièces du dossier
-              </Typography>
+              <Typography variant="h3">Pièces du dossier</Typography>
               <Typography variant="body2" color="text.secondary">
                 Fichiers classés dans le stockage sécurisé.
               </Typography>
@@ -421,7 +419,7 @@ export function DossierDocumentsPanel({
               <InsertDriveFileOutlined
                 sx={{ fontSize: 44, color: "text.disabled" }}
               />
-              <Typography sx={{ fontWeight: 800, mt: 1 }}>
+              <Typography sx={{ fontWeight: 700, mt: 1 }}>
                 Aucun document pour cette période
               </Typography>
             </Box>
@@ -453,7 +451,7 @@ export function DossierDocumentsPanel({
                 <InsertDriveFileOutlined />
               </Box>
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography sx={{ fontWeight: 800 }} noWrap>
+                <Typography sx={{ fontWeight: 700 }} noWrap>
                   {document.originalName}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -545,9 +543,7 @@ export function DossierDocumentsPanel({
             }}
           >
             <Box>
-              <Typography variant="h3" sx={{ fontSize: 22 }}>
-                Demandes de pièces
-              </Typography>
+              <Typography variant="h3">Demandes de pièces</Typography>
               <Typography variant="body2" color="text.secondary">
                 {String(month).padStart(2, "0")}/{year}
               </Typography>
@@ -587,12 +583,14 @@ export function DossierDocumentsPanel({
             >
               <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 800 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>
                     {entry.label}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {documentCategoryLabel(entry.category)}
-                    {entry.dueOn ? ` · Échéance ${formatDate(entry.dueOn)}` : ""}
+                    {entry.dueOn
+                      ? ` · Échéance ${formatDate(entry.dueOn)}`
+                      : ""}
                   </Typography>
                   {entry.message && (
                     <Typography
@@ -604,7 +602,11 @@ export function DossierDocumentsPanel({
                     </Typography>
                   )}
                   {entry.rejectionReason && (
-                    <Typography variant="caption" color="error" sx={{ display: "block" }}>
+                    <Typography
+                      variant="caption"
+                      color="error"
+                      sx={{ display: "block" }}
+                    >
                       Correction demandée : {entry.rejectionReason}
                     </Typography>
                   )}
@@ -720,7 +722,7 @@ export function DossierDocumentsPanel({
           }}
         >
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="h3" sx={{ fontSize: 22 }} noWrap>
+            <Typography variant="h3" noWrap>
               Aperçu du document
             </Typography>
             <Typography variant="body2" color="text.secondary" noWrap>

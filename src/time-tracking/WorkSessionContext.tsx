@@ -111,7 +111,9 @@ export function WorkSessionProvider({ children }: { children: ReactNode }) {
       window.addEventListener(event, markInteraction, { passive: true }),
     );
     return () =>
-      events.forEach((event) => window.removeEventListener(event, markInteraction));
+      events.forEach((event) =>
+        window.removeEventListener(event, markInteraction),
+      );
   }, []);
 
   const heartbeat = useCallback(
@@ -127,7 +129,8 @@ export function WorkSessionProvider({ children }: { children: ReactNode }) {
         setError("");
       } catch (reason) {
         setError(message(reason));
-        if (reason instanceof ApiError && reason.status === 404) setSession(null);
+        if (reason instanceof ApiError && reason.status === 404)
+          setSession(null);
       }
     },
     [organization?.id, session],
@@ -243,7 +246,8 @@ export function WorkSessionProvider({ children }: { children: ReactNode }) {
             width: { xs: "calc(100% - 32px)", sm: 390 },
             p: 1.5,
             border: "1px solid",
-            borderColor: session.status === "ACTIVE" ? "primary.main" : "warning.main",
+            borderColor:
+              session.status === "ACTIVE" ? "primary.main" : "warning.main",
           }}
         >
           <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
@@ -254,7 +258,10 @@ export function WorkSessionProvider({ children }: { children: ReactNode }) {
                 borderRadius: 2,
                 display: "grid",
                 placeItems: "center",
-                bgcolor: session.status === "ACTIVE" ? "primary.main" : "warning.light",
+                bgcolor:
+                  session.status === "ACTIVE"
+                    ? "primary.main"
+                    : "warning.light",
                 color: session.status === "ACTIVE" ? "white" : "warning.dark",
               }}
             >
@@ -262,7 +269,7 @@ export function WorkSessionProvider({ children }: { children: ReactNode }) {
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                <Typography sx={{ fontWeight: 800 }} noWrap>
+                <Typography sx={{ fontWeight: 700 }} noWrap>
                   {session.taskTitle || session.description}
                 </Typography>
                 <Chip
@@ -304,7 +311,11 @@ export function WorkSessionProvider({ children }: { children: ReactNode }) {
             </Button>
           </Stack>
           {error && (
-            <Typography variant="caption" color="error" sx={{ display: "block", mt: 1 }}>
+            <Typography
+              variant="caption"
+              color="error"
+              sx={{ display: "block", mt: 1 }}
+            >
               {error}
             </Typography>
           )}
@@ -317,6 +328,8 @@ export function WorkSessionProvider({ children }: { children: ReactNode }) {
 export function useWorkSession() {
   const context = useContext(WorkSessionContext);
   if (!context)
-    throw new Error("useWorkSession doit être utilisé dans WorkSessionProvider.");
+    throw new Error(
+      "useWorkSession doit être utilisé dans WorkSessionProvider.",
+    );
   return context;
 }

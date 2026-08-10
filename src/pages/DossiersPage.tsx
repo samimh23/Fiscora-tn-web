@@ -121,9 +121,7 @@ export function DossiersPage() {
           )}
           {!query.isLoading && !query.data?.items.length && (
             <Box sx={{ p: 7, textAlign: "center" }}>
-              <Typography variant="h3" sx={{ fontSize: 24 }}>
-                Aucun dossier trouvé
-              </Typography>
+              <Typography variant="h3">Aucun dossier trouvé</Typography>
               <Typography color="text.secondary" sx={{ mt: 1 }}>
                 Créez votre premier dossier client ou modifiez la recherche.
               </Typography>
@@ -142,7 +140,7 @@ export function DossiersPage() {
               }}
             >
               <Box sx={{ minWidth: 0 }}>
-                <Typography noWrap sx={{ fontWeight: 750 }}>
+                <Typography noWrap sx={{ fontWeight: 600 }}>
                   {item.legalName}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" noWrap>
@@ -154,7 +152,7 @@ export function DossiersPage() {
                 <Typography variant="caption" color="text.secondary">
                   Forme
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 650 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   {legalFormLabel(item.legalForm)}
                 </Typography>
               </Box>
@@ -162,7 +160,7 @@ export function DossiersPage() {
                 <Typography variant="caption" color="text.secondary">
                   Régime
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 650 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
                   {taxRegimeLabel(item.taxRegime)}
                 </Typography>
               </Box>
