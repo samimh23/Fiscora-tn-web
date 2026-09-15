@@ -12,6 +12,7 @@ import { ClientPortalShell } from "./components/ClientPortalShell";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { PlatformAdminShell } from "./components/PlatformAdminShell";
 import { WorkSessionProvider } from "./time-tracking/WorkSessionContext";
+import { UnsavedChangesProvider } from "./unsaved-changes/UnsavedChangesProvider";
 
 const AuthPage = lazy(() =>
   import("./pages/AuthPage").then((module) => ({ default: module.AuthPage })),
@@ -168,7 +169,9 @@ function ProtectedRoute() {
   // On mémorise la page demandée : après une session expirée, la reconnexion
   // doit ramener le comptable où il travaillait, pas sur l'accueil.
   return isAuthenticated ? (
-    <Outlet />
+    <UnsavedChangesProvider>
+      <Outlet />
+    </UnsavedChangesProvider>
   ) : (
     <Navigate to="/connexion" replace state={{ from: location }} />
   );

@@ -24,6 +24,9 @@ import {
   legalFormOptions,
   taxRegimeOptions,
 } from "./options";
+import { useFeedback } from "../../feedback/useFeedback";
+import { UnsavedChangesDialog } from "../../components/UnsavedChangesDialog";
+import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 
 const money = z
   .string()
@@ -137,6 +140,7 @@ export function DossierFormDialog({
   onSaved?: (saved: DossierSummary) => void;
 }) {
   const queryClient = useQueryClient();
+  const { showFeedback } = useFeedback();
   const [apiError, setApiError] = useState("");
   const editing = Boolean(dossier);
   const {
@@ -144,7 +148,7 @@ export function DossierFormDialog({
     control,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<DossierFormValues>({
     resolver: zodResolver(dossierSchema),
     defaultValues: valuesFromDossier(dossier),
@@ -197,6 +201,11 @@ export function DossierFormDialog({
       });
       onSaved?.(saved);
       onClose();
+      showFeedback(
+        editing
+          ? "Le dossier a été mis à jour."
+          : "Le dossier client a été créé.",
+      );
     },
     onError: (error) =>
       setApiError(
@@ -205,14 +214,19 @@ export function DossierFormDialog({
           : "Impossible d’enregistrer le dossier.",
       ),
   });
+  const closeGuard = useUnsavedChangesGuard(
+    open && isDirty && !mutation.isPending,
+    onClose,
+  );
 
   return (
-    <Dialog
-      open={open}
-      onClose={mutation.isPending ? undefined : onClose}
-      fullWidth
-      maxWidth="md"
-    >
+    <>
+      <Dialog
+        open={open}
+        onClose={mutation.isPending ? undefined : closeGuard.requestClose}
+        fullWidth
+        maxWidth="md"
+      >
       <DialogTitle sx={{ pb: 1 }}>
         <Typography
           variant="overline"
@@ -448,7 +462,7 @@ export function DossierFormDialog({
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} disabled={mutation.isPending}>
+        <Button onClick={closeGuard.requestClose} disabled={mutation.isPending}>
           Annuler
         </Button>
         <Button
@@ -464,6 +478,8 @@ export function DossierFormDialog({
               : "Créer le dossier"}
         </Button>
       </DialogActions>
-    </Dialog>
+      </Dialog>
+      <UnsavedChangesDialog guard={closeGuard} />
+    </>
   );
 }

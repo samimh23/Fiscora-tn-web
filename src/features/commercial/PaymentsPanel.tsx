@@ -22,6 +22,7 @@ import {
   AddRounded,
   AccountBalanceWalletOutlined,
   PostAddRounded,
+  UndoRounded,
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
 import type {
@@ -32,6 +33,9 @@ import type {
   ThirdPartyPayment,
 } from "../../types/api";
 import { money, paymentStatusLabels, shortDate } from "./options";
+import { useFeedback } from "../../feedback/useFeedback";
+import { UnsavedChangesDialog } from "../../components/UnsavedChangesDialog";
+import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 
 type AllocationMap = Record<string, string>;
 const isInstrumentMethod = (method: string) => {
@@ -47,6 +51,10 @@ const instrumentStatusLabels: Record<string, string> = {
   DEPOSE: "Déposé en banque",
   ENCAISSE: "Encaissé",
   IMPAYE: "Impayé",
+};
+const correctionTypeLabels: Record<string, string> = {
+  ANNULATION_SAISIE: "Saisie annulée",
+  REMBOURSEMENT: "Remboursé",
 };
 
 function PaymentDialog({
@@ -69,13 +77,13 @@ function PaymentDialog({
   journals: AccountingJournal[];
 }) {
   const queryClient = useQueryClient();
+  const { showFeedback } = useFeedback();
+  const today = new Date().toISOString().slice(0, 10);
   const [direction, setDirection] = useState<"ENCAISSEMENT" | "DECAISSEMENT">(
     "ENCAISSEMENT",
   );
   const [thirdPartyId, setThirdPartyId] = useState("");
-  const [paymentDate, setPaymentDate] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
+  const [paymentDate, setPaymentDate] = useState(today);
   const [method, setMethod] = useState("Virement");
   const [reference, setReference] = useState("");
   const [instrumentNumber, setInstrumentNumber] = useState("");
@@ -170,6 +178,7 @@ function PaymentDialog({
         queryKey: ["third-party-payments", organizationId, dossierId],
       });
       onClose();
+      showFeedback("Le règlement a été créé en brouillon.");
     },
     onError: (reason) =>
       setError(
@@ -188,14 +197,33 @@ function PaymentDialog({
     total > 0 &&
     Object.keys(allocations).length,
   );
+  const isDirty = Boolean(
+    direction !== "ENCAISSEMENT" ||
+    thirdPartyId ||
+    paymentDate !== today ||
+    method !== "Virement" ||
+    reference ||
+    instrumentNumber ||
+    instrumentBank ||
+    instrumentDueDate ||
+    journalId ||
+    cashAccountId ||
+    thirdPartyAccountId ||
+    Object.keys(allocations).length,
+  );
+  const closeGuard = useUnsavedChangesGuard(
+    open && isDirty && !mutation.isPending,
+    onClose,
+  );
 
   return (
-    <Dialog
-      open={open}
-      onClose={mutation.isPending ? undefined : onClose}
-      fullWidth
-      maxWidth="md"
-    >
+    <>
+      <Dialog
+        open={open}
+        onClose={mutation.isPending ? undefined : closeGuard.requestClose}
+        fullWidth
+        maxWidth="md"
+      >
       <DialogTitle>Nouveau règlement</DialogTitle>
       <DialogContent
         sx={{
@@ -415,7 +443,7 @@ function PaymentDialog({
         </Card>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Annuler</Button>
+        <Button onClick={closeGuard.requestClose}>Annuler</Button>
         <Button
           variant="contained"
           disabled={!valid || mutation.isPending}
@@ -424,7 +452,9 @@ function PaymentDialog({
           {mutation.isPending ? "Enregistrement…" : "Créer le règlement"}
         </Button>
       </DialogActions>
-    </Dialog>
+      </Dialog>
+      <UnsavedChangesDialog guard={closeGuard} />
+    </>
   );
 }
 
@@ -454,8 +484,33 @@ export function PaymentsPanel({
   canPost: boolean;
 }) {
   const queryClient = useQueryClient();
+  const { showFeedback } = useFeedback();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
+  const [correctionFor, setCorrectionFor] =
+    useState<ThirdPartyPayment | null>(null);
+  const [correction, setCorrection] = useState({
+    correctionType: "ANNULATION_SAISIE" as
+      | "ANNULATION_SAISIE"
+      | "REMBOURSEMENT",
+    correctionDate: new Date().toISOString().slice(0, 10),
+    reason: "",
+  });
+  const refreshPaymentData = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["third-party-payments", organizationId, dossierId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["business-invoices", organizationId, dossierId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ["third-parties", organizationId, dossierId],
+      }),
+      queryClient.invalidateQueries({ queryKey: ["bank-statements"] }),
+      queryClient.invalidateQueries({ queryKey: ["bank-statement"] }),
+    ]);
+  };
   const post = useMutation({
     mutationFn: (payment: ThirdPartyPayment) =>
       api.post<ThirdPartyPayment>(
@@ -463,17 +518,8 @@ export function PaymentsPanel({
       ),
     onSuccess: async () => {
       setError("");
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["third-party-payments", organizationId, dossierId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["business-invoices", organizationId, dossierId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["third-parties", organizationId, dossierId],
-        }),
-      ]);
+      showFeedback("Le règlement a été comptabilisé.");
+      await refreshPaymentData();
     },
     onError: (reason) =>
       setError(
@@ -495,14 +541,8 @@ export function PaymentsPanel({
       ),
     onSuccess: async () => {
       setError("");
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["third-party-payments", organizationId, dossierId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["business-invoices", organizationId, dossierId],
-        }),
-      ]);
+      showFeedback("Le statut de l’effet a été mis à jour.");
+      await refreshPaymentData();
     },
     onError: (reason) =>
       setError(
@@ -511,7 +551,56 @@ export function PaymentsPanel({
           : "Action impossible sur cet effet.",
       ),
   });
-  const instruments = payments.filter((payment) => payment.instrumentStatus);
+  const correct = useMutation({
+    mutationFn: () =>
+      api.post<ThirdPartyPayment>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/payments/${correctionFor?.id}/correct`,
+        correction,
+      ),
+    onSuccess: async () => {
+      const label =
+        correction.correctionType === "REMBOURSEMENT"
+          ? "Le remboursement a été enregistré."
+          : "La saisie du règlement a été annulée.";
+      setError("");
+      showFeedback(label);
+      setCorrectionFor(null);
+      setCorrection({
+        correctionType: "ANNULATION_SAISIE",
+        correctionDate: new Date().toISOString().slice(0, 10),
+        reason: "",
+      });
+      await refreshPaymentData();
+    },
+    onError: (reason) =>
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : "La correction du règlement est impossible.",
+      ),
+  });
+  const openCorrection = (payment: ThirdPartyPayment) => {
+    setError("");
+    setCorrectionFor(payment);
+    setCorrection({
+      correctionType: "ANNULATION_SAISIE",
+      correctionDate: new Date().toISOString().slice(0, 10),
+      reason: "",
+    });
+  };
+  const correctionDirty = Boolean(
+    correctionFor &&
+      (correction.correctionType !== "ANNULATION_SAISIE" ||
+        correction.correctionDate !== new Date().toISOString().slice(0, 10) ||
+        correction.reason),
+  );
+  const correctionCloseGuard = useUnsavedChangesGuard(
+    correctionDirty && !correct.isPending,
+    () => setCorrectionFor(null),
+  );
+  const instruments = payments.filter(
+    (payment) => payment.instrumentStatus && payment.status !== "ANNULE",
+  );
   const columns: Array<{
     status: "RECU" | "DEPOSE" | "ENCAISSE" | "IMPAYE";
     next?: "deposit" | "clear";
@@ -757,18 +846,46 @@ export function PaymentsPanel({
               >
                 {payment.allocations.length} facture(s) affectée(s)
               </Typography>
+              {payment.correctionType && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ display: "block", mt: 0.5 }}
+                >
+                  {correctionTypeLabels[payment.correctionType]} le{" "}
+                  {shortDate(payment.correctionDate)} ·{" "}
+                  {payment.correctionReason}
+                </Typography>
+              )}
             </Box>
-            {canPost && !archived && payment.status === "BROUILLON" && (
-              <Button
-                size="small"
-                color="success"
-                variant="contained"
-                startIcon={<PostAddRounded />}
-                onClick={() => post.mutate(payment)}
-              >
-                Comptabiliser
-              </Button>
-            )}
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ justifyContent: { xs: "flex-start", md: "flex-end" } }}
+            >
+              {canPost && !archived && payment.status === "BROUILLON" && (
+                <Button
+                  size="small"
+                  color="success"
+                  variant="contained"
+                  startIcon={<PostAddRounded />}
+                  disabled={post.isPending}
+                  onClick={() => post.mutate(payment)}
+                >
+                  Comptabiliser
+                </Button>
+              )}
+              {canPost && !archived && payment.status !== "ANNULE" && (
+                <Button
+                  size="small"
+                  color="warning"
+                  startIcon={<UndoRounded />}
+                  onClick={() => openCorrection(payment)}
+                >
+                  Corriger
+                </Button>
+              )}
+            </Stack>
           </Box>
         ))}
       </Card>
@@ -784,6 +901,88 @@ export function PaymentsPanel({
           journals={journals}
         />
       )}
+      <Dialog
+        open={Boolean(correctionFor)}
+        onClose={
+          correct.isPending ? undefined : correctionCloseGuard.requestClose
+        }
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Corriger le règlement</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Alert severity="warning">
+              Le règlement original de {money(correctionFor?.amount)} restera
+              visible. Ses affectations seront retirées des factures et son
+              écriture sera extournée si elle est comptabilisée. Tout
+              rapprochement bancaire associé sera rouvert.
+            </Alert>
+            {error && <Alert severity="error">{error}</Alert>}
+            <TextField
+              select
+              label="Type de correction"
+              value={correction.correctionType}
+              onChange={(event) =>
+                setCorrection({
+                  ...correction,
+                  correctionType: event.target.value as
+                    | "ANNULATION_SAISIE"
+                    | "REMBOURSEMENT",
+                })
+              }
+            >
+              <MenuItem value="ANNULATION_SAISIE">
+                Annulation d’une saisie erronée
+              </MenuItem>
+              <MenuItem
+                value="REMBOURSEMENT"
+                disabled={correctionFor?.status === "BROUILLON"}
+              >
+                Remboursement au client ou par le fournisseur
+              </MenuItem>
+            </TextField>
+            <TextField
+              type="date"
+              label="Date de correction"
+              value={correction.correctionDate}
+              onChange={(event) =>
+                setCorrection({
+                  ...correction,
+                  correctionDate: event.target.value,
+                })
+              }
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <TextField
+              multiline
+              minRows={3}
+              label="Motif obligatoire"
+              value={correction.reason}
+              onChange={(event) =>
+                setCorrection({ ...correction, reason: event.target.value })
+              }
+              helperText="Précisez l’erreur ou la référence du remboursement pour la piste d’audit."
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={correctionCloseGuard.requestClose}>Conserver</Button>
+          <Button
+            color="warning"
+            variant="contained"
+            disabled={
+              !correction.correctionDate ||
+              correction.reason.trim().length < 3 ||
+              correct.isPending
+            }
+            onClick={() => correct.mutate()}
+          >
+            {correct.isPending ? "Correction…" : "Confirmer la correction"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <UnsavedChangesDialog guard={correctionCloseGuard} />
     </>
   );
 }

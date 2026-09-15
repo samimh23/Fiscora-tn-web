@@ -15,10 +15,23 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { AddRounded, MenuBookOutlined } from "@mui/icons-material";
+import {
+  AddRounded,
+  EditOutlined,
+  MenuBookOutlined,
+} from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
 import type { AccountingJournal } from "../../types/api";
 import { journalTypeLabels } from "./options";
+import { useFeedback } from "../../feedback/useFeedback";
+import { UnsavedChangesDialog } from "../../components/UnsavedChangesDialog";
+import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
+
+const defaultJournalForm = {
+  code: "",
+  name: "",
+  type: "OPERATIONS_DIVERSES",
+};
 
 export function JournalsPanel({
   organizationId,
@@ -34,33 +47,56 @@ export function JournalsPanel({
   canManage: boolean;
 }) {
   const queryClient = useQueryClient();
+  const { showFeedback } = useFeedback();
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [type, setType] = useState("OPERATIONS_DIVERSES");
+  const [initialForm, setInitialForm] = useState(defaultJournalForm);
   const [error, setError] = useState("");
+  const closeEditor = () => {
+    setOpen(false);
+    setEditingId(null);
+    setCode("");
+    setName("");
+    setType("OPERATIONS_DIVERSES");
+    setError("");
+  };
   const mutation = useMutation({
-    mutationFn: () =>
-      api.post<AccountingJournal>(
-        `/api/organizations/${organizationId}/dossiers/${dossierId}/journals`,
-        { code: code.trim(), name: name.trim(), type },
-      ),
+    mutationFn: () => {
+      const path = `/api/organizations/${organizationId}/dossiers/${dossierId}/journals${editingId ? `/${editingId}` : ""}`;
+      const payload = { code: code.trim(), name: name.trim(), type };
+      return editingId
+        ? api.put<AccountingJournal>(path, payload)
+        : api.post<AccountingJournal>(path, payload);
+    },
     onSuccess: async () => {
+      const message = editingId
+        ? "Le journal a été modifié."
+        : "Le journal a été créé.";
       await queryClient.invalidateQueries({
         queryKey: ["journals", organizationId, dossierId],
       });
-      setOpen(false);
-      setCode("");
-      setName("");
-      setError("");
+      closeEditor();
+      showFeedback(message);
     },
     onError: (reason) =>
       setError(
         reason instanceof ApiError
           ? reason.message
-          : "Impossible de créer le journal.",
+          : editingId
+            ? "Impossible de modifier le journal."
+            : "Impossible de créer le journal.",
       ),
   });
+  const isDirty =
+    open &&
+    JSON.stringify({ code, name, type }) !== JSON.stringify(initialForm);
+  const closeGuard = useUnsavedChangesGuard(
+    isDirty && !mutation.isPending,
+    closeEditor,
+  );
   return (
     <>
       <Card>
@@ -86,6 +122,11 @@ export function JournalsPanel({
               startIcon={<AddRounded />}
               onClick={() => {
                 setError("");
+                setEditingId(null);
+                setCode("");
+                setName("");
+                setType("OPERATIONS_DIVERSES");
+                setInitialForm(defaultJournalForm);
                 setOpen(true);
               }}
             >
@@ -146,17 +187,40 @@ export function JournalsPanel({
                 size="small"
                 variant="outlined"
               />
+              {canManage && !archived && (
+                <Button
+                  size="small"
+                  startIcon={<EditOutlined />}
+                  onClick={() => {
+                    setEditingId(journal.id);
+                    setCode(journal.code);
+                    setName(journal.name);
+                    setType(journal.type);
+                    setInitialForm({
+                      code: journal.code,
+                      name: journal.name,
+                      type: journal.type,
+                    });
+                    setError("");
+                    setOpen(true);
+                  }}
+                >
+                  Modifier
+                </Button>
+              )}
             </Box>
           ))}
         </Box>
       </Card>
       <Dialog
         open={open}
-        onClose={mutation.isPending ? undefined : () => setOpen(false)}
+        onClose={mutation.isPending ? undefined : closeGuard.requestClose}
         fullWidth
         maxWidth="xs"
       >
-        <DialogTitle>Créer un journal</DialogTitle>
+        <DialogTitle>
+          {editingId ? "Modifier le journal" : "Créer un journal"}
+        </DialogTitle>
         <DialogContent sx={{ display: "grid", gap: 2, pt: "12px !important" }}>
           {error && <Alert severity="error">{error}</Alert>}
           <Stack direction="row" spacing={2}>
@@ -189,16 +253,17 @@ export function JournalsPanel({
           </TextField>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>Annuler</Button>
+          <Button onClick={closeGuard.requestClose}>Annuler</Button>
           <Button
             variant="contained"
             disabled={!code.trim() || !name.trim() || mutation.isPending}
             onClick={() => mutation.mutate()}
           >
-            Créer
+            {editingId ? "Enregistrer" : "Créer"}
           </Button>
         </DialogActions>
       </Dialog>
+      <UnsavedChangesDialog guard={closeGuard} />
     </>
   );
 }

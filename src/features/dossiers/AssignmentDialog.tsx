@@ -19,6 +19,9 @@ import {
 } from "@mui/material";
 import { api, ApiError } from "../../api/client";
 import type { DossierAssignment, OrganizationMember } from "../../types/api";
+import { UnsavedChangesDialog } from "../../components/UnsavedChangesDialog";
+import { useFeedback } from "../../feedback/useFeedback";
+import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 
 const assignmentSchema = z.object({
   membershipId: z.string().uuid("Sélectionnez un collaborateur."),
@@ -45,6 +48,7 @@ export function AssignmentDialog({
   assignment?: DossierAssignment | null;
 }) {
   const queryClient = useQueryClient();
+  const { showFeedback } = useFeedback();
   const [apiError, setApiError] = useState("");
   const editing = Boolean(assignment);
   const {
@@ -54,7 +58,7 @@ export function AssignmentDialog({
     setValue,
     watch,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentSchema),
     defaultValues: {
@@ -104,6 +108,11 @@ export function AssignmentDialog({
         queryKey: ["dossier-assignments", organizationId, dossierId],
       });
       onClose();
+      showFeedback(
+        editing
+          ? "L’affectation a été modifiée."
+          : "Le collaborateur a été affecté au dossier.",
+      );
     },
     onError: (error) =>
       setApiError(
@@ -112,14 +121,19 @@ export function AssignmentDialog({
           : "Impossible d’enregistrer l’affectation.",
       ),
   });
+  const closeGuard = useUnsavedChangesGuard(
+    open && isDirty && !mutation.isPending,
+    onClose,
+  );
 
   return (
-    <Dialog
-      open={open}
-      onClose={mutation.isPending ? undefined : onClose}
-      fullWidth
-      maxWidth="sm"
-    >
+    <>
+      <Dialog
+        open={open}
+        onClose={mutation.isPending ? undefined : closeGuard.requestClose}
+        fullWidth
+        maxWidth="sm"
+      >
       <DialogTitle>
         <Typography variant="h3">
           {editing ? "Modifier l’affectation" : "Affecter un collaborateur"}
@@ -226,7 +240,7 @@ export function AssignmentDialog({
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} disabled={mutation.isPending}>
+        <Button onClick={closeGuard.requestClose} disabled={mutation.isPending}>
           Annuler
         </Button>
         <Button
@@ -238,6 +252,8 @@ export function AssignmentDialog({
           {mutation.isPending ? "Enregistrement…" : "Enregistrer l’affectation"}
         </Button>
       </DialogActions>
-    </Dialog>
+      </Dialog>
+      <UnsavedChangesDialog guard={closeGuard} />
+    </>
   );
 }

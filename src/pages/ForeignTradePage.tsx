@@ -26,6 +26,7 @@ import {
 import {
   AddRounded,
   CurrencyExchangeRounded,
+  EditOutlined,
   PostAddRounded,
 } from "@mui/icons-material";
 import { api } from "../api/client";
@@ -38,6 +39,9 @@ import {
 import { PageHeader } from "../components/PageHeader";
 import type { AccountingJournal, LedgerAccount } from "../types/api";
 import { useDossierSelection } from "../hooks/useDossierSelection";
+import { useFeedback } from "../feedback/useFeedback";
+import { UnsavedChangesDialog } from "../components/UnsavedChangesDialog";
+import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 interface ExchangeRate {
   id: string;
@@ -70,7 +74,19 @@ interface TradeOperation {
   exchangeRate: string;
   localAmount: string;
   landedCost: string;
+  freightAmount: string;
+  insuranceAmount: string;
+  customsDuties: string;
   importVat: string;
+  otherCosts: string;
+  incoterm: string | null;
+  customsDeclarationNumber: string | null;
+  customsDeclarationDate: string | null;
+  vatSuspensionCertificateId: string | null;
+  journalId: string;
+  tradeAccountId: string;
+  thirdPartyAccountId: string;
+  vatAccountId: string | null;
   exchangeDifference: string | null;
   status: string;
   repatriationDate: string | null;
@@ -108,6 +124,9 @@ export function ForeignTradePage() {
   const [dossierId, setDossierId] = useDossierSelection();
   const [tab, setTab] = useState(0);
   const [operationOpen, setOperationOpen] = useState(false);
+  const [editingOperationId, setEditingOperationId] = useState<string | null>(
+    null,
+  );
   const [settleOperation, setSettleOperation] = useState<TradeOperation | null>(
     null,
   );
@@ -126,6 +145,7 @@ export function ForeignTradePage() {
     notes: "",
   });
   const [operation, setOperation] = useState(emptyOperation);
+  const [initialOperation, setInitialOperation] = useState(emptyOperation);
   const [settlement, setSettlement] = useState({
     settlementDate: today,
     settlementRate: "",
@@ -135,7 +155,9 @@ export function ForeignTradePage() {
     repatriationDate: today,
     repatriationBankReference: "",
   });
+  const [initialSettlement, setInitialSettlement] = useState(settlement);
   const qc = useQueryClient();
+  const { showFeedback } = useFeedback();
   const orgBase = organizationId ? `/api/organizations/${organizationId}` : "";
   const base = dossierId
     ? `${orgBase}/foreign-trade/dossiers/${dossierId}`
@@ -188,6 +210,7 @@ export function ForeignTradePage() {
     onSuccess: () => {
       refresh();
       setRate({ ...rate, rate: "" });
+      showFeedback("Le taux de change a été enregistré.");
     },
   });
   const saveCertificate = useMutation({
@@ -200,27 +223,80 @@ export function ForeignTradePage() {
         authorizedBase: "",
         notes: "",
       });
+      showFeedback("L’attestation de suspension a été enregistrée.");
     },
   });
   const saveOperation = useMutation({
-    mutationFn: () =>
-      api.post(`${base}/operations`, {
+    mutationFn: () => {
+      const payload = {
         ...operation,
         exchangeRate: operation.exchangeRate || undefined,
         customsDeclarationDate: operation.customsDeclarationDate || undefined,
         vatSuspensionCertificateId:
           operation.vatSuspensionCertificateId || undefined,
         vatAccountId: operation.vatAccountId || undefined,
-      }),
+      };
+      return editingOperationId
+        ? api.put(`${base}/operations/${editingOperationId}`, payload)
+        : api.post(`${base}/operations`, payload);
+    },
     onSuccess: () => {
+      const message = editingOperationId
+        ? "L’opération internationale a été modifiée."
+        : "L’opération internationale a été créée en brouillon.";
       refresh();
       setOperationOpen(false);
+      setEditingOperationId(null);
       setOperation(emptyOperation);
+      showFeedback(message);
     },
   });
+  const openOperationCreator = () => {
+    setEditingOperationId(null);
+    setOperation(emptyOperation);
+    setInitialOperation(emptyOperation);
+    setOperationOpen(true);
+  };
+  const openOperationEditor = (item: TradeOperation) => {
+    setEditingOperationId(item.id);
+    const values = {
+      direction: item.direction,
+      reference: item.reference,
+      operationDate: item.operationDate,
+      thirdPartyName: item.thirdPartyName,
+      countryCode: item.countryCode,
+      currencyCode: item.currencyCode,
+      foreignAmount: item.foreignAmount,
+      exchangeRate: item.exchangeRate,
+      freightAmount: item.freightAmount,
+      insuranceAmount: item.insuranceAmount,
+      customsDuties: item.customsDuties,
+      importVat: item.importVat,
+      otherCosts: item.otherCosts,
+      incoterm: item.incoterm ?? "",
+      customsDeclarationNumber: item.customsDeclarationNumber ?? "",
+      customsDeclarationDate: item.customsDeclarationDate ?? "",
+      vatSuspensionCertificateId: item.vatSuspensionCertificateId ?? "",
+      journalId: item.journalId,
+      tradeAccountId: item.tradeAccountId,
+      thirdPartyAccountId: item.thirdPartyAccountId,
+      vatAccountId: item.vatAccountId ?? "",
+    };
+    setOperation(values);
+    setInitialOperation(values);
+    setOperationOpen(true);
+  };
+  const closeOperationEditor = () => {
+    setOperationOpen(false);
+    setEditingOperationId(null);
+    setOperation(emptyOperation);
+  };
   const postOperation = useMutation({
     mutationFn: (id: string) => api.post(`${base}/operations/${id}/post`),
-    onSuccess: refresh,
+    onSuccess: () => {
+      refresh();
+      showFeedback("L’opération internationale a été comptabilisée.");
+    },
   });
   const settle = useMutation({
     mutationFn: () =>
@@ -228,8 +304,39 @@ export function ForeignTradePage() {
     onSuccess: () => {
       refresh();
       setSettleOperation(null);
+      showFeedback("Le règlement et l’écart de change ont été comptabilisés.");
     },
   });
+  const openSettlement = (item: TradeOperation) => {
+    const values = {
+      settlementDate: today,
+      settlementRate: "",
+      journalId: "",
+      fxGainAccountId: "",
+      fxLossAccountId: "",
+      repatriationDate: today,
+      repatriationBankReference: "",
+    };
+    setSettlement(values);
+    setInitialSettlement(values);
+    setSettleOperation(item);
+  };
+  const operationDirty =
+    operationOpen &&
+    JSON.stringify(operation) !== JSON.stringify(initialOperation);
+  const settlementDirty =
+    Boolean(settleOperation) &&
+    JSON.stringify(settlement) !== JSON.stringify(initialSettlement);
+  const closeActiveTradeForm = () => {
+    if (settleOperation) setSettleOperation(null);
+    else if (operationOpen) closeOperationEditor();
+  };
+  const formCloseGuard = useUnsavedChangesGuard(
+    (operationDirty || settlementDirty) &&
+      !saveOperation.isPending &&
+      !settle.isPending,
+    closeActiveTradeForm,
+  );
   const error =
     saveRate.error ??
     saveCertificate.error ??
@@ -294,7 +401,7 @@ export function ForeignTradePage() {
                   variant="contained"
                   startIcon={<AddRounded />}
                   disabled={!base || !can("foreign_trade.manage")}
-                  onClick={() => setOperationOpen(true)}
+                  onClick={openOperationCreator}
                 >
                   Nouvelle opération
                 </Button>
@@ -316,7 +423,7 @@ export function ForeignTradePage() {
                         <TableCell align="right">Valeur TND</TableCell>
                         <TableCell align="right">Coût rendu</TableCell>
                         <TableCell>Statut</TableCell>
-                        <TableCell />
+                        <TableCell align="right">Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -379,8 +486,22 @@ export function ForeignTradePage() {
                               }
                             />
                           </TableCell>
-                          <TableCell>
-                            <Stack direction="row" spacing={1}>
+                          <TableCell align="right">
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              sx={{ justifyContent: "flex-end" }}
+                            >
+                              {item.status === "BROUILLON" &&
+                                can("foreign_trade.manage") && (
+                                  <Button
+                                    size="small"
+                                    startIcon={<EditOutlined />}
+                                    onClick={() => openOperationEditor(item)}
+                                  >
+                                    Modifier
+                                  </Button>
+                                )}
                               {item.status === "BROUILLON" &&
                                 can("foreign_trade.post") && (
                                   <Button
@@ -398,7 +519,7 @@ export function ForeignTradePage() {
                                   <Button
                                     size="small"
                                     startIcon={<CurrencyExchangeRounded />}
-                                    onClick={() => setSettleOperation(item)}
+                                    onClick={() => openSettlement(item)}
                                   >
                                     Régler
                                   </Button>
@@ -676,11 +797,17 @@ export function ForeignTradePage() {
 
       <Dialog
         open={operationOpen}
-        onClose={() => setOperationOpen(false)}
+        onClose={
+          saveOperation.isPending ? undefined : formCloseGuard.requestClose
+        }
         fullWidth
         maxWidth="md"
       >
-        <DialogTitle>Nouvelle opération internationale</DialogTitle>
+        <DialogTitle>
+          {editingOperationId
+            ? "Modifier l’opération internationale"
+            : "Nouvelle opération internationale"}
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
@@ -900,7 +1027,7 @@ export function ForeignTradePage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOperationOpen(false)}>Annuler</Button>
+          <Button onClick={formCloseGuard.requestClose}>Annuler</Button>
           <Button
             variant="contained"
             disabled={
@@ -914,14 +1041,14 @@ export function ForeignTradePage() {
             }
             onClick={() => saveOperation.mutate()}
           >
-            Enregistrer le brouillon
+            {editingOperationId ? "Enregistrer les modifications" : "Enregistrer le brouillon"}
           </Button>
         </DialogActions>
       </Dialog>
 
       <Dialog
         open={Boolean(settleOperation)}
-        onClose={() => setSettleOperation(null)}
+        onClose={settle.isPending ? undefined : formCloseGuard.requestClose}
         fullWidth
         maxWidth="sm"
       >
@@ -1010,7 +1137,7 @@ export function ForeignTradePage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSettleOperation(null)}>Annuler</Button>
+          <Button onClick={formCloseGuard.requestClose}>Annuler</Button>
           <Button
             variant="contained"
             disabled={
@@ -1028,6 +1155,7 @@ export function ForeignTradePage() {
           </Button>
         </DialogActions>
       </Dialog>
+      <UnsavedChangesDialog guard={formCloseGuard} />
     </>
   );
 }

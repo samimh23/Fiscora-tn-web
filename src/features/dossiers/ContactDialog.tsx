@@ -18,6 +18,9 @@ import {
 } from "@mui/material";
 import { api, ApiError } from "../../api/client";
 import type { DossierContact } from "../../types/api";
+import { UnsavedChangesDialog } from "../../components/UnsavedChangesDialog";
+import { useFeedback } from "../../feedback/useFeedback";
+import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 
 const contactSchema = z.object({
   fullName: z.string().min(2, "Le nom complet est obligatoire.").max(160),
@@ -59,6 +62,7 @@ export function ContactDialog({
   contact?: DossierContact | null;
 }) {
   const queryClient = useQueryClient();
+  const { showFeedback } = useFeedback();
   const [apiError, setApiError] = useState("");
   const editing = Boolean(contact);
   const {
@@ -66,7 +70,7 @@ export function ContactDialog({
     control,
     reset,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ContactFormValues>({
     resolver: zodResolver(contactSchema),
     defaultValues: emptyContact,
@@ -122,6 +126,7 @@ export function ContactDialog({
         queryKey: ["dossier-contacts", organizationId, dossierId],
       });
       onClose();
+      showFeedback(editing ? "Le contact a été modifié." : "Le contact a été ajouté.");
     },
     onError: (error) =>
       setApiError(
@@ -130,14 +135,19 @@ export function ContactDialog({
           : "Impossible d’enregistrer le contact.",
       ),
   });
+  const closeGuard = useUnsavedChangesGuard(
+    open && isDirty && !mutation.isPending,
+    onClose,
+  );
 
   return (
-    <Dialog
-      open={open}
-      onClose={mutation.isPending ? undefined : onClose}
-      fullWidth
-      maxWidth="sm"
-    >
+    <>
+      <Dialog
+        open={open}
+        onClose={mutation.isPending ? undefined : closeGuard.requestClose}
+        fullWidth
+        maxWidth="sm"
+      >
       <DialogTitle>
         <Typography variant="h3">
           {editing ? "Modifier le contact" : "Ajouter un contact"}
@@ -215,7 +225,7 @@ export function ContactDialog({
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} disabled={mutation.isPending}>
+        <Button onClick={closeGuard.requestClose} disabled={mutation.isPending}>
           Annuler
         </Button>
         <Button
@@ -227,6 +237,8 @@ export function ContactDialog({
           {mutation.isPending ? "Enregistrement…" : "Enregistrer"}
         </Button>
       </DialogActions>
-    </Dialog>
+      </Dialog>
+      <UnsavedChangesDialog guard={closeGuard} />
+    </>
   );
 }

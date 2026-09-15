@@ -726,6 +726,12 @@ export interface ThirdPartyPayment {
   instrumentStatus: "RECU" | "DEPOSE" | "ENCAISSE" | "IMPAYE" | null;
   instrumentDepositedAtUtc: string | null;
   instrumentClearedAtUtc: string | null;
+  correctionType: "ANNULATION_SAISIE" | "REMBOURSEMENT" | null;
+  correctionDate: string | null;
+  correctionReason: string | null;
+  correctedByUserId: string | null;
+  correctedAtUtc: string | null;
+  reversalJournalEntryId: string | null;
 }
 
 export interface FiscalVatRate {
