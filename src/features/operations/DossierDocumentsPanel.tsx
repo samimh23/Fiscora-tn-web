@@ -308,6 +308,9 @@ export function DossierDocumentsPanel({
         `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${documentId}/extraction`,
       ),
     onSuccess: async () => {
+      setReviewTarget(null);
+      setReviewDraft({});
+      setReviewComment("");
       setError("");
       await refresh();
     },
@@ -1447,8 +1450,18 @@ export function DossierDocumentsPanel({
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button
+            variant="outlined"
+            disabled={requestExtraction.isPending || reviewExtraction.isPending}
+            onClick={() =>
+              reviewTarget &&
+              requestExtraction.mutate(reviewTarget.documentId)
+            }
+          >
+            Relancer l’extraction
+          </Button>
+          <Button
             onClick={() => setReviewTarget(null)}
-            disabled={reviewExtraction.isPending}
+            disabled={requestExtraction.isPending || reviewExtraction.isPending}
           >
             Fermer
           </Button>
