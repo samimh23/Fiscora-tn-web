@@ -111,6 +111,7 @@ const extractionFields = [
   { path: "issue_date", label: "Date d’émission" },
   { path: "subtotal_excl_tax", label: "Montant HT" },
   { path: "tax_amount", label: "TVA" },
+  { path: "fodec_amount", label: "FODEC" },
   { path: "stamp_tax", label: "Timbre" },
   { path: "total_incl_tax", label: "Total TTC" },
   { path: "amount_due", label: "Montant dû" },
@@ -465,6 +466,21 @@ export function DossierDocumentsPanel({
           Boolean(item) && typeof item === "object" && !Array.isArray(item),
       )
     : [];
+  const reviewTaxes = Array.isArray(reviewDraft.other_taxes)
+    ? reviewDraft.other_taxes.filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) && typeof item === "object" && !Array.isArray(item),
+      )
+    : [];
+  const updateReviewTax = (
+    index: number,
+    field: "label" | "amount",
+    value: string,
+  ) => {
+    const taxes = reviewTaxes.map((item) => ({ ...item }));
+    taxes[index][field] = value.trim() ? value : null;
+    setReviewDraft({ ...reviewDraft, other_taxes: taxes });
+  };
 
   return (
     <>
@@ -1329,6 +1345,42 @@ export function DossierDocumentsPanel({
                   />
                 ))}
               </Box>
+              {reviewTaxes.length > 0 && (
+                <Box sx={{ mt: 2.5 }}>
+                  <Typography variant="h4" sx={{ mb: 1 }}>
+                    Autres taxes et prélèvements
+                  </Typography>
+                  <Box sx={{ display: "grid", gap: 1 }}>
+                    {reviewTaxes.map((tax, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: "minmax(0, 1fr) 150px",
+                          gap: 1,
+                        }}
+                      >
+                        <TextField
+                          size="small"
+                          label="Libellé"
+                          value={tax.label == null ? "" : String(tax.label)}
+                          onChange={(event) =>
+                            updateReviewTax(index, "label", event.target.value)
+                          }
+                        />
+                        <TextField
+                          size="small"
+                          label="Montant"
+                          value={tax.amount == null ? "" : String(tax.amount)}
+                          onChange={(event) =>
+                            updateReviewTax(index, "amount", event.target.value)
+                          }
+                        />
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
               {reviewLines.length > 0 && (
                 <Box sx={{ mt: 2.5 }}>
                   <Typography variant="h4" sx={{ mb: 1 }}>
