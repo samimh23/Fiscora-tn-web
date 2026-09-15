@@ -2,6 +2,14 @@ import type { AuthResponse } from "../types/api";
 
 const SESSION_KEY = "compta-tn.session";
 export const SESSION_CHANGED_EVENT = "compta-tn:session-changed";
+const API_BASE_URL = (import.meta.env.VITE_API_URL ?? "")
+  .trim()
+  .replace(/\/+$/, "");
+
+function apiUrl(path: string) {
+  if (!API_BASE_URL || /^https?:\/\//i.test(path)) return path;
+  return `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
 
 export class ApiError extends Error {
   public readonly status: number;
@@ -48,7 +56,7 @@ async function parseError(response: Response) {
 async function refreshSession(): Promise<AuthResponse | null> {
   const current = readSession();
   if (!current?.refreshToken) return null;
-  const response = await fetch("/api/auth/refresh", {
+  const response = await fetch(apiUrl("/api/auth/refresh"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refreshToken: current.refreshToken }),
@@ -79,7 +87,7 @@ export async function apiRequest<T>(
   if (session?.accessToken)
     headers.set("Authorization", `Bearer ${session.accessToken}`);
 
-  const response = await fetch(path, { ...init, headers });
+  const response = await fetch(apiUrl(path), { ...init, headers });
   if (response.status === 401 && retryAfterRefresh && session?.refreshToken) {
     const renewed = await refreshSession();
     if (renewed) return apiRequest<T>(path, init, false);
@@ -95,7 +103,7 @@ export async function downloadApiFile(path: string, filename: string) {
     const headers = new Headers();
     if (session?.accessToken)
       headers.set("Authorization", `Bearer ${session.accessToken}`);
-    const response = await fetch(path, { headers });
+    const response = await fetch(apiUrl(path), { headers });
     if (response.status === 401 && retryAfterRefresh && session?.refreshToken) {
       const renewed = await refreshSession();
       if (renewed) return fetchFile(false);
