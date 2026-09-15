@@ -368,6 +368,7 @@ export function DossierWorkspacePage({ module }: { module: WorkspaceModule }) {
           dossierId={dossierId}
           archived={archived}
           canUpload={can("documents.upload")}
+          canValidate={can("documents.validate")}
         />
       )}
       {dossier.data && module === "commercial" && (

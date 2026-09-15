@@ -455,6 +455,42 @@ export interface AccountingDocument {
   malwareScannedAtUtc: string | null;
 }
 
+export interface ExtractionValidationIssue {
+  code: string;
+  field: string;
+  severity: "ERROR" | "WARNING";
+  message: string;
+}
+
+export interface DocumentExtractionJob {
+  id: string;
+  documentId: string;
+  status:
+    | "EN_ATTENTE"
+    | "EN_COURS"
+    | "A_REVOIR"
+    | "VALIDEE"
+    | "REJETEE"
+    | "ECHEC";
+  attemptCount: number;
+  availableAtUtc: string;
+  modelName: string | null;
+  normalizedData: Record<string, unknown> | null;
+  validationIssues: ExtractionValidationIssue[];
+  lastError: string | null;
+  processedAtUtc: string | null;
+  reviewedAtUtc: string | null;
+  reviewedByUserId: string | null;
+  reviewComment: string | null;
+}
+
+export interface DocumentExtractionReviewItem extends DocumentExtractionJob {
+  document: Pick<
+    AccountingDocument,
+    "id" | "originalName" | "mimeType" | "category" | "createdAtUtc"
+  >;
+}
+
 export interface DocumentPreview {
   originalName: string;
   mimeType: string;

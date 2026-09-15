@@ -32,6 +32,7 @@ import {
 import { api, ApiError } from "../../api/client";
 import type {
   AccountingDocument,
+  DocumentExtractionReviewItem,
   DocumentPreview,
   MissingDocumentExpectation,
 } from "../../types/api";
@@ -87,16 +88,73 @@ const formatDate = (value?: string | null) =>
       )
     : "—";
 
+const extractionStatus = (status: string) => {
+  const values: Record<
+    string,
+    { label: string; color: "default" | "info" | "warning" | "success" | "error" }
+  > = {
+    NON_DEMANDEE: { label: "Non extraite", color: "default" },
+    EN_ATTENTE: { label: "Extraction planifiée", color: "info" },
+    EN_COURS: { label: "Extraction en cours", color: "info" },
+    A_REVOIR: { label: "Contrôle requis", color: "warning" },
+    VALIDEE: { label: "Extraction validée", color: "success" },
+    REJETEE: { label: "Extraction rejetée", color: "error" },
+    ECHEC: { label: "Extraction en échec", color: "error" },
+  };
+  return values[status] ?? { label: status, color: "default" as const };
+};
+
+const extractionFields = [
+  { path: "document_type", label: "Type de document" },
+  { path: "supplier.name", label: "Fournisseur" },
+  { path: "document_number", label: "Numéro" },
+  { path: "issue_date", label: "Date d’émission" },
+  { path: "subtotal_excl_tax", label: "Montant HT" },
+  { path: "tax_amount", label: "TVA" },
+  { path: "stamp_tax", label: "Timbre" },
+  { path: "total_incl_tax", label: "Total TTC" },
+  { path: "amount_due", label: "Montant dû" },
+] as const;
+
+const readPath = (record: Record<string, unknown>, path: string) => {
+  const value = path.split(".").reduce<unknown>((current, key) => {
+    if (!current || typeof current !== "object" || Array.isArray(current))
+      return undefined;
+    return (current as Record<string, unknown>)[key];
+  }, record);
+  return value == null ? "" : String(value);
+};
+
+const writePath = (
+  record: Record<string, unknown>,
+  path: string,
+  value: string,
+) => {
+  const copy = structuredClone(record);
+  const keys = path.split(".");
+  let cursor = copy;
+  keys.slice(0, -1).forEach((key) => {
+    const child = cursor[key];
+    if (!child || typeof child !== "object" || Array.isArray(child))
+      cursor[key] = {};
+    cursor = cursor[key] as Record<string, unknown>;
+  });
+  cursor[keys[keys.length - 1]] = value.trim() ? value : null;
+  return copy;
+};
+
 export function DossierDocumentsPanel({
   organizationId,
   dossierId,
   archived,
   canUpload,
+  canValidate,
 }: {
   organizationId: string;
   dossierId: string;
   archived: boolean;
   canUpload: boolean;
+  canValidate: boolean;
 }) {
   const queryClient = useQueryClient();
   const [year, setYear] = useState(currentYear);
@@ -126,6 +184,10 @@ export function DossierDocumentsPanel({
   const [receiveSelections, setReceiveSelections] = useState<
     Record<string, string>
   >({});
+  const [reviewTarget, setReviewTarget] =
+    useState<DocumentExtractionReviewItem | null>(null);
+  const [reviewDraft, setReviewDraft] = useState<Record<string, unknown>>({});
+  const [reviewComment, setReviewComment] = useState("");
   const [error, setError] = useState("");
   const documents = useQuery({
     queryKey: [
@@ -140,6 +202,12 @@ export function DossierDocumentsPanel({
       api.get<AccountingDocument[]>(
         `/api/organizations/${organizationId}/dossiers/${dossierId}/documents?periodYear=${year}&periodMonth=${month}${category ? `&category=${category}` : ""}`,
       ),
+    refetchInterval: (query) =>
+      (query.state.data ?? []).some((item) =>
+        ["EN_ATTENTE", "EN_COURS"].includes(item.extractionStatus),
+      )
+        ? 10_000
+        : false,
   });
   const expectations = useQuery({
     queryKey: ["missing-documents", organizationId, dossierId, year, month],
@@ -165,6 +233,29 @@ export function DossierDocumentsPanel({
       return result;
     },
     enabled: Boolean(previewTarget),
+    retry: false,
+  });
+  const extractionReviews = useQuery({
+    queryKey: ["document-extraction-reviews", organizationId, dossierId],
+    queryFn: () =>
+      api.get<DocumentExtractionReviewItem[]>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/extraction/review-queue`,
+      ),
+    enabled: canValidate,
+    refetchInterval: 15_000,
+  });
+  const reviewPreview = useQuery({
+    queryKey: [
+      "document-extraction-preview",
+      organizationId,
+      dossierId,
+      reviewTarget?.document.id,
+    ],
+    queryFn: () =>
+      api.get<DocumentPreview>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${reviewTarget!.document.id}/preview`,
+      ),
+    enabled: Boolean(reviewTarget),
     retry: false,
   });
   const refresh = async () => {
@@ -208,6 +299,57 @@ export function DossierDocumentsPanel({
         reason instanceof ApiError || reason instanceof Error
           ? reason.message
           : "Téléversement impossible.",
+      ),
+  });
+  const requestExtraction = useMutation({
+    mutationFn: (documentId: string) =>
+      api.post(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${documentId}/extraction`,
+      ),
+    onSuccess: async () => {
+      setError("");
+      await refresh();
+    },
+    onError: (reason) =>
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : "Impossible de démarrer l’extraction.",
+      ),
+  });
+  const reviewExtraction = useMutation({
+    mutationFn: ({
+      documentId,
+      decision,
+    }: {
+      documentId: string;
+      decision: "APPROUVER" | "REJETER";
+    }) =>
+      api.patch(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${documentId}/extraction/review`,
+        {
+          decision,
+          ...(decision === "APPROUVER" ? { correctedData: reviewDraft } : {}),
+          comment: reviewComment.trim() || undefined,
+        },
+      ),
+    onSuccess: async () => {
+      setReviewTarget(null);
+      setReviewDraft({});
+      setReviewComment("");
+      setError("");
+      await Promise.all([
+        refresh(),
+        queryClient.invalidateQueries({
+          queryKey: ["document-extraction-reviews", organizationId, dossierId],
+        }),
+      ]);
+    },
+    onError: (reason) =>
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : "Impossible d’enregistrer la décision.",
       ),
   });
   const action = useMutation({
@@ -308,10 +450,121 @@ export function DossierDocumentsPanel({
     expectations.data?.filter(
       (entry) => !["VALIDEE", "ANNULEE"].includes(entry.status ?? "DEMANDEE"),
     ) ?? [];
+  const openReview = (item: DocumentExtractionReviewItem) => {
+    setReviewTarget(item);
+    setReviewDraft(structuredClone(item.normalizedData ?? {}));
+    setReviewComment("");
+    setError("");
+  };
+  const reviewByDocument = new Map(
+    (extractionReviews.data ?? []).map((item) => [item.documentId, item]),
+  );
+  const reviewLines = Array.isArray(reviewDraft.line_items)
+    ? reviewDraft.line_items.filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) && typeof item === "object" && !Array.isArray(item),
+      )
+    : [];
 
   return (
     <>
       <Box className="documents-layout">
+        {canValidate && (
+          <Card sx={{ gridColumn: "1 / -1" }}>
+            <Box
+              sx={{
+                p: 2.5,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 2,
+                flexWrap: "wrap",
+              }}
+            >
+              <Box>
+                <Typography variant="h3">Contrôle des extractions</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Les valeurs proposées par l’IA ne sont jamais comptabilisées
+                  sans validation humaine.
+                </Typography>
+              </Box>
+              <Chip
+                label={`${extractionReviews.data?.length ?? 0} à contrôler`}
+                color={extractionReviews.data?.length ? "warning" : "success"}
+                variant="outlined"
+              />
+            </Box>
+            {extractionReviews.isLoading && (
+              <Box sx={{ px: 2.5, pb: 2.5 }}>
+                <Skeleton height={58} />
+              </Box>
+            )}
+            {extractionReviews.isError && (
+              <Alert severity="error" sx={{ mx: 2.5, mb: 2.5 }}>
+                Impossible de charger la file de contrôle.
+              </Alert>
+            )}
+            {!extractionReviews.isLoading &&
+              !extractionReviews.isError &&
+              !extractionReviews.data?.length && (
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ px: 2.5, pb: 2.5 }}
+                >
+                  Aucune extraction en attente. Les nouvelles propositions
+                  apparaîtront ici automatiquement.
+                </Typography>
+              )}
+            {extractionReviews.data?.map((item) => (
+              <Box
+                key={item.id}
+                sx={{
+                  px: 2.5,
+                  py: 1.75,
+                  borderTop: "1px solid",
+                  borderColor: "divider",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  flexWrap: "wrap",
+                }}
+              >
+                <InsertDriveFileOutlined color="primary" />
+                <Box sx={{ flex: 1, minWidth: 220 }}>
+                  <Typography sx={{ fontWeight: 700 }}>
+                    {item.document.originalName}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {documentCategoryLabel(item.document.category)} ·{" "}
+                    {item.modelName ?? "NuExtract3"} · tentative {item.attemptCount}
+                  </Typography>
+                </Box>
+                <Chip
+                  size="small"
+                  color={
+                    item.validationIssues.some(
+                      (issue) => issue.severity === "ERROR",
+                    )
+                      ? "error"
+                      : item.validationIssues.length
+                        ? "warning"
+                        : "success"
+                  }
+                  label={
+                    item.validationIssues.length
+                      ? `${item.validationIssues.length} contrôle(s)`
+                      : "Cohérence automatique OK"
+                  }
+                  variant="outlined"
+                />
+                <Button variant="contained" onClick={() => openReview(item)}>
+                  Contrôler
+                </Button>
+              </Box>
+            ))}
+          </Card>
+        )}
         <Card>
           <Box
             sx={{
@@ -485,6 +738,38 @@ export function DossierDocumentsPanel({
                   variant="outlined"
                 />
               </Tooltip>
+              <Chip
+                label={extractionStatus(document.extractionStatus).label}
+                color={extractionStatus(document.extractionStatus).color}
+                size="small"
+                variant="outlined"
+              />
+              {canValidate &&
+                !archived &&
+                document.malwareScanStatus === "SAIN" &&
+                ["image/jpeg", "image/png"].includes(document.mimeType) &&
+                !["EN_ATTENTE", "EN_COURS", "A_REVOIR"].includes(
+                  document.extractionStatus,
+                ) && (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={requestExtraction.isPending}
+                    onClick={() => requestExtraction.mutate(document.id)}
+                  >
+                    Extraire
+                  </Button>
+                )}
+              {canValidate && reviewByDocument.has(document.id) && (
+                <Button
+                  size="small"
+                  color="warning"
+                  variant="contained"
+                  onClick={() => openReview(reviewByDocument.get(document.id)!)}
+                >
+                  Contrôler
+                </Button>
+              )}
               {canUpload &&
                 !archived &&
                 document.processingStatus !== "TRAITE" && (
@@ -925,6 +1210,224 @@ export function DossierDocumentsPanel({
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPreviewTarget(null)}>Fermer</Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={Boolean(reviewTarget)}
+        onClose={
+          reviewExtraction.isPending ? undefined : () => setReviewTarget(null)
+        }
+        fullWidth
+        maxWidth="xl"
+      >
+        <DialogTitle>
+          <Typography variant="h3">Contrôler l’extraction</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {reviewTarget?.document.originalName} · comparez chaque valeur avec
+            la pièce originale avant validation.
+          </Typography>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 0 }}>
+          {error && (
+            <Alert severity="error" sx={{ m: 2.5 }}>
+              {error}
+            </Alert>
+          )}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1fr) 520px" },
+              minHeight: { lg: 620 },
+            }}
+          >
+            <Box
+              sx={{
+                bgcolor: "grey.100",
+                p: 2.5,
+                display: "flex",
+                minHeight: 420,
+                borderRight: { lg: "1px solid" },
+                borderColor: { lg: "divider" },
+              }}
+            >
+              {reviewPreview.isLoading && (
+                <Skeleton variant="rounded" width="100%" height={520} />
+              )}
+              {reviewPreview.isError && (
+                <Alert severity="error" sx={{ alignSelf: "flex-start" }}>
+                  Aperçu indisponible. Téléchargez la pièce avant de prendre une
+                  décision.
+                </Alert>
+              )}
+              {reviewPreview.data?.kind === "image" &&
+                reviewPreview.data.url && (
+                  <Box
+                    component="img"
+                    src={reviewPreview.data.url}
+                    alt={reviewPreview.data.originalName}
+                    sx={{
+                      width: "100%",
+                      maxHeight: 720,
+                      objectFit: "contain",
+                      m: "auto",
+                      bgcolor: "common.white",
+                      boxShadow: 1,
+                    }}
+                  />
+                )}
+              {reviewPreview.data?.kind === "pdf" && reviewPreview.data.url && (
+                <Box
+                  component="iframe"
+                  src={reviewPreview.data.url}
+                  title={reviewPreview.data.originalName}
+                  sx={{ width: "100%", minHeight: 620, border: 0 }}
+                />
+              )}
+            </Box>
+            <Box sx={{ p: 2.5, overflowY: "auto", maxHeight: { lg: 720 } }}>
+              <Typography variant="h4" sx={{ mb: 0.5 }}>
+                Valeurs proposées
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Corrigez les champs inexacts. Les contrôles comptables seront
+                relancés lors de l’approbation.
+              </Typography>
+              {reviewTarget?.validationIssues.map((issue) => (
+                <Alert
+                  key={`${issue.code}-${issue.field}`}
+                  severity={issue.severity === "ERROR" ? "error" : "warning"}
+                  sx={{ mb: 1 }}
+                >
+                  <strong>{issue.field}</strong> — {issue.message}
+                </Alert>
+              ))}
+              {!reviewTarget?.validationIssues.length && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  Les contrôles automatiques sont cohérents. Une vérification
+                  visuelle reste obligatoire.
+                </Alert>
+              )}
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                  gap: 1.5,
+                }}
+              >
+                {extractionFields.map((field) => (
+                  <TextField
+                    key={field.path}
+                    size="small"
+                    label={field.label}
+                    value={readPath(reviewDraft, field.path)}
+                    onChange={(event) =>
+                      setReviewDraft(
+                        writePath(reviewDraft, field.path, event.target.value),
+                      )
+                    }
+                    fullWidth
+                  />
+                ))}
+              </Box>
+              {reviewLines.length > 0 && (
+                <Box sx={{ mt: 2.5 }}>
+                  <Typography variant="h4" sx={{ mb: 1 }}>
+                    Lignes détectées ({reviewLines.length})
+                  </Typography>
+                  <Box
+                    sx={{
+                      overflowX: "auto",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Box
+                      component="table"
+                      sx={{
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        "& th, & td": {
+                          textAlign: "left",
+                          px: 1.25,
+                          py: 1,
+                          borderBottom: "1px solid",
+                          borderColor: "divider",
+                          fontSize: 13,
+                        },
+                        "& th": { bgcolor: "grey.100", fontWeight: 700 },
+                      }}
+                    >
+                      <thead>
+                        <tr>
+                          <th>Description</th>
+                          <th>Qté</th>
+                          <th>Prix</th>
+                          <th>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reviewLines.map((line, index) => (
+                          <tr key={index}>
+                            <td>{String(line.description ?? "—")}</td>
+                            <td>{String(line.quantity ?? "—")}</td>
+                            <td>{String(line.unit_price ?? "—")}</td>
+                            <td>{String(line.line_total ?? "—")}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+              <TextField
+                label="Note de contrôle"
+                placeholder="Obligatoire en cas de rejet"
+                value={reviewComment}
+                onChange={(event) => setReviewComment(event.target.value)}
+                multiline
+                minRows={3}
+                fullWidth
+                sx={{ mt: 2.5 }}
+              />
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setReviewTarget(null)}
+            disabled={reviewExtraction.isPending}
+          >
+            Fermer
+          </Button>
+          <Button
+            color="error"
+            variant="outlined"
+            disabled={!reviewComment.trim() || reviewExtraction.isPending}
+            onClick={() =>
+              reviewTarget &&
+              reviewExtraction.mutate({
+                documentId: reviewTarget.documentId,
+                decision: "REJETER",
+              })
+            }
+          >
+            Rejeter
+          </Button>
+          <Button
+            color="success"
+            variant="contained"
+            disabled={reviewExtraction.isPending}
+            onClick={() =>
+              reviewTarget &&
+              reviewExtraction.mutate({
+                documentId: reviewTarget.documentId,
+                decision: "APPROUVER",
+              })
+            }
+          >
+            Approuver les valeurs
+          </Button>
         </DialogActions>
       </Dialog>
       <Dialog

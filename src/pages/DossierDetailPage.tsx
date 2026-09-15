@@ -919,6 +919,7 @@ export function DossierDetailPage() {
           dossierId={dossierId}
           archived={archived}
           canUpload={can("documents.upload")}
+          canValidate={can("documents.validate")}
         />
       )}
 
