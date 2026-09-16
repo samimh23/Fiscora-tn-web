@@ -2,6 +2,7 @@ export interface OrganizationSummary {
   id: string;
   name: string;
   slug: string;
+  emailIngestionAddress?: string;
   role: string;
   permissions: string[];
 }
@@ -314,6 +315,7 @@ export interface DossierSummary {
   archivedAtUtc?: string | null;
   createdAtUtc?: string;
   updatedAtUtc?: string;
+  emailIngestionAddress?: string;
 }
 
 export interface DossierSetupStep {
@@ -454,9 +456,43 @@ export interface AccountingDocument {
   malwareSignature: string | null;
   malwareScannedAtUtc: string | null;
   uploadedBy: {
-    type: "CLIENT" | "CABINET" | "UNKNOWN";
+    type: "CLIENT" | "CABINET" | "EMAIL" | "UNKNOWN";
     name: string;
   };
+  ingestionSource?: "UPLOAD" | "EMAIL";
+  sourceEmail?: string | null;
+  sourceSubject?: string | null;
+  sourceMessageId?: string | null;
+}
+
+export interface InboundEmailMessage {
+  id: string;
+  senderEmail: string;
+  senderName: string | null;
+  subject: string | null;
+  recipients: string[];
+  receivedAtUtc: string;
+  status: "RECUE" | "A_CLASSER" | "IMPORTEE" | "PARTIELLE" | "REJETEE";
+  routingReason: string | null;
+  failureReason: string | null;
+  dossierId: string | null;
+  attachmentCount: number;
+  importedCount: number;
+  attachments: Array<{
+    id: string;
+    originalName: string;
+    mimeType: string;
+    sizeBytes: string;
+    status:
+      | "SAIN"
+      | "NON_ANALYSE"
+      | "INFECTE"
+      | "ERREUR"
+      | "NON_SUPPORTE"
+      | "IMPORTE";
+    failureReason: string | null;
+    documentId: string | null;
+  }>;
 }
 
 export interface ExtractionValidationIssue {

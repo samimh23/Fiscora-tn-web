@@ -25,8 +25,10 @@ import {
   ApartmentRounded,
   AutoAwesomeRounded,
   CheckCircleOutlineRounded,
+  ContentCopyRounded,
   DeleteOutlineRounded,
   DownloadRounded,
+  EmailOutlined,
   InsertDriveFileOutlined,
   PersonOutlineRounded,
   UploadFileRounded,
@@ -35,9 +37,12 @@ import {
 import { api, ApiError } from "../../api/client";
 import type {
   AccountingDocument,
+  DossierSummary,
   DocumentExtractionReviewItem,
   DocumentPreview,
+  InboundEmailMessage,
   MissingDocumentExpectation,
+  OrganizationSummary,
 } from "../../types/api";
 import { documentCategories, documentCategoryLabel } from "./options";
 
@@ -114,6 +119,13 @@ const documentOrigin = (document: AccountingDocument) => {
         detail: document.uploadedBy.name,
         color: "default" as const,
         icon: <ApartmentRounded fontSize="small" />,
+      };
+    case "EMAIL":
+      return {
+        label: "Reçu par e-mail",
+        detail: document.sourceEmail ?? document.uploadedBy.name,
+        color: "info" as const,
+        icon: <EmailOutlined fontSize="small" />,
       };
     default:
       return {
@@ -227,6 +239,30 @@ export function DossierDocumentsPanel({
   const [reviewDraft, setReviewDraft] = useState<Record<string, unknown>>({});
   const [reviewComment, setReviewComment] = useState("");
   const [error, setError] = useState("");
+  const [copiedAddress, setCopiedAddress] = useState("");
+  const organization = useQuery({
+    queryKey: ["organization-email-ingestion", organizationId],
+    queryFn: () =>
+      api.get<OrganizationSummary>(`/api/organizations/${organizationId}`),
+    enabled: canUpload,
+  });
+  const dossier = useQuery({
+    queryKey: ["dossier-email-ingestion", organizationId, dossierId],
+    queryFn: () =>
+      api.get<DossierSummary>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}`,
+      ),
+    enabled: canUpload,
+  });
+  const unmatchedEmails = useQuery({
+    queryKey: ["unmatched-inbound-emails", organizationId],
+    queryFn: () =>
+      api.get<InboundEmailMessage[]>(
+        `/api/organizations/${organizationId}/email-ingestion/unmatched`,
+      ),
+    enabled: canUpload,
+    refetchInterval: 30_000,
+  });
   const documents = useQuery({
     queryKey: [
       "dossier-documents",
@@ -470,6 +506,34 @@ export function DossierDocumentsPanel({
         reason instanceof ApiError ? reason.message : "Action impossible.",
       ),
   });
+  const classifyEmail = useMutation({
+    mutationFn: (messageId: string) =>
+      api.patch(
+        `/api/organizations/${organizationId}/email-ingestion/${messageId}/classify`,
+        { dossierId },
+      ),
+    onSuccess: async () => {
+      setError("");
+      await Promise.all([
+        refresh(),
+        queryClient.invalidateQueries({
+          queryKey: ["unmatched-inbound-emails", organizationId],
+        }),
+      ]);
+    },
+    onError: (reason) =>
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : "Impossible de classer cet e-mail.",
+      ),
+  });
+  const copyAddress = async (address?: string) => {
+    if (!address) return;
+    await navigator.clipboard.writeText(address);
+    setCopiedAddress(address);
+    window.setTimeout(() => setCopiedAddress(""), 1800);
+  };
   const download = async (document: AccountingDocument) => {
     try {
       const response = await api.get<{ url: string }>(
@@ -621,6 +685,160 @@ export function DossierDocumentsPanel({
             ))}
           </Box>
         </Card>
+        {canUpload && (
+          <Card sx={{ gridColumn: "1 / -1", p: 2.5 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 2,
+                flexWrap: "wrap",
+              }}
+            >
+              <Box sx={{ maxWidth: 720 }}>
+                <Typography variant="h3">Recevoir les factures par e-mail</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  Votre Gmail conserve le message. Une copie transférée à Fiscora
+                  est contrôlée, puis rattachée au bon dossier lorsque
+                  l’expéditeur correspond à un contact client unique.
+                </Typography>
+              </Box>
+              <Chip
+                icon={<EmailOutlined />}
+                label={`${unmatchedEmails.data?.length ?? 0} e-mail(s) à classer`}
+                color={unmatchedEmails.data?.length ? "warning" : "success"}
+                variant="outlined"
+              />
+            </Box>
+            <Box
+              sx={{
+                mt: 2,
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 1.5,
+              }}
+            >
+              {[
+                {
+                  title: "Transfert automatique depuis le Gmail du cabinet",
+                  description:
+                    "Ajoutez cette adresse comme destination de transfert dans Gmail. Fiscora reconnaît le client grâce à son adresse d’expéditeur.",
+                  address: organization.data?.emailIngestionAddress,
+                },
+                {
+                  title: "Adresse dédiée à ce dossier",
+                  description:
+                    "Donnez cette adresse au client lorsqu’il faut garantir le classement dans ce dossier, même si son adresse d’expéditeur change.",
+                  address: dossier.data?.emailIngestionAddress,
+                },
+              ].map((item) => (
+                <Box
+                  key={item.title}
+                  sx={{
+                    p: 2,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 2,
+                    bgcolor: "background.default",
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 700 }}>{item.title}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {item.description}
+                  </Typography>
+                  <Box
+                    sx={{
+                      mt: 1.5,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        flex: 1,
+                        fontFamily: "monospace",
+                        overflowWrap: "anywhere",
+                      }}
+                    >
+                      {item.address ?? "Configuration en cours"}
+                    </Typography>
+                    <Tooltip
+                      title={
+                        copiedAddress === item.address ? "Adresse copiée" : "Copier"
+                      }
+                    >
+                      <span>
+                        <IconButton
+                          size="small"
+                          disabled={!item.address}
+                          onClick={() => void copyAddress(item.address)}
+                        >
+                          <ContentCopyRounded fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+            {unmatchedEmails.isError && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                La file des e-mails à classer ne peut pas être chargée.
+              </Alert>
+            )}
+            {!!unmatchedEmails.data?.length && (
+              <Box sx={{ mt: 2.5 }}>
+                <Typography sx={{ fontWeight: 700, mb: 1 }}>
+                  E-mails dont le dossier n’a pas été reconnu
+                </Typography>
+                {unmatchedEmails.data.map((message) => (
+                  <Box
+                    key={message.id}
+                    sx={{
+                      py: 1.5,
+                      display: "flex",
+                      gap: 1.5,
+                      alignItems: "center",
+                      flexWrap: "wrap",
+                      borderTop: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  >
+                    <EmailOutlined color="action" />
+                    <Box sx={{ flex: 1, minWidth: 220 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        {message.senderName || message.senderEmail}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {message.subject || "Sans objet"} · {message.attachmentCount}{" "}
+                        pièce(s) · {formatDateTime(message.receivedAtUtc)}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="warning.main"
+                        sx={{ display: "block" }}
+                      >
+                        {message.routingReason}
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      disabled={classifyEmail.isPending || archived}
+                      onClick={() => classifyEmail.mutate(message.id)}
+                    >
+                      Classer dans ce dossier
+                    </Button>
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Card>
+        )}
         {canValidate && (
           <Card sx={{ gridColumn: "1 / -1" }}>
             <Box
