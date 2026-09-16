@@ -13,7 +13,11 @@ import {
   saveSession,
   SESSION_CHANGED_EVENT,
 } from "../api/client";
-import type { AuthResponse, OrganizationSummary } from "../types/api";
+import type {
+  AuthResponse,
+  GoogleRegistrationRequired,
+  OrganizationSummary,
+} from "../types/api";
 
 const ORGANIZATION_KEY = "compta-tn.organization";
 
@@ -27,6 +31,13 @@ interface RegisterInput extends LoginInput {
   organizationName: string;
 }
 
+interface GoogleRegisterInput {
+  credential: string;
+  fullName: string;
+  organizationName: string;
+  acceptedTerms: true;
+}
+
 interface AuthContextValue {
   session: AuthResponse | null;
   isAuthenticated: boolean;
@@ -35,7 +46,10 @@ interface AuthContextValue {
   selectOrganization: (id: string) => void;
   can: (permission: string) => boolean;
   login: (input: LoginInput) => Promise<void>;
-  loginWithGoogle: (credential: string) => Promise<void>;
+  loginWithGoogle: (
+    credential: string,
+  ) => Promise<GoogleRegistrationRequired | null>;
+  registerWithGoogle: (input: GoogleRegisterInput) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -128,9 +142,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGoogle = useCallback(
     async (credential: string) => {
-      const response = await api.post<AuthResponse>('/api/auth/google', {
-        credential,
-      });
+      const response = await api.post<
+        AuthResponse | GoogleRegistrationRequired
+      >("/api/auth/google", { credential });
+      if ("registrationRequired" in response) return response;
+      setSession(response);
+      return null;
+    },
+    [setSession],
+  );
+
+  const registerWithGoogle = useCallback(
+    async (input: GoogleRegisterInput) => {
+      const response = await api.post<AuthResponse>(
+        "/api/auth/google/register",
+        input,
+      );
       setSession(response);
     },
     [setSession],
@@ -172,6 +199,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         Boolean(organization?.permissions.includes(permission)),
       login,
       loginWithGoogle,
+      registerWithGoogle,
       register,
       logout,
     }),
@@ -182,6 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       organization,
       register,
+      registerWithGoogle,
       selectOrganization,
       session,
     ],

@@ -1,12 +1,25 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import { useLocation, useNavigate, Link as RouterLink } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type Resolver } from "react-hook-form";
 import { z } from "zod";
-import { Alert, Box, Button, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  TextField,
+  Typography,
+} from "@mui/material";
 import {
   ArrowForwardRounded,
   CheckCircleOutlineRounded,
+  VerifiedRounded,
 } from "@mui/icons-material";
 import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
@@ -36,7 +49,12 @@ type FormValues = z.infer<typeof registerSchema>;
 export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const isRegister = mode === "register";
   const { t } = useLanguage();
-  const { login, loginWithGoogle, register: createAccount } = useAuth();
+  const {
+    login,
+    loginWithGoogle,
+    register: createAccount,
+    registerWithGoogle,
+  } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // ProtectedRoute dépose ici la page demandée avant la redirection.
@@ -46,6 +64,15 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const redirectTo = from ? `${from.pathname}${from.search ?? ""}` : "/";
   const [apiError, setApiError] = useState("");
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+  const [isGoogleRegistering, setIsGoogleRegistering] = useState(false);
+  const [googleRegistrationError, setGoogleRegistrationError] = useState("");
+  const [googleRegistration, setGoogleRegistration] = useState<{
+    credential: string;
+    email: string;
+  } | null>(null);
+  const [googleFullName, setGoogleFullName] = useState("");
+  const [googleOrganizationName, setGoogleOrganizationName] = useState("");
+  const [googleTermsAccepted, setGoogleTermsAccepted] = useState(false);
   const {
     register,
     handleSubmit,
@@ -82,7 +109,18 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
       setApiError("");
       setIsGoogleSubmitting(true);
       try {
-        await loginWithGoogle(credential);
+        const result = await loginWithGoogle(credential);
+        if (result) {
+          setGoogleRegistration({ credential, email: result.profile.email });
+          setGoogleFullName(
+            result.profile.fullName?.trim() ||
+              result.profile.email.split("@")[0],
+          );
+          setGoogleOrganizationName("");
+          setGoogleTermsAccepted(false);
+          setGoogleRegistrationError("");
+          return;
+        }
         navigate(redirectTo, { replace: true });
       } catch (error) {
         setApiError(
@@ -96,6 +134,47 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     },
     [loginWithGoogle, navigate, redirectTo, t],
   );
+
+  const closeGoogleRegistration = () => {
+    if (isGoogleRegistering) return;
+    setGoogleRegistration(null);
+    setGoogleRegistrationError("");
+  };
+
+  const onGoogleRegister = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!googleRegistration) return;
+    if (
+      googleFullName.trim().length < 2 ||
+      googleOrganizationName.trim().length < 2 ||
+      !googleTermsAccepted
+    ) {
+      setGoogleRegistrationError(
+        t("Complétez les informations et acceptez les conditions."),
+      );
+      return;
+    }
+
+    setGoogleRegistrationError("");
+    setIsGoogleRegistering(true);
+    try {
+      await registerWithGoogle({
+        credential: googleRegistration.credential,
+        fullName: googleFullName.trim(),
+        organizationName: googleOrganizationName.trim(),
+        acceptedTerms: true,
+      });
+      navigate(redirectTo, { replace: true });
+    } catch (error) {
+      setGoogleRegistrationError(
+        error instanceof ApiError
+          ? error.message
+          : t("Impossible de contacter le serveur."),
+      );
+    } finally {
+      setIsGoogleRegistering(false);
+    }
+  };
 
   return (
     <main className="auth-page">
@@ -196,21 +275,19 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               {apiError}
             </Alert>
           )}
-          {!isRegister && (
-            <>
-              <GoogleSignInButton
-                disabled={isSubmitting || isGoogleSubmitting}
-                onCredential={onGoogleCredential}
-              />
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Box sx={{ height: 1, bgcolor: "divider", flex: 1 }} />
-                <Typography color="text.secondary" variant="body2">
-                  {t("ou")}
-                </Typography>
-                <Box sx={{ height: 1, bgcolor: "divider", flex: 1 }} />
-              </Box>
-            </>
-          )}
+          <GoogleSignInButton
+            disabled={
+              isSubmitting || isGoogleSubmitting || isGoogleRegistering
+            }
+            onCredential={onGoogleCredential}
+          />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box sx={{ height: 1, bgcolor: "divider", flex: 1 }} />
+            <Typography color="text.secondary" variant="body2">
+              {t("ou")}
+            </Typography>
+            <Box sx={{ height: 1, bgcolor: "divider", flex: 1 }} />
+          </Box>
           <Box sx={{ display: "grid", gap: 2.2 }}>
             {isRegister && (
               <TextField
@@ -305,6 +382,97 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
           </Typography>
         </Box>
       </section>
+
+      <Dialog
+        open={Boolean(googleRegistration)}
+        onClose={closeGoogleRegistration}
+        fullWidth
+        maxWidth="sm"
+      >
+        <Box component="form" onSubmit={onGoogleRegister} noValidate>
+          <DialogTitle>{t("Créer votre cabinet avec Google")}</DialogTitle>
+          <DialogContent dividers>
+            <Typography color="text.secondary" sx={{ mb: 2.5 }}>
+              {t(
+                "Votre identité Google est vérifiée. Complétez ces informations pour créer un nouvel espace indépendant.",
+              )}
+            </Typography>
+            {googleRegistrationError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {googleRegistrationError}
+              </Alert>
+            )}
+            <Alert icon={<VerifiedRounded />} severity="success" sx={{ mb: 2 }}>
+              {t("Adresse Google vérifiée")} : {googleRegistration?.email}
+            </Alert>
+            <Box sx={{ display: "grid", gap: 2 }}>
+              <TextField
+                label={t("Nom complet")}
+                value={googleFullName}
+                onChange={(event) => setGoogleFullName(event.target.value)}
+                autoComplete="name"
+                autoFocus
+                required
+              />
+              <TextField
+                label={t("Nom du cabinet")}
+                value={googleOrganizationName}
+                onChange={(event) =>
+                  setGoogleOrganizationName(event.target.value)
+                }
+                autoComplete="organization"
+                required
+                helperText={t(
+                  "Un nouvel espace isolé sera créé. Vous en serez le propriétaire.",
+                )}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={googleTermsAccepted}
+                    onChange={(event) =>
+                      setGoogleTermsAccepted(event.target.checked)
+                    }
+                  />
+                }
+                label={
+                  <Typography variant="body2">
+                    {t("J’accepte les")}{" "}
+                    <RouterLink to="/conditions">
+                      {t("conditions d’utilisation")}
+                    </RouterLink>{" "}
+                    {t("et la")}{" "}
+                    <RouterLink to="/confidentialite">
+                      {t("politique de confidentialité")}
+                    </RouterLink>
+                    .
+                  </Typography>
+                }
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button
+              onClick={closeGoogleRegistration}
+              disabled={isGoogleRegistering}
+            >
+              {t("Annuler")}
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={
+                isGoogleRegistering ||
+                googleFullName.trim().length < 2 ||
+                googleOrganizationName.trim().length < 2 ||
+                !googleTermsAccepted
+              }
+            >
+              {isGoogleRegistering ? t("Création…") : t("Créer mon cabinet")}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
     </main>
   );
 }

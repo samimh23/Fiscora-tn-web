@@ -72,6 +72,19 @@ export const arabicTranslations: Record<string, string> = {
   ou: "أو",
   "La connexion Google est temporairement indisponible.":
     "تسجيل الدخول عبر Google غير متاح مؤقتاً.",
+  "Créer votre cabinet avec Google": "إنشاء مكتبك باستخدام Google",
+  "Votre identité Google est vérifiée. Complétez ces informations pour créer un nouvel espace indépendant.":
+    "تم التحقق من هويتك عبر Google. أكمل هذه المعلومات لإنشاء فضاء مستقل جديد.",
+  "Adresse Google vérifiée": "عنوان Google موثّق",
+  "Un nouvel espace isolé sera créé. Vous en serez le propriétaire.":
+    "سيتم إنشاء فضاء جديد ومعزول وستكون أنت مالكه.",
+  "J’accepte les": "أوافق على",
+  "conditions d’utilisation": "شروط الاستخدام",
+  "et la": "و",
+  "politique de confidentialité": "سياسة الخصوصية",
+  "Complétez les informations et acceptez les conditions.":
+    "أكمل المعلومات ووافق على الشروط.",
+  "Création…": "جارٍ الإنشاء…",
   "Invitation sécurisée": "دعوة آمنة",
   "Créez votre accès": "أنشئ بيانات دخولك",
   "Choisissez vous-même votre mot de passe. L’administrateur du cabinet ne pourra jamais le voir.":

@@ -23,6 +23,14 @@ export interface AuthResponse {
   organizations: OrganizationSummary[];
 }
 
+export interface GoogleRegistrationRequired {
+  registrationRequired: true;
+  profile: {
+    email: string;
+    fullName: string | null;
+  };
+}
+
 export interface InvitationPreview {
   email: string;
   organizationName: string;
