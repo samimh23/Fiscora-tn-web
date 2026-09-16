@@ -1,7 +1,7 @@
 name: Deploy frontend to Azure staging
 
 on:
-  workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -13,10 +13,9 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build and deploy frontend
-    if: github.ref == 'refs/heads/main'
+    name: Build, deploy and verify frontend
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
@@ -62,3 +61,31 @@ jobs:
           app_location: dist
           output_location: ""
           skip_app_build: true
+
+      - name: Resolve the staging URL
+        id: frontend-url
+        shell: bash
+        run: |
+          hostname="$(az staticwebapp show \
+            --resource-group "${{ vars.AZURE_RESOURCE_GROUP }}" \
+            --name "${{ vars.AZURE_STATIC_WEB_APP_NAME }}" \
+            --query defaultHostname \
+            --output tsv)"
+          echo "url=https://$hostname" >> "$GITHUB_OUTPUT"
+
+      - name: Verify the deployed HTML
+        shell: bash
+        run: |
+          curl --fail --show-error --silent \
+            --retry 12 --retry-delay 5 --retry-all-errors \
+            "${{ steps.frontend-url.outputs.url }}/connexion" \
+            | grep -F '<div id="root"></div>'
+
+      - name: Install the smoke-test browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run public staging smoke tests
+        env:
+          E2E_BASE_URL: ${{ steps.frontend-url.outputs.url }}
+          E2E_SKIP_WEBSERVER: "1"
+        run: npm run test:e2e -- e2e/staging-smoke.spec.ts --project=desktop
