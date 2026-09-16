@@ -60,10 +60,13 @@ export function GoogleSignInButton({
   const { language, t } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     if (!GOOGLE_CLIENT_ID) return;
     let active = true;
+    setLoadFailed(false);
+    setIsReady(false);
     currentCredentialHandler = (response) => {
       if (active && response.credential) void onCredential(response.credential);
     };
@@ -84,8 +87,13 @@ export function GoogleSignInButton({
           width: Math.min(400, containerRef.current.clientWidth || 400),
           locale: language === 'ar' ? 'ar' : 'fr',
         });
+        setIsReady(true);
       })
-      .catch(() => active && setLoadFailed(true));
+      .catch(() => {
+        if (!active) return;
+        setIsReady(false);
+        setLoadFailed(true);
+      });
 
     return () => {
       active = false;
@@ -114,7 +122,7 @@ export function GoogleSignInButton({
       }}
     >
       <Box ref={containerRef} sx={{ display: 'flex', justifyContent: 'center' }} />
-      {!window.google?.accounts.id && (
+      {!isReady && (
         <CircularProgress
           size={22}
           sx={{ position: 'absolute', inset: 0, margin: 'auto' }}
