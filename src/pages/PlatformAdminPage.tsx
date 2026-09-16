@@ -47,6 +47,7 @@ import {
 import { api, readSession } from "../api/client";
 import { MetricCard } from "../components/MetricCard";
 import { PlatformEmailPanel } from "../features/platform-admin/PlatformEmailPanel";
+import { PlatformMonitoringPanel } from "../features/platform-admin/PlatformMonitoringPanel";
 import { PlatformSaasAnalyticsPanel } from "../features/saas/PlatformSaasAnalyticsPanel";
 import { PlatformSubscriptionsPanel } from "../features/saas/PlatformSubscriptionsPanel";
 import type {
@@ -407,6 +408,7 @@ export function PlatformAdminPage() {
             <Tab label="Analytics SaaS" />
             <Tab label="Traitements" />
             <Tab label="E-mails" />
+            <Tab label="Supervision" />
             <Tab label="Journal d’audit" />
           </Tabs>
           {(tab === 0 || tab === 1) && (
@@ -739,7 +741,9 @@ export function PlatformAdminPage() {
 
         {tab === 5 && <PlatformEmailPanel />}
 
-        {tab === 6 && (
+        {tab === 6 && <PlatformMonitoringPanel />}
+
+        {tab === 7 && (
           <TableContainer>
             <Table>
               <TableHead>

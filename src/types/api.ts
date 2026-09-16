@@ -108,6 +108,46 @@ export interface PlatformJobsOverview {
   }>;
 }
 
+export interface PlatformMonitoring {
+  generatedAtUtc: string;
+  scope: "CURRENT_API_REPLICA";
+  windowMinutes: number;
+  runtime: {
+    status: "OPERATIONNEL";
+    environment: string;
+    nodeVersion: string;
+    startedAtUtc: string;
+    uptimeSeconds: number;
+    memoryRssBytes: number;
+    heapUsedBytes: number;
+  };
+  http: {
+    activeRequests: number;
+    requestsTotal: number;
+    errors5xx: number;
+    errorRate: number;
+    averageDurationMs: number;
+    p95DurationMs: number;
+  };
+  database: {
+    status: "OPERATIONNEL" | "INDISPONIBLE";
+    latencyMs: number;
+  };
+  history: Array<{
+    timestampUtc: string;
+    requests: number;
+    errors5xx: number;
+    averageDurationMs: number;
+  }>;
+  pipelines: PlatformJobsOverview["pipelines"];
+  integrations: {
+    applicationInsightsConfigured: boolean;
+    documentExtractionEnabled: boolean;
+    assistantEnabled: boolean;
+    emailConfigured: boolean;
+  };
+}
+
 export interface PlatformAuditLog {
   id: string;
   action: string;
