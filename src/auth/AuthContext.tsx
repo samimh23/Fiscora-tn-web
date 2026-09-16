@@ -35,6 +35,7 @@ interface AuthContextValue {
   selectOrganization: (id: string) => void;
   can: (permission: string) => boolean;
   login: (input: LoginInput) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -125,6 +126,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [setSession],
   );
 
+  const loginWithGoogle = useCallback(
+    async (credential: string) => {
+      const response = await api.post<AuthResponse>('/api/auth/google', {
+        credential,
+      });
+      setSession(response);
+    },
+    [setSession],
+  );
+
   const register = useCallback(
     async (input: RegisterInput) => {
       const response = await api.post<AuthResponse>(
@@ -160,12 +171,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       can: (permission: string) =>
         Boolean(organization?.permissions.includes(permission)),
       login,
+      loginWithGoogle,
       register,
       logout,
     }),
     [
       isBooting,
       login,
+      loginWithGoogle,
       logout,
       organization,
       register,

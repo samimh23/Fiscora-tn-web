@@ -69,6 +69,9 @@ export const arabicTranslations: Record<string, string> = {
   "Ajoutez une minuscule.": "أضف حرفاً لاتينياً صغيراً.",
   "Ajoutez un chiffre.": "أضف رقماً.",
   "Impossible de contacter le serveur.": "تعذر الاتصال بالخادم.",
+  ou: "أو",
+  "La connexion Google est temporairement indisponible.":
+    "تسجيل الدخول عبر Google غير متاح مؤقتاً.",
   "Invitation sécurisée": "دعوة آمنة",
   "Créez votre accès": "أنشئ بيانات دخولك",
   "Choisissez vous-même votre mot de passe. L’administrateur du cabinet ne pourra jamais le voir.":

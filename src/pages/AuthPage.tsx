@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useLocation, useNavigate, Link as RouterLink } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type Resolver } from "react-hook-form";
@@ -12,6 +12,7 @@ import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
 import { Brand } from "../components/Brand";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
+import { GoogleSignInButton } from "../components/GoogleSignInButton";
 import { useLanguage } from "../i18n/LanguageContext";
 
 const loginSchema = z.object({
@@ -35,7 +36,7 @@ type FormValues = z.infer<typeof registerSchema>;
 export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const isRegister = mode === "register";
   const { t } = useLanguage();
-  const { login, register: createAccount } = useAuth();
+  const { login, loginWithGoogle, register: createAccount } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   // ProtectedRoute dépose ici la page demandée avant la redirection.
@@ -44,6 +45,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   )?.from;
   const redirectTo = from ? `${from.pathname}${from.search ?? ""}` : "/";
   const [apiError, setApiError] = useState("");
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const {
     register,
     handleSubmit,
@@ -74,6 +76,26 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
       );
     }
   });
+
+  const onGoogleCredential = useCallback(
+    async (credential: string) => {
+      setApiError("");
+      setIsGoogleSubmitting(true);
+      try {
+        await loginWithGoogle(credential);
+        navigate(redirectTo, { replace: true });
+      } catch (error) {
+        setApiError(
+          error instanceof ApiError
+            ? error.message
+            : t("Impossible de contacter le serveur."),
+        );
+      } finally {
+        setIsGoogleSubmitting(false);
+      }
+    },
+    [loginWithGoogle, navigate, redirectTo, t],
+  );
 
   return (
     <main className="auth-page">
@@ -174,6 +196,21 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               {apiError}
             </Alert>
           )}
+          {!isRegister && (
+            <>
+              <GoogleSignInButton
+                disabled={isSubmitting || isGoogleSubmitting}
+                onCredential={onGoogleCredential}
+              />
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ height: 1, bgcolor: "divider", flex: 1 }} />
+                <Typography color="text.secondary" variant="body2">
+                  {t("ou")}
+                </Typography>
+                <Box sx={{ height: 1, bgcolor: "divider", flex: 1 }} />
+              </Box>
+            </>
+          )}
           <Box sx={{ display: "grid", gap: 2.2 }}>
             {isRegister && (
               <TextField
@@ -223,7 +260,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               type="submit"
               variant="contained"
               size="large"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isGoogleSubmitting}
               endIcon={<ArrowForwardRounded />}
             >
               {isSubmitting
