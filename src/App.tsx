@@ -163,6 +163,11 @@ const SubscriptionPage = lazy(() =>
     default: module.SubscriptionPage,
   })),
 );
+const LegalPage = lazy(() =>
+  import("./pages/LegalPage").then((module) => ({
+    default: module.LegalPage,
+  })),
+);
 
 const lazyPage = (page: ReactNode) => (
   <Suspense fallback={<LoadingScreen />}>{page}</Suspense>
@@ -247,6 +252,16 @@ function PlatformAdminOnlyRoute() {
 }
 
 const router = createBrowserRouter([
+  {
+    path: "/confidentialite",
+    element: lazyPage(<LegalPage type="privacy" />),
+    errorElement: <RouteErrorPage />,
+  },
+  {
+    path: "/conditions",
+    element: lazyPage(<LegalPage type="terms" />),
+    errorElement: <RouteErrorPage />,
+  },
   {
     path: "/invitation/:token",
     element: lazyPage(<AcceptInvitationPage />),

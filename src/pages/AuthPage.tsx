@@ -284,6 +284,25 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               {isRegister ? t("Se connecter") : t("Créer un espace")}
             </RouterLink>
           </Typography>
+          <Typography
+            color="text.secondary"
+            variant="caption"
+            sx={{ mt: 2, textAlign: "center" }}
+          >
+            <RouterLink
+              to="/confidentialite"
+              style={{ color: "inherit", fontWeight: 600 }}
+            >
+              Politique de confidentialité
+            </RouterLink>
+            {" · "}
+            <RouterLink
+              to="/conditions"
+              style={{ color: "inherit", fontWeight: 600 }}
+            >
+              Conditions d’utilisation
+            </RouterLink>
+          </Typography>
         </Box>
       </section>
     </main>
