@@ -42,6 +42,11 @@ const MigrationAssistantPage = lazy(() =>
     default: module.MigrationAssistantPage,
   })),
 );
+const AssistantPage = lazy(() =>
+  import("./pages/AssistantPage").then((module) => ({
+    default: module.AssistantPage,
+  })),
+);
 const DossierWorkspacePage = lazy(() =>
   import("./pages/DossierWorkspacePage").then((module) => ({
     default: module.DossierWorkspacePage,
@@ -326,6 +331,10 @@ const router = createBrowserRouter([
               {
                 path: "/migration",
                 element: lazyPage(<MigrationAssistantPage />),
+              },
+              {
+                path: "/assistant",
+                element: lazyPage(<AssistantPage />),
               },
               {
                 path: "/banque",

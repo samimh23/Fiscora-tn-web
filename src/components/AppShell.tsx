@@ -43,6 +43,7 @@ import {
   AdminPanelSettingsOutlined,
   ApartmentOutlined,
   AssessmentOutlined,
+  AutoAwesomeOutlined,
   BadgeOutlined,
   BusinessCenterOutlined,
   CalendarMonthOutlined,
@@ -115,6 +116,12 @@ const navSections: Array<{
         path: "/documents",
         icon: DescriptionOutlined,
         permission: "documents.view",
+      },
+      {
+        label: "Assistant Fiscora",
+        path: "/assistant",
+        icon: AutoAwesomeOutlined,
+        permission: "documents.validate",
       },
       {
         label: "Achats & ventes",
@@ -445,7 +452,11 @@ export function AppShell() {
             </Typography>
             <Typography
               variant="caption"
-              sx={{ display: "block", mt: 0.35, color: "rgba(255,255,255,.65)" }}
+              sx={{
+                display: "block",
+                mt: 0.35,
+                color: "rgba(255,255,255,.65)",
+              }}
             >
               Retards, pièces, validation, banque — dans le bon ordre.
             </Typography>
