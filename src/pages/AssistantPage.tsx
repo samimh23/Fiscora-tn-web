@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import {
   Alert,
@@ -10,13 +10,17 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  IconButton,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import {
   AutoAwesomeOutlined,
+  ContentCopyRounded,
   DescriptionOutlined,
+  RestartAltRounded,
   SendRounded,
   ShieldOutlined,
   SyncRounded,
@@ -67,7 +71,15 @@ export function AssistantPage() {
   const [error, setError] = useState("");
   const [indexStatus, setIndexStatus] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [copiedMessageId, setCopiedMessageId] = useState("");
+  const conversationEndRef = useRef<HTMLDivElement | null>(null);
   const endpoint = `/api/organizations/${organizationId}/dossiers/${dossierId}/assistant`;
+
+  useEffect(() => {
+    setMessages([]);
+    setError("");
+    setIndexStatus("");
+  }, [dossierId]);
 
   const reindex = useMutation({
     mutationFn: () =>
@@ -112,6 +124,10 @@ export function AssistantPage() {
       ),
   });
 
+  useEffect(() => {
+    conversationEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, ask.isPending]);
+
   const send = (text = question) => {
     const clean = text.trim();
     if (!clean || !dossierId || ask.isPending) return;
@@ -124,6 +140,12 @@ export function AssistantPage() {
     ask.mutate(clean);
   };
 
+  const copyAnswer = async (message: ChatMessage) => {
+    await navigator.clipboard.writeText(message.text);
+    setCopiedMessageId(message.id);
+    window.setTimeout(() => setCopiedMessageId(""), 1500);
+  };
+
   return (
     <>
       <PageHeader
@@ -132,6 +154,33 @@ export function AssistantPage() {
         description="Interrogez uniquement les données extraites puis validées par le cabinet. Chaque réponse indique les pièces utilisées."
         action={<DossierSelector value={dossierId} onChange={setDossierId} />}
       />
+
+      <Stack
+        direction="row"
+        sx={{ mb: 2, gap: 1, alignItems: "center", flexWrap: "wrap" }}
+      >
+        <Chip
+          icon={<ShieldOutlined />}
+          label="Sources validées uniquement"
+          color="success"
+          variant="outlined"
+        />
+        <Chip label="Réponses avec citations" variant="outlined" />
+        <Box sx={{ flex: 1 }} />
+        {messages.length > 0 && (
+          <Button
+            size="small"
+            color="inherit"
+            startIcon={<RestartAltRounded />}
+            onClick={() => {
+              setMessages([]);
+              setError("");
+            }}
+          >
+            Nouvelle conversation
+          </Button>
+        )}
+      </Stack>
 
       {!dossierId && (
         <Alert severity="info" sx={{ mb: 2 }}>
@@ -264,6 +313,24 @@ export function AssistantPage() {
                             ))}
                           </Stack>
                         ) : null}
+                        {message.role === "assistant" && (
+                          <Tooltip
+                            title={
+                              copiedMessageId === message.id
+                                ? "Réponse copiée"
+                                : "Copier la réponse"
+                            }
+                          >
+                            <IconButton
+                              size="small"
+                              aria-label="Copier la réponse"
+                              onClick={() => void copyAnswer(message)}
+                              sx={{ mt: 1, ml: -0.5 }}
+                            >
+                              <ContentCopyRounded fontSize="inherit" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </Box>
                     </Box>
                   ))}
@@ -279,6 +346,7 @@ export function AssistantPage() {
                       </Typography>
                     </Stack>
                   )}
+                  <div ref={conversationEndRef} />
                 </Stack>
               )}
             </Box>
@@ -298,13 +366,13 @@ export function AssistantPage() {
                 value={question}
                 onChange={(event) => setQuestion(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter" && event.ctrlKey) {
+                  if (event.key === "Enter" && !event.shiftKey) {
                     event.preventDefault();
                     send();
                   }
                 }}
                 disabled={!dossierId || ask.isPending}
-                helperText="Ctrl + Entrée pour envoyer"
+                helperText="Entrée pour envoyer · Maj + Entrée pour une nouvelle ligne"
               />
               <Button
                 variant="contained"
