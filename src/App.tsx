@@ -11,6 +11,7 @@ import { AppShell } from "./components/AppShell";
 import { ClientPortalShell } from "./components/ClientPortalShell";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { PlatformAdminShell } from "./components/PlatformAdminShell";
+import { RouteErrorPage } from "./components/RouteErrorPage";
 import { WorkSessionProvider } from "./time-tracking/WorkSessionContext";
 import { UnsavedChangesProvider } from "./unsaved-changes/UnsavedChangesProvider";
 
@@ -246,9 +247,14 @@ function PlatformAdminOnlyRoute() {
 }
 
 const router = createBrowserRouter([
-  { path: "/invitation/:token", element: lazyPage(<AcceptInvitationPage />) },
+  {
+    path: "/invitation/:token",
+    element: lazyPage(<AcceptInvitationPage />),
+    errorElement: <RouteErrorPage />,
+  },
   {
     element: <PublicOnlyRoute />,
+    errorElement: <RouteErrorPage />,
     children: [
       { path: "/connexion", element: lazyPage(<AuthPage mode="login" />) },
       { path: "/inscription", element: lazyPage(<AuthPage mode="register" />) },
@@ -264,6 +270,7 @@ const router = createBrowserRouter([
   },
   {
     element: <ProtectedRoute />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         element: <PlatformAdminOnlyRoute />,

@@ -6,7 +6,16 @@
       "/*.{css,js,png,jpg,jpeg,gif,svg,ico,woff,woff2,ttf,map,json}"
     ]
   },
+  "routes": [
+    {
+      "route": "/assets/*",
+      "headers": {
+        "Cache-Control": "public, max-age=31536000, immutable"
+      }
+    }
+  ],
   "globalHeaders": {
+    "Cache-Control": "no-cache, no-store, must-revalidate",
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
