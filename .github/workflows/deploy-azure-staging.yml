@@ -33,7 +33,9 @@ jobs:
       - name: Build frontend
         env:
           VITE_API_URL: ${{ vars.AZURE_API_URL }}
-          VITE_GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_OAUTH_CLIENT_ID }}
+          # OAuth client IDs identify a public browser application; unlike a
+          # client secret, this value is expected to be shipped in the bundle.
+          VITE_GOOGLE_CLIENT_ID: 472441103512-gip0b8tn1mdn46r4fvqb4re0snrp0r8i.apps.googleusercontent.com
         run: npm run build
 
       - name: Authenticate to Azure with OIDC
