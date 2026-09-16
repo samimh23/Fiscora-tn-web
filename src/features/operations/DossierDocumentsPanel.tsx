@@ -22,10 +22,13 @@ import {
 } from "@mui/material";
 import {
   AddRounded,
+  ApartmentRounded,
+  AutoAwesomeRounded,
   CheckCircleOutlineRounded,
   DeleteOutlineRounded,
   DownloadRounded,
   InsertDriveFileOutlined,
+  PersonOutlineRounded,
   UploadFileRounded,
   VisibilityOutlined,
 } from "@mui/icons-material";
@@ -87,6 +90,40 @@ const formatDate = (value?: string | null) =>
         new Date(`${value.slice(0, 10)}T00:00:00`),
       )
     : "—";
+
+const formatDateTime = (value?: string | null) =>
+  value
+    ? new Intl.DateTimeFormat("fr-TN", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(new Date(value))
+    : "—";
+
+const documentOrigin = (document: AccountingDocument) => {
+  switch (document.uploadedBy?.type) {
+    case "CLIENT":
+      return {
+        label: "Reçu du client",
+        detail: document.uploadedBy.name,
+        color: "info" as const,
+        icon: <PersonOutlineRounded fontSize="small" />,
+      };
+    case "CABINET":
+      return {
+        label: "Ajouté par le cabinet",
+        detail: document.uploadedBy.name,
+        color: "default" as const,
+        icon: <ApartmentRounded fontSize="small" />,
+      };
+    default:
+      return {
+        label: "Origine non renseignée",
+        detail: document.uploadedBy?.name ?? "—",
+        color: "default" as const,
+        icon: <InsertDriveFileOutlined fontSize="small" />,
+      };
+  }
+};
 
 const extractionStatus = (status: string) => {
   const values: Record<
@@ -484,10 +521,106 @@ export function DossierDocumentsPanel({
     taxes[index][field] = value.trim() ? value : null;
     setReviewDraft({ ...reviewDraft, other_taxes: taxes });
   };
+  const receivedDocuments = documents.data ?? [];
+  const clientDocumentCount = receivedDocuments.filter(
+    (document) => document.uploadedBy?.type === "CLIENT",
+  ).length;
+  const reviewCount = extractionReviews.data?.length ?? 0;
 
   return (
     <>
       <Box className="documents-layout">
+        <Card sx={{ gridColumn: "1 / -1", p: 2.5 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: 2,
+              flexWrap: "wrap",
+            }}
+          >
+            <Box>
+              <Typography variant="h3">Collecter et préparer les pièces</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Retrouvez ce que le client a envoyé, vérifiez les données lues
+                par l’IA, puis classez la pièce lorsqu’elle est prête.
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+              <Chip
+                icon={<PersonOutlineRounded />}
+                label={`${clientDocumentCount} reçu(s) du client`}
+                variant="outlined"
+                color={clientDocumentCount ? "info" : "default"}
+              />
+              <Chip
+                icon={<AutoAwesomeRounded />}
+                label={`${reviewCount} à vérifier`}
+                variant="outlined"
+                color={reviewCount ? "warning" : "success"}
+              />
+              <Chip
+                label={`${missing.length} demande(s) ouverte(s)`}
+                variant="outlined"
+                color={missing.length ? "warning" : "default"}
+              />
+            </Box>
+          </Box>
+          <Box
+            sx={{
+              mt: 2.5,
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
+              border: "1px solid",
+              borderColor: "divider",
+              borderRadius: 2,
+              overflow: "hidden",
+            }}
+          >
+            {[
+              ["1", "Recevoir", "Client ou cabinet dépose une pièce"],
+              ["2", "Vérifier", "Contrôler les valeurs proposées par l’IA"],
+              ["3", "Classer", "La pièce devient prête pour le traitement comptable"],
+            ].map(([number, title, description], index) => (
+              <Box
+                key={number}
+                sx={{
+                  p: 2,
+                  display: "flex",
+                  gap: 1.5,
+                  borderLeft: { md: index ? "1px solid" : 0 },
+                  borderTop: { xs: index ? "1px solid" : 0, md: 0 },
+                  borderColor: "divider",
+                  bgcolor: "background.paper",
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 28,
+                    height: 28,
+                    flex: "0 0 auto",
+                    borderRadius: "50%",
+                    bgcolor: "primary.main",
+                    color: "primary.contrastText",
+                    display: "grid",
+                    placeItems: "center",
+                    fontWeight: 700,
+                    fontSize: 13,
+                  }}
+                >
+                  {number}
+                </Box>
+                <Box>
+                  <Typography sx={{ fontWeight: 700 }}>{title}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {description}
+                  </Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Card>
         {canValidate && (
           <Card sx={{ gridColumn: "1 / -1" }}>
             <Box
@@ -501,10 +634,10 @@ export function DossierDocumentsPanel({
               }}
             >
               <Box>
-                <Typography variant="h3">Contrôle des extractions</Typography>
+                <Typography variant="h3">À vérifier avant comptabilisation</Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Les valeurs proposées par l’IA ne sont jamais comptabilisées
-                  sans validation humaine.
+                  Comparez la pièce originale avec les valeurs lues par l’IA.
+                  Rien n’est validé sans votre accord.
                 </Typography>
               </Box>
               <Chip
@@ -572,13 +705,13 @@ export function DossierDocumentsPanel({
                   }
                   label={
                     item.validationIssues.length
-                      ? `${item.validationIssues.length} contrôle(s)`
-                      : "Cohérence automatique OK"
+                      ? `${item.validationIssues.length} point(s) à examiner`
+                      : "Calculs cohérents — lecture à confirmer"
                   }
                   variant="outlined"
                 />
                 <Button variant="contained" onClick={() => openReview(item)}>
-                  Contrôler
+                  Vérifier les données
                 </Button>
               </Box>
             ))}
@@ -596,9 +729,9 @@ export function DossierDocumentsPanel({
             }}
           >
             <Box>
-              <Typography variant="h3">Pièces du dossier</Typography>
+              <Typography variant="h3">Documents reçus</Typography>
               <Typography variant="body2" color="text.secondary">
-                Fichiers classés dans le stockage sécurisé.
+                Tous les fichiers déposés par le client ou ajoutés par le cabinet.
               </Typography>
             </Box>
             {canUpload && !archived && (
@@ -706,7 +839,8 @@ export function DossierDocumentsPanel({
                 borderColor: "divider",
                 display: "flex",
                 gap: 2,
-                alignItems: "center",
+                alignItems: "flex-start",
+                flexWrap: "wrap",
               }}
             >
               <Box
@@ -722,117 +856,154 @@ export function DossierDocumentsPanel({
               >
                 <InsertDriveFileOutlined />
               </Box>
-              <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Box sx={{ flex: "1 1 300px", minWidth: 0 }}>
                 <Typography sx={{ fontWeight: 700 }} noWrap>
                   {document.originalName}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {documentCategoryLabel(document.category)} ·{" "}
-                  {fileSize(document.sizeBytes)} · v{document.version}
+                  {fileSize(document.sizeBytes)} · version {document.version} · reçu le{" "}
+                  {formatDateTime(document.createdAtUtc)}
                 </Typography>
+                <Box
+                  sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
+                >
+                  <Chip
+                    icon={documentOrigin(document).icon}
+                    label={documentOrigin(document).label}
+                    color={documentOrigin(document).color}
+                    size="small"
+                    variant="outlined"
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    par {documentOrigin(document).detail}
+                  </Typography>
+                </Box>
               </Box>
-              <Chip
-                label={
-                  document.processingStatus === "TRAITE"
-                    ? "Traité"
-                    : "À traiter"
-                }
-                color={
-                  document.processingStatus === "TRAITE" ? "success" : "warning"
-                }
-                size="small"
-                variant="outlined"
-              />
-              <Tooltip
-                title={
-                  document.malwareScanStatus === "INFECTE"
-                    ? `Menace détectée : ${document.malwareSignature ?? "signature inconnue"}`
-                    : "Tous les documents doivent être analysés avant leur ouverture."
-                }
+              <Box
+                sx={{
+                  flex: "1 1 260px",
+                  display: "flex",
+                  gap: 0.75,
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                }}
               >
                 <Chip
-                  label={malwareStatus(document).label}
-                  color={malwareStatus(document).color}
+                  label={
+                    document.processingStatus === "TRAITE"
+                      ? "Dossier classé"
+                      : "Classement à terminer"
+                  }
+                  color={
+                    document.processingStatus === "TRAITE" ? "success" : "warning"
+                  }
                   size="small"
                   variant="outlined"
                 />
-              </Tooltip>
-              <Chip
-                label={extractionStatus(document.extractionStatus).label}
-                color={extractionStatus(document.extractionStatus).color}
-                size="small"
-                variant="outlined"
-              />
-              {canValidate &&
-                !archived &&
-                document.malwareScanStatus === "SAIN" &&
-                ["image/jpeg", "image/png"].includes(document.mimeType) &&
-                !["EN_ATTENTE", "EN_COURS", "A_REVOIR"].includes(
-                  document.extractionStatus,
-                ) && (
-                  <Button
+                <Tooltip
+                  title={
+                    document.malwareScanStatus === "INFECTE"
+                      ? `Menace détectée : ${document.malwareSignature ?? "signature inconnue"}`
+                      : "Le fichier a été contrôlé avant son ouverture."
+                  }
+                >
+                  <Chip
+                    label={malwareStatus(document).label}
+                    color={malwareStatus(document).color}
                     size="small"
                     variant="outlined"
-                    disabled={requestExtraction.isPending}
-                    onClick={() => requestExtraction.mutate(document.id)}
+                  />
+                </Tooltip>
+                <Chip
+                  label={extractionStatus(document.extractionStatus).label}
+                  color={extractionStatus(document.extractionStatus).color}
+                  size="small"
+                  variant="outlined"
+                />
+              </Box>
+              <Box
+                sx={{
+                  flex: "0 1 auto",
+                  display: "flex",
+                  gap: 0.5,
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                }}
+              >
+                {canValidate &&
+                  !archived &&
+                  document.malwareScanStatus === "SAIN" &&
+                  ["image/jpeg", "image/png"].includes(document.mimeType) &&
+                  !["EN_ATTENTE", "EN_COURS", "A_REVOIR"].includes(
+                    document.extractionStatus,
+                  ) && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AutoAwesomeRounded />}
+                      disabled={requestExtraction.isPending}
+                      onClick={() => requestExtraction.mutate(document.id)}
+                    >
+                      Lire avec l’IA
+                    </Button>
+                  )}
+                {canValidate && reviewByDocument.has(document.id) && (
+                  <Button
+                    size="small"
+                    color="warning"
+                    variant="contained"
+                    onClick={() => openReview(reviewByDocument.get(document.id)!)}
                   >
-                    Extraire
+                    Vérifier les données
                   </Button>
                 )}
-              {canValidate && reviewByDocument.has(document.id) && (
-                <Button
-                  size="small"
-                  color="warning"
-                  variant="contained"
-                  onClick={() => openReview(reviewByDocument.get(document.id)!)}
-                >
-                  Contrôler
-                </Button>
-              )}
-              {canUpload &&
-                !archived &&
-                document.processingStatus !== "TRAITE" && (
-                  <Tooltip title="Marquer comme traité">
-                    <IconButton
+                {canUpload &&
+                  !archived &&
+                  document.processingStatus !== "TRAITE" && (
+                    <Button
+                      size="small"
+                      variant="text"
                       color="success"
+                      startIcon={<CheckCircleOutlineRounded />}
                       onClick={() =>
                         action.mutate({ type: "processed", document })
                       }
                     >
-                      <CheckCircleOutlineRounded />
+                      Terminer le classement
+                    </Button>
+                  )}
+                <Tooltip title="Voir le document">
+                  <IconButton
+                    color="primary"
+                    disabled={document.malwareScanStatus === "INFECTE"}
+                    onClick={() => {
+                      setPreviewSheet(0);
+                      setPreviewTarget(document);
+                    }}
+                  >
+                    <VisibilityOutlined />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Télécharger">
+                  <IconButton
+                    disabled={document.malwareScanStatus === "INFECTE"}
+                    onClick={() => void download(document)}
+                  >
+                    <DownloadRounded />
+                  </IconButton>
+                </Tooltip>
+                {canUpload && !archived && (
+                  <Tooltip title="Supprimer">
+                    <IconButton
+                      color="error"
+                      onClick={() => setDeleteTarget(document)}
+                    >
+                      <DeleteOutlineRounded />
                     </IconButton>
                   </Tooltip>
                 )}
-              <Tooltip title="Aperçu">
-                <IconButton
-                  color="primary"
-                  disabled={document.malwareScanStatus === "INFECTE"}
-                  onClick={() => {
-                    setPreviewSheet(0);
-                    setPreviewTarget(document);
-                  }}
-                >
-                  <VisibilityOutlined />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Télécharger">
-                <IconButton
-                  disabled={document.malwareScanStatus === "INFECTE"}
-                  onClick={() => void download(document)}
-                >
-                  <DownloadRounded />
-                </IconButton>
-              </Tooltip>
-              {canUpload && !archived && (
-                <Tooltip title="Supprimer">
-                  <IconButton
-                    color="error"
-                    onClick={() => setDeleteTarget(document)}
-                  >
-                    <DeleteOutlineRounded />
-                  </IconButton>
-                </Tooltip>
-              )}
+              </Box>
             </Box>
           ))}
         </Card>
@@ -847,18 +1018,20 @@ export function DossierDocumentsPanel({
             }}
           >
             <Box>
-              <Typography variant="h3">Demandes de pièces</Typography>
+              <Typography variant="h3">Documents demandés au client</Typography>
               <Typography variant="body2" color="text.secondary">
-                {String(month).padStart(2, "0")}/{year}
+                Suivi des pièces manquantes · {String(month).padStart(2, "0")}/{year}
               </Typography>
             </Box>
             {canUpload && !archived && (
-              <IconButton
-                color="primary"
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<AddRounded />}
                 onClick={() => setExpectationOpen(true)}
               >
-                <AddRounded />
-              </IconButton>
+                Nouvelle demande
+              </Button>
             )}
           </Box>
           {expectations.isLoading && (
@@ -872,7 +1045,7 @@ export function DossierDocumentsPanel({
               color="text.secondary"
               sx={{ px: 2.5, pb: 3 }}
             >
-              Aucune demande de pièce définie.
+              Aucune pièce n’a été demandée au client pour cette période.
             </Typography>
           )}
           {expectations.data?.map((entry) => (
@@ -1240,7 +1413,7 @@ export function DossierDocumentsPanel({
         maxWidth="xl"
       >
         <DialogTitle>
-          <Typography variant="h3">Contrôler l’extraction</Typography>
+          <Typography variant="h3">Vérifier les données lues par l’IA</Typography>
           <Typography variant="body2" color="text.secondary">
             {reviewTarget?.document.originalName} · comparez chaque valeur avec
             la pièce originale avant validation.
@@ -1305,7 +1478,7 @@ export function DossierDocumentsPanel({
             </Box>
             <Box sx={{ p: 2.5, overflowY: "auto", maxHeight: { lg: 720 } }}>
               <Typography variant="h4" sx={{ mb: 0.5 }}>
-                Valeurs proposées
+                Données à confirmer
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Corrigez les champs inexacts. Les contrôles comptables seront
@@ -1457,7 +1630,7 @@ export function DossierDocumentsPanel({
               requestExtraction.mutate(reviewTarget.documentId)
             }
           >
-            Relancer l’extraction
+            Relire avec l’IA
           </Button>
           <Button
             onClick={() => setReviewTarget(null)}
@@ -1491,7 +1664,7 @@ export function DossierDocumentsPanel({
               })
             }
           >
-            Approuver les valeurs
+            Confirmer ces données
           </Button>
         </DialogActions>
       </Dialog>
@@ -1501,7 +1674,7 @@ export function DossierDocumentsPanel({
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>Déposer un document</DialogTitle>
+        <DialogTitle>Ajouter un document au dossier</DialogTitle>
         <DialogContent sx={{ display: "grid", gap: 2, pt: "12px !important" }}>
           {error && <Alert severity="error">{error}</Alert>}
           <Button
@@ -1564,7 +1737,7 @@ export function DossierDocumentsPanel({
             onClick={() => upload.mutate()}
             disabled={!file || upload.isPending}
           >
-            {upload.isPending ? "Envoi…" : "Téléverser"}
+            {upload.isPending ? "Ajout…" : "Ajouter au dossier"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -453,6 +453,10 @@ export interface AccountingDocument {
   malwareScanStatus: "NON_ANALYSE" | "SAIN" | "INFECTE" | "ERREUR";
   malwareSignature: string | null;
   malwareScannedAtUtc: string | null;
+  uploadedBy: {
+    type: "CLIENT" | "CABINET" | "UNKNOWN";
+    name: string;
+  };
 }
 
 export interface ExtractionValidationIssue {
