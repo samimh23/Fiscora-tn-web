@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -37,6 +37,7 @@ import {
 import { api, ApiError } from "../../api/client";
 import type {
   AccountingDocument,
+  BankAccount,
   DossierSummary,
   DocumentExtractionReviewItem,
   DocumentPreview,
@@ -166,6 +167,17 @@ const extractionFields = [
   { path: "amount_due", label: "Montant dû" },
 ] as const;
 
+const bankExtractionFields = [
+  { path: "bank_statement.bank_name", label: "Banque" },
+  { path: "bank_statement.iban", label: "IBAN / RIB" },
+  { path: "bank_statement.account_number", label: "Numéro de compte" },
+  { path: "currency", label: "Devise" },
+  { path: "bank_statement.period_start", label: "Début de période" },
+  { path: "bank_statement.period_end", label: "Fin de période" },
+  { path: "bank_statement.opening_balance", label: "Solde initial" },
+  { path: "bank_statement.closing_balance", label: "Solde final" },
+] as const;
+
 const readPath = (record: Record<string, unknown>, path: string) => {
   const value = path.split(".").reduce<unknown>((current, key) => {
     if (!current || typeof current !== "object" || Array.isArray(current))
@@ -219,7 +231,7 @@ export function DossierDocumentsPanel({
     null,
   );
   const [previewSheet, setPreviewSheet] = useState(0);
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [uploadCategory, setUploadCategory] = useState("BOITE_RECEPTION");
   const [shareWithClient, setShareWithClient] = useState(false);
   const [expectationId, setExpectationId] = useState("");
@@ -238,6 +250,7 @@ export function DossierDocumentsPanel({
     useState<DocumentExtractionReviewItem | null>(null);
   const [reviewDraft, setReviewDraft] = useState<Record<string, unknown>>({});
   const [reviewComment, setReviewComment] = useState("");
+  const [reviewBankAccountId, setReviewBankAccountId] = useState("");
   const [error, setError] = useState("");
   const [copiedAddress, setCopiedAddress] = useState("");
   const organization = useQuery({
@@ -318,6 +331,15 @@ export function DossierDocumentsPanel({
     enabled: canValidate,
     refetchInterval: 15_000,
   });
+  const bankAccounts = useQuery({
+    queryKey: ["bank-accounts", organizationId, dossierId],
+    queryFn: () =>
+      api.get<BankAccount[]>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/accounts`,
+      ),
+    enabled:
+      canValidate && reviewDraft.document_type === "bank_statement",
+  });
   const reviewPreview = useQuery({
     queryKey: [
       "document-extraction-preview",
@@ -342,28 +364,36 @@ export function DossierDocumentsPanel({
   };
   const upload = useMutation({
     mutationFn: async () => {
-      if (!file) throw new Error("Sélectionnez un fichier.");
-      if (file.size > 20 * 1024 * 1024)
-        throw new Error("Le fichier dépasse la limite de 20 Mo.");
-      const data = new FormData();
-      data.append("file", file);
-      data.append("category", uploadCategory);
-      data.append("periodYear", String(year));
-      data.append("periodMonth", String(month));
-      data.append("isClientVisible", String(shareWithClient));
-      const result = await api.upload<AccountingDocument>(
-        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents`,
-        data,
-      );
+      if (!files.length) throw new Error("Sélectionnez au moins un fichier.");
+      if (files.some((item) => item.size > 20 * 1024 * 1024))
+        throw new Error("Chaque fichier doit respecter la limite de 20 Mo.");
+      if (expectationId && files.length > 1)
+        throw new Error(
+          "Une demande de pièce précise ne peut être associée qu’à un seul fichier.",
+        );
+      const results: AccountingDocument[] = [];
+      for (const file of files) {
+        const data = new FormData();
+        data.append("file", file);
+        data.append("category", uploadCategory);
+        data.append("periodYear", String(year));
+        data.append("periodMonth", String(month));
+        data.append("isClientVisible", String(shareWithClient));
+        const result = await api.upload<AccountingDocument>(
+          `/api/organizations/${organizationId}/dossiers/${dossierId}/documents`,
+          data,
+        );
+        results.push(result);
+      }
       if (expectationId)
         await api.patch(
-          `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/missing/${expectationId}/receive/${result.id}`,
+          `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/missing/${expectationId}/receive/${results[0].id}`,
         );
-      return result;
+      return results;
     },
     onSuccess: async () => {
       setUploadOpen(false);
-      setFile(null);
+      setFiles([]);
       setExpectationId("");
       setError("");
       await refresh();
@@ -407,6 +437,10 @@ export function DossierDocumentsPanel({
         {
           decision,
           ...(decision === "APPROUVER" ? { correctedData: reviewDraft } : {}),
+          ...(decision === "APPROUVER" &&
+          reviewDraft.document_type === "bank_statement"
+            ? { bankAccountId: reviewBankAccountId }
+            : {}),
           comment: reviewComment.trim() || undefined,
         },
       ),
@@ -414,6 +448,7 @@ export function DossierDocumentsPanel({
       setReviewTarget(null);
       setReviewDraft({});
       setReviewComment("");
+      setReviewBankAccountId("");
       setError("");
       await Promise.all([
         refresh(),
@@ -556,9 +591,29 @@ export function DossierDocumentsPanel({
       (entry) => !["VALIDEE", "ANNULEE"].includes(entry.status ?? "DEMANDEE"),
     ) ?? [];
   const openReview = (item: DocumentExtractionReviewItem) => {
+    const draft = structuredClone(item.normalizedData ?? {});
     setReviewTarget(item);
-    setReviewDraft(structuredClone(item.normalizedData ?? {}));
+    setReviewDraft(draft);
     setReviewComment("");
+    if (draft.document_type === "bank_statement") {
+      const statement =
+        draft.bank_statement &&
+        typeof draft.bank_statement === "object" &&
+        !Array.isArray(draft.bank_statement)
+          ? (draft.bank_statement as Record<string, unknown>)
+          : {};
+      const extractedIban = String(statement.iban ?? "")
+        .replace(/[^a-zA-Z0-9]/g, "")
+        .toUpperCase();
+      const matching = bankAccounts.data?.find(
+        (account) =>
+          account.iban?.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() ===
+          extractedIban,
+      );
+      setReviewBankAccountId(
+        matching?.id ?? bankAccounts.data?.[0]?.id ?? "",
+      );
+    } else setReviewBankAccountId("");
     setError("");
   };
   const reviewByDocument = new Map(
@@ -576,6 +631,60 @@ export function DossierDocumentsPanel({
           Boolean(item) && typeof item === "object" && !Array.isArray(item),
       )
     : [];
+  const isBankReview = reviewDraft.document_type === "bank_statement";
+  const reviewBankStatement =
+    reviewDraft.bank_statement &&
+    typeof reviewDraft.bank_statement === "object" &&
+    !Array.isArray(reviewDraft.bank_statement)
+      ? (reviewDraft.bank_statement as Record<string, unknown>)
+      : {};
+  const reviewTransactions = Array.isArray(reviewBankStatement.transactions)
+    ? reviewBankStatement.transactions.filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) && typeof item === "object" && !Array.isArray(item),
+      )
+    : [];
+  const updateReviewTransaction = (
+    index: number,
+    field:
+      | "transaction_date"
+      | "value_date"
+      | "description"
+      | "reference"
+      | "debit"
+      | "credit"
+      | "amount"
+      | "balance",
+    value: string,
+  ) => {
+    const transactions = reviewTransactions.map((item) => ({ ...item }));
+    transactions[index][field] = value.trim() ? value : null;
+    setReviewDraft({
+      ...reviewDraft,
+      bank_statement: { ...reviewBankStatement, transactions },
+    });
+  };
+  useEffect(() => {
+    if (!isBankReview || reviewBankAccountId || !bankAccounts.data?.length)
+      return;
+    const extractedIban = String(reviewBankStatement.iban ?? "")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase();
+    const matching = bankAccounts.data.find(
+      (account) =>
+        Boolean(extractedIban) &&
+        account.iban?.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() ===
+          extractedIban,
+    );
+    setReviewBankAccountId(
+      matching?.id ?? (bankAccounts.data.length === 1 ? bankAccounts.data[0].id : ""),
+    );
+  }, [
+    bankAccounts.data,
+    isBankReview,
+    reviewBankAccountId,
+    reviewBankStatement.iban,
+  ]);
   const updateReviewTax = (
     index: number,
     field: "label" | "amount",
@@ -1717,6 +1826,30 @@ export function DossierDocumentsPanel({
                   visuelle reste obligatoire.
                 </Alert>
               )}
+              {isBankReview && (
+                <TextField
+                  select
+                  size="small"
+                  label="Compte bancaire de destination"
+                  value={reviewBankAccountId}
+                  onChange={(event) =>
+                    setReviewBankAccountId(event.target.value)
+                  }
+                  helperText={
+                    bankAccounts.data?.length
+                      ? "Le compte est proposé automatiquement lorsque l’IBAN correspond."
+                      : "Créez d’abord un compte bancaire dans Production > Banque."
+                  }
+                  fullWidth
+                  sx={{ mb: 2 }}
+                >
+                  {(bankAccounts.data ?? []).map((account) => (
+                    <MenuItem key={account.id} value={account.id}>
+                      {account.name} · {account.iban || account.currency}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
               <Box
                 sx={{
                   display: "grid",
@@ -1724,7 +1857,8 @@ export function DossierDocumentsPanel({
                   gap: 1.5,
                 }}
               >
-                {extractionFields.map((field) => (
+                {(isBankReview ? bankExtractionFields : extractionFields).map(
+                  (field) => (
                   <TextField
                     key={field.path}
                     size="small"
@@ -1737,9 +1871,87 @@ export function DossierDocumentsPanel({
                     }
                     fullWidth
                   />
-                ))}
+                  ),
+                )}
               </Box>
-              {reviewTaxes.length > 0 && (
+              {isBankReview && reviewTransactions.length > 0 && (
+                <Box sx={{ mt: 2.5 }}>
+                  <Typography variant="h4" sx={{ mb: 1 }}>
+                    Opérations détectées ({reviewTransactions.length})
+                  </Typography>
+                  <Box
+                    sx={{
+                      overflowX: "auto",
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 2,
+                    }}
+                  >
+                    <Box
+                      component="table"
+                      sx={{
+                        minWidth: 980,
+                        width: "100%",
+                        borderCollapse: "collapse",
+                        "& th, & td": {
+                          px: 0.75,
+                          py: 0.75,
+                          borderBottom: "1px solid",
+                          borderColor: "divider",
+                          verticalAlign: "top",
+                        },
+                        "& th": { bgcolor: "grey.100", fontSize: 12 },
+                      }}
+                    >
+                      <thead>
+                        <tr>
+                          <th>Date</th>
+                          <th>Valeur</th>
+                          <th>Libellé</th>
+                          <th>Référence</th>
+                          <th>Montant</th>
+                          <th>Solde</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reviewTransactions.map((transaction, index) => (
+                          <tr key={index}>
+                            {(
+                              [
+                                "transaction_date",
+                                "value_date",
+                                "description",
+                                "reference",
+                                "amount",
+                                "balance",
+                              ] as const
+                            ).map((field) => (
+                              <td key={field}>
+                                <TextField
+                                  size="small"
+                                  value={String(transaction[field] ?? "")}
+                                  onChange={(event) =>
+                                    updateReviewTransaction(
+                                      index,
+                                      field,
+                                      event.target.value,
+                                    )
+                                  }
+                                  sx={{
+                                    minWidth:
+                                      field === "description" ? 220 : 115,
+                                  }}
+                                />
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+              {!isBankReview && reviewTaxes.length > 0 && (
                 <Box sx={{ mt: 2.5 }}>
                   <Typography variant="h4" sx={{ mb: 1 }}>
                     Autres taxes et prélèvements
@@ -1775,7 +1987,7 @@ export function DossierDocumentsPanel({
                   </Box>
                 </Box>
               )}
-              {reviewLines.length > 0 && (
+              {!isBankReview && reviewLines.length > 0 && (
                 <Box sx={{ mt: 2.5 }}>
                   <Typography variant="h4" sx={{ mb: 1 }}>
                     Lignes détectées ({reviewLines.length})
@@ -1873,7 +2085,10 @@ export function DossierDocumentsPanel({
           <Button
             color="success"
             variant="contained"
-            disabled={reviewExtraction.isPending}
+            disabled={
+              reviewExtraction.isPending ||
+              (isBankReview && !reviewBankAccountId)
+            }
             onClick={() =>
               reviewTarget &&
               reviewExtraction.mutate({
@@ -1900,14 +2115,24 @@ export function DossierDocumentsPanel({
             variant="outlined"
             startIcon={<UploadFileRounded />}
           >
-            {file ? file.name : "Choisir un fichier"}
+            {files.length
+              ? `${files.length} fichier(s) sélectionné(s)`
+              : "Choisir un ou plusieurs fichiers"}
             <input
               hidden
               type="file"
+              multiple
               accept={accepted}
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              onChange={(event) =>
+                setFiles(Array.from(event.target.files ?? []))
+              }
             />
           </Button>
+          {files.length > 0 && (
+            <Typography variant="caption" color="text.secondary">
+              {files.map((item) => item.name).join(" · ")}
+            </Typography>
+          )}
           <TextField
             select
             label="Catégorie"
@@ -1953,7 +2178,7 @@ export function DossierDocumentsPanel({
           <Button
             variant="contained"
             onClick={() => upload.mutate()}
-            disabled={!file || upload.isPending}
+            disabled={!files.length || upload.isPending}
           >
             {upload.isPending ? "Ajout…" : "Ajouter au dossier"}
           </Button>
