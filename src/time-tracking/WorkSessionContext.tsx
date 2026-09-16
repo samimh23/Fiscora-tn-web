@@ -333,3 +333,7 @@ export function useWorkSession() {
     );
   return context;
 }
+
+export function useOptionalWorkSession() {
+  return useContext(WorkSessionContext);
+}

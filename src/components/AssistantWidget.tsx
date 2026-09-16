@@ -29,19 +29,27 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-import { useWorkSession } from "../time-tracking/WorkSessionContext";
+import { useOptionalWorkSession } from "../time-tracking/WorkSessionContext";
 import type { DossierSummary, PagedResponse } from "../types/api";
 
 interface WidgetCitation {
   chunkId: string;
   label: string;
   sourceName: string;
+  kind?: "DOCUMENT" | "PRODUCT_HELP";
+  path?: string;
+}
+
+interface WidgetAction {
+  label: string;
+  path: string;
 }
 
 interface WidgetAnswer {
   id: string;
   answer: string;
   citations: WidgetCitation[];
+  actions?: WidgetAction[];
 }
 
 interface WidgetMessage {
@@ -49,6 +57,7 @@ interface WidgetMessage {
   role: "user" | "assistant";
   text: string;
   citations?: WidgetCitation[];
+  actions?: WidgetAction[];
 }
 
 function requestError(error: unknown) {
@@ -58,8 +67,8 @@ function requestError(error: unknown) {
 }
 
 export function AssistantWidget() {
-  const { organization } = useAuth();
-  const { session: workSession } = useWorkSession();
+  const { organization, can } = useAuth();
+  const workSession = useOptionalWorkSession()?.session ?? null;
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -69,6 +78,9 @@ export function AssistantWidget() {
   const [messages, setMessages] = useState<WidgetMessage[]>([]);
   const endRef = useRef<HTMLDivElement | null>(null);
   const organizationId = organization?.id ?? "";
+  const isClientPortal =
+    organization?.role.toLocaleLowerCase("fr").includes("portail client") ??
+    false;
   const storageKey = `fiscora.lastDossier.${organizationId || "none"}`;
   const pathDossierId = useMemo(
     () => location.pathname.match(/^\/dossiers\/([^/]+)/)?.[1] ?? "",
@@ -104,10 +116,17 @@ export function AssistantWidget() {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const endpoint = `/api/organizations/${organizationId}/dossiers/${dossierId}/assistant`;
+  const accountingEndpoint = `/api/organizations/${organizationId}/dossiers/${dossierId}/assistant`;
   const ask = useMutation({
     mutationFn: (text: string) =>
-      api.post<WidgetAnswer>(`${endpoint}/ask`, { question: text }),
+      api.post<WidgetAnswer>(
+        `/api/organizations/${organizationId}/assistant/ask`,
+        {
+          question: text,
+          currentPath: `${location.pathname}${location.search}`,
+          dossierId: dossierId || undefined,
+        },
+      ),
     onSuccess: (result) => {
       setError("");
       setMessages((current) => [
@@ -117,6 +136,7 @@ export function AssistantWidget() {
           role: "assistant",
           text: result.answer,
           citations: result.citations,
+          actions: result.actions,
         },
       ]);
     },
@@ -124,7 +144,7 @@ export function AssistantWidget() {
   });
 
   const reindex = useMutation({
-    mutationFn: () => api.post(`${endpoint}/reindex`),
+    mutationFn: () => api.post(`${accountingEndpoint}/reindex`),
     onSuccess: () => setError(""),
     onError: (reason) => setError(requestError(reason)),
   });
@@ -138,7 +158,7 @@ export function AssistantWidget() {
 
   const send = () => {
     const clean = question.trim();
-    if (!clean || !dossierId || ask.isPending) return;
+    if (!clean || !organizationId || ask.isPending) return;
     setMessages((current) => [
       ...current,
       { id: `user-${Date.now()}`, role: "user", text: clean },
@@ -188,22 +208,31 @@ export function AssistantWidget() {
                 <AutoAwesomeOutlined />
               </Box>
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography sx={{ fontWeight: 800 }}>Assistant Fiscora</Typography>
-                <Typography variant="caption" sx={{ color: "rgba(255,255,255,.72)" }}>
-                  Réponses fondées sur les pièces validées
+                <Typography sx={{ fontWeight: 800 }}>
+                  Assistant Fiscora
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "rgba(255,255,255,.72)" }}
+                >
+                  Guide des pages et données validées
                 </Typography>
               </Box>
-              <Tooltip title="Ouvrir l’espace complet">
-                <IconButton
-                  aria-label="Ouvrir l’assistant complet"
-                  onClick={() =>
-                    navigate(`/assistant${dossierId ? `?dossierId=${dossierId}` : ""}`)
-                  }
-                  sx={{ color: "white" }}
-                >
-                  <LaunchRounded fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              {!isClientPortal && (
+                <Tooltip title="Ouvrir l’espace complet">
+                  <IconButton
+                    aria-label="Ouvrir l’assistant complet"
+                    onClick={() =>
+                      navigate(
+                        `/assistant${dossierId ? `?dossierId=${dossierId}` : ""}`,
+                      )
+                    }
+                    sx={{ color: "white" }}
+                  >
+                    <LaunchRounded fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
               <IconButton
                 aria-label="Fermer l’assistant"
                 onClick={() => setOpen(false)}
@@ -214,7 +243,11 @@ export function AssistantWidget() {
             </Stack>
           </Box>
 
-          <Stack direction="row" spacing={1} sx={{ p: 1.5, alignItems: "center" }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ p: 1.5, alignItems: "center" }}
+          >
             <FormControl size="small" fullWidth>
               <InputLabel>Dossier client</InputLabel>
               <Select
@@ -229,21 +262,23 @@ export function AssistantWidget() {
                 ))}
               </Select>
             </FormControl>
-            <Tooltip title="Actualiser les sources validées">
-              <span>
-                <IconButton
-                  aria-label="Actualiser les sources validées"
-                  onClick={() => reindex.mutate()}
-                  disabled={!dossierId || reindex.isPending}
-                >
-                  {reindex.isPending ? (
-                    <CircularProgress size={20} />
-                  ) : (
-                    <SyncRounded />
-                  )}
-                </IconButton>
-              </span>
-            </Tooltip>
+            {can("documents.validate") && (
+              <Tooltip title="Actualiser les sources validées">
+                <span>
+                  <IconButton
+                    aria-label="Actualiser les sources validées"
+                    onClick={() => reindex.mutate()}
+                    disabled={!dossierId || reindex.isPending}
+                  >
+                    {reindex.isPending ? (
+                      <CircularProgress size={20} />
+                    ) : (
+                      <SyncRounded />
+                    )}
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
           </Stack>
 
           <Box
@@ -251,7 +286,11 @@ export function AssistantWidget() {
             sx={{ flex: 1, overflowY: "auto", px: 1.5, pb: 1.5 }}
           >
             {error && (
-              <Alert severity="error" onClose={() => setError("")} sx={{ mb: 1.5 }}>
+              <Alert
+                severity="error"
+                onClose={() => setError("")}
+                sx={{ mb: 1.5 }}
+              >
                 {error}
               </Alert>
             )}
@@ -266,11 +305,20 @@ export function AssistantWidget() {
                   px: 2,
                 }}
               >
-                <SmartToyOutlined sx={{ fontSize: 42, color: "primary.main" }} />
+                <SmartToyOutlined
+                  sx={{ fontSize: 42, color: "primary.main" }}
+                />
                 <Box>
-                  <Typography sx={{ fontWeight: 800 }}>Comment puis-je vous aider ?</Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    Posez une question sur les factures et documents validés du dossier.
+                  <Typography sx={{ fontWeight: 800 }}>
+                    Comment puis-je vous aider ?
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 0.5 }}
+                  >
+                    Demandez comment réaliser une tâche sur la page actuelle, ou
+                    interrogez les pièces validées du dossier choisi.
                   </Typography>
                 </Box>
               </Stack>
@@ -280,10 +328,15 @@ export function AssistantWidget() {
                   <Box
                     key={message.id}
                     sx={{
-                      alignSelf: message.role === "user" ? "flex-end" : "flex-start",
+                      alignSelf:
+                        message.role === "user" ? "flex-end" : "flex-start",
                       maxWidth: "88%",
-                      bgcolor: message.role === "user" ? "primary.main" : "grey.100",
-                      color: message.role === "user" ? "primary.contrastText" : "text.primary",
+                      bgcolor:
+                        message.role === "user" ? "primary.main" : "grey.100",
+                      color:
+                        message.role === "user"
+                          ? "primary.contrastText"
+                          : "text.primary",
                       borderRadius: 2,
                       px: 1.5,
                       py: 1.1,
@@ -301,7 +354,34 @@ export function AssistantWidget() {
                             icon={<DescriptionOutlined />}
                             label={citation.sourceName}
                             variant="outlined"
-                            sx={{ bgcolor: "white", justifyContent: "flex-start" }}
+                            onClick={
+                              citation.kind === "PRODUCT_HELP" && citation.path
+                                ? () => navigate(citation.path!)
+                                : undefined
+                            }
+                            sx={{
+                              bgcolor: "white",
+                              justifyContent: "flex-start",
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                    ) : null}
+                    {message.actions?.length ? (
+                      <Stack
+                        direction="row"
+                        sx={{ mt: 1, gap: 0.75, flexWrap: "wrap" }}
+                      >
+                        {message.actions.map((action) => (
+                          <Chip
+                            key={`${message.id}-${action.path}`}
+                            size="small"
+                            icon={<LaunchRounded />}
+                            label={action.label}
+                            color="primary"
+                            variant="outlined"
+                            onClick={() => navigate(action.path)}
+                            sx={{ bgcolor: "white" }}
                           />
                         ))}
                       </Stack>
@@ -309,10 +389,14 @@ export function AssistantWidget() {
                   </Box>
                 ))}
                 {ask.isPending && (
-                  <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ alignItems: "center" }}
+                  >
                     <CircularProgress size={16} />
                     <Typography variant="caption" color="text.secondary">
-                      Recherche dans les sources…
+                      Recherche dans les guides et sources…
                     </Typography>
                   </Stack>
                 )}
@@ -321,7 +405,11 @@ export function AssistantWidget() {
             )}
           </Box>
 
-          <Stack direction="row" spacing={1} sx={{ p: 1.5, borderTop: "1px solid", borderColor: "divider" }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ p: 1.5, borderTop: "1px solid", borderColor: "divider" }}
+          >
             <TextField
               fullWidth
               size="small"
@@ -334,13 +422,13 @@ export function AssistantWidget() {
                   send();
                 }
               }}
-              disabled={!dossierId || ask.isPending}
+              disabled={!organizationId || ask.isPending}
             />
             <IconButton
               color="primary"
               aria-label="Envoyer la question"
               onClick={send}
-              disabled={!question.trim() || !dossierId || ask.isPending}
+              disabled={!question.trim() || !organizationId || ask.isPending}
             >
               <SendRounded />
             </IconButton>
@@ -348,10 +436,16 @@ export function AssistantWidget() {
         </Paper>
       )}
 
-      <Tooltip title={open ? "Fermer l’Assistant Fiscora" : "Ouvrir l’Assistant Fiscora"}>
+      <Tooltip
+        title={
+          open ? "Fermer l’Assistant Fiscora" : "Ouvrir l’Assistant Fiscora"
+        }
+      >
         <Fab
           color="primary"
-          aria-label={open ? "Fermer l’Assistant Fiscora" : "Ouvrir l’Assistant Fiscora"}
+          aria-label={
+            open ? "Fermer l’Assistant Fiscora" : "Ouvrir l’Assistant Fiscora"
+          }
           onClick={() => setOpen((current) => !current)}
           sx={{
             position: "fixed",

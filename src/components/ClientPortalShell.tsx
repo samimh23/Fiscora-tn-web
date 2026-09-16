@@ -35,6 +35,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
 import { Brand } from "./Brand";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { AssistantWidget } from "./AssistantWidget";
 
 const width = 272;
 const items = [
@@ -219,6 +220,7 @@ export function ClientPortalShell() {
           </Menu>
         </Toolbar>
       </AppBar>
+      <AssistantWidget />
       <Box component="nav" sx={{ width: { lg: width }, flexShrink: { lg: 0 } }}>
         <Drawer
           anchor={direction === "rtl" ? "right" : "left"}

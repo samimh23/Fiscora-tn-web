@@ -849,9 +849,7 @@ export function AppShell() {
         </Toolbar>
       </AppBar>
 
-      {can("documents.validate") && location.pathname !== "/assistant" && (
-        <AssistantWidget />
-      )}
+      {location.pathname !== "/assistant" && <AssistantWidget />}
 
       <Box
         component="nav"

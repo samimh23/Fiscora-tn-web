@@ -24,7 +24,9 @@ import {
   SendRounded,
   ShieldOutlined,
   SyncRounded,
+  LaunchRounded,
 } from "@mui/icons-material";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { PageHeader } from "../components/PageHeader";
@@ -37,6 +39,13 @@ interface AssistantCitation {
   sourceId: string;
   sourceName: string;
   pageNumber: number | null;
+  kind?: "DOCUMENT" | "PRODUCT_HELP";
+  path?: string;
+}
+
+interface AssistantAction {
+  label: string;
+  path: string;
 }
 
 interface AssistantAnswer {
@@ -44,6 +53,7 @@ interface AssistantAnswer {
   answer: string;
   citations: AssistantCitation[];
   model: string;
+  actions?: AssistantAction[];
 }
 
 interface ChatMessage {
@@ -51,12 +61,13 @@ interface ChatMessage {
   role: "user" | "assistant";
   text: string;
   citations?: AssistantCitation[];
+  actions?: AssistantAction[];
 }
 
 const suggestions = [
+  "Comment déposer une facture et la faire lire par l’IA ?",
   "Quel est le total TTC des factures validées ?",
-  "Quels fournisseurs apparaissent dans les pièces ?",
-  "Résume les montants de TVA présents dans les documents.",
+  "Où importer un relevé bancaire et le rapprocher ?",
 ];
 
 function errorMessage(error: unknown, fallback: string) {
@@ -66,6 +77,8 @@ function errorMessage(error: unknown, fallback: string) {
 export function AssistantPage() {
   const { organization } = useAuth();
   const organizationId = organization?.id ?? "";
+  const location = useLocation();
+  const navigate = useNavigate();
   const [dossierId, setDossierId] = useDossierSelection();
   const [question, setQuestion] = useState("");
   const [error, setError] = useState("");
@@ -102,7 +115,14 @@ export function AssistantPage() {
 
   const ask = useMutation({
     mutationFn: (text: string) =>
-      api.post<AssistantAnswer>(`${endpoint}/ask`, { question: text }),
+      api.post<AssistantAnswer>(
+        `/api/organizations/${organizationId}/assistant/ask`,
+        {
+          question: text,
+          currentPath: `${location.pathname}${location.search}`,
+          dossierId: dossierId || undefined,
+        },
+      ),
     onSuccess: (result) => {
       setError("");
       setMessages((current) => [
@@ -112,6 +132,7 @@ export function AssistantPage() {
           role: "assistant",
           text: result.answer,
           citations: result.citations,
+          actions: result.actions,
         },
       ]);
     },
@@ -130,7 +151,7 @@ export function AssistantPage() {
 
   const send = (text = question) => {
     const clean = text.trim();
-    if (!clean || !dossierId || ask.isPending) return;
+    if (!clean || !organizationId || ask.isPending) return;
     setError("");
     setMessages((current) => [
       ...current,
@@ -151,7 +172,7 @@ export function AssistantPage() {
       <PageHeader
         eyebrow="Dossier client"
         title="Assistant Fiscora"
-        description="Interrogez uniquement les données extraites puis validées par le cabinet. Chaque réponse indique les pièces utilisées."
+        description="Demandez comment réaliser une tâche dans Fiscora ou interrogez les données validées d’un dossier. Chaque réponse cite ses sources."
         action={<DossierSelector value={dossierId} onChange={setDossierId} />}
       />
 
@@ -166,6 +187,7 @@ export function AssistantPage() {
           variant="outlined"
         />
         <Chip label="Réponses avec citations" variant="outlined" />
+        <Chip label="Guide contextuel des pages" variant="outlined" />
         <Box sx={{ flex: 1 }} />
         {messages.length > 0 && (
           <Button
@@ -184,7 +206,8 @@ export function AssistantPage() {
 
       {!dossierId && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Choisissez un dossier client pour ouvrir son assistant.
+          Le guide Fiscora reste disponible. Choisissez un dossier uniquement
+          pour interroger ses pièces comptables validées.
         </Alert>
       )}
       {error && (
@@ -241,8 +264,9 @@ export function AssistantPage() {
                       color="text.secondary"
                       sx={{ mt: 0.5, maxWidth: 540 }}
                     >
-                      L’assistant ne consulte que les pièces validées du dossier
-                      sélectionné. Il ne crée aucune écriture comptable.
+                      Posez une question sur la page ou une procédure Fiscora.
+                      Avec un dossier sélectionné, vous pouvez aussi interroger
+                      ses pièces validées. L’assistant n’exécute aucune action.
                     </Typography>
                   </Box>
                   <Stack
@@ -255,7 +279,7 @@ export function AssistantPage() {
                         label={suggestion}
                         variant="outlined"
                         onClick={() => send(suggestion)}
-                        disabled={!dossierId || ask.isPending}
+                        disabled={!organizationId || ask.isPending}
                         sx={{ height: "auto", py: 0.5, maxWidth: "100%" }}
                       />
                     ))}
@@ -308,6 +332,30 @@ export function AssistantPage() {
                                 icon={<DescriptionOutlined />}
                                 label={`[${citation.label}] ${citation.sourceName}`}
                                 variant="outlined"
+                                onClick={
+                                  citation.kind === "PRODUCT_HELP" &&
+                                  citation.path
+                                    ? () => navigate(citation.path!)
+                                    : undefined
+                                }
+                                sx={{ bgcolor: "background.paper" }}
+                              />
+                            ))}
+                          </Stack>
+                        ) : null}
+                        {message.actions?.length ? (
+                          <Stack
+                            direction="row"
+                            sx={{ mt: 1, gap: 0.75, flexWrap: "wrap" }}
+                          >
+                            {message.actions.map((action) => (
+                              <Chip
+                                key={`${message.id}-${action.path}`}
+                                icon={<LaunchRounded />}
+                                label={action.label}
+                                color="primary"
+                                variant="outlined"
+                                onClick={() => navigate(action.path)}
                                 sx={{ bgcolor: "background.paper" }}
                               />
                             ))}
@@ -342,7 +390,7 @@ export function AssistantPage() {
                     >
                       <CircularProgress size={18} />
                       <Typography variant="body2" color="text.secondary">
-                        Recherche dans les pièces validées…
+                        Recherche dans les guides et sources validées…
                       </Typography>
                     </Stack>
                   )}
@@ -371,7 +419,7 @@ export function AssistantPage() {
                     send();
                   }
                 }}
-                disabled={!dossierId || ask.isPending}
+                disabled={!organizationId || ask.isPending}
                 helperText="Entrée pour envoyer · Maj + Entrée pour une nouvelle ligne"
               />
               <Button
@@ -384,7 +432,7 @@ export function AssistantPage() {
                   )
                 }
                 onClick={() => send()}
-                disabled={!question.trim() || !dossierId || ask.isPending}
+                disabled={!question.trim() || !organizationId || ask.isPending}
                 sx={{ minWidth: 120, mb: { sm: 3 } }}
               >
                 Envoyer
