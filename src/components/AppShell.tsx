@@ -79,6 +79,7 @@ import type {
   PagedResponse,
 } from "../types/api";
 import { Brand } from "./Brand";
+import { AssistantWidget } from "./AssistantWidget";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 
 const drawerWidth = 248;
@@ -566,49 +567,6 @@ export function AppShell() {
               ))}
             </Select>
           </FormControl>
-          {can("documents.validate") && (
-            <>
-              <Tooltip title="Ouvrir l’Assistant Fiscora">
-                <IconButton
-                  component={NavLink}
-                  to="/assistant"
-                  aria-label="Ouvrir l’Assistant Fiscora"
-                  sx={{
-                    display: { xs: "inline-flex", sm: "none" },
-                    color:
-                      location.pathname === "/assistant"
-                        ? "primary.contrastText"
-                        : "primary.main",
-                    bgcolor:
-                      location.pathname === "/assistant"
-                        ? "primary.main"
-                        : "primary.50",
-                    border: "1px solid",
-                    borderColor: "primary.light",
-                    "&:hover": { bgcolor: "primary.light" },
-                  }}
-                >
-                  <AutoAwesomeOutlined fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Button
-                component={NavLink}
-                to="/assistant"
-                startIcon={<AutoAwesomeOutlined />}
-                variant={
-                  location.pathname === "/assistant" ? "contained" : "outlined"
-                }
-                aria-label="Ouvrir l’Assistant Fiscora"
-                sx={{
-                  display: { xs: "none", sm: "inline-flex" },
-                  flexShrink: 0,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Assistant IA
-              </Button>
-            </>
-          )}
           {can("dossiers.view") && (
             <Autocomplete
               options={dossierOptions.data?.items ?? []}
@@ -890,6 +848,10 @@ export function AppShell() {
           </Menu>
         </Toolbar>
       </AppBar>
+
+      {can("documents.validate") && location.pathname !== "/assistant" && (
+        <AssistantWidget />
+      )}
 
       <Box
         component="nav"
