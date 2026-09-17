@@ -4,22 +4,19 @@ import { Alert, Box, Card, Tab, Tabs } from "@mui/material";
 import {
   AccountBalanceWalletOutlined,
   BusinessOutlined,
-  DescriptionOutlined,
   ReceiptLongOutlined,
 } from "@mui/icons-material";
 import { api } from "../../api/client";
 import type {
   AccountingJournal,
   BusinessInvoice,
-  CommercialDocument,
   FiscalVatRate,
   FiscalWithholdingRate,
   LedgerAccount,
   ThirdParty,
   ThirdPartyPayment,
 } from "../../types/api";
-import { CommercialDocumentsPanel } from "./CommercialDocumentsPanel";
-import { InvoicesPanel, type InvoiceDraftSeed } from "./InvoicesPanel";
+import { InvoicesPanel } from "./InvoicesPanel";
 import { PaymentsPanel } from "./PaymentsPanel";
 import { ThirdPartiesPanel } from "./ThirdPartiesPanel";
 import { useLanguage } from "../../i18n/LanguageContext";
@@ -57,23 +54,16 @@ export function DossierCommercialPanel({
 }) {
   const { t } = useLanguage();
   const initial = canInvoicesView
-    ? "documents"
+    ? "invoices"
     : canThirdPartiesView
       ? "parties"
       : "payments";
   const [tab, setTab] = useState(initial);
-  const [invoiceSeed, setInvoiceSeed] = useState<InvoiceDraftSeed | null>(null);
   const base = `/api/organizations/${organizationId}/dossiers/${dossierId}`;
   const parties = useQuery({
     queryKey: ["third-parties", organizationId, dossierId],
     queryFn: () => api.get<ThirdParty[]>(`${base}/third-parties`),
     enabled: canThirdPartiesView,
-  });
-  const commercialDocuments = useQuery({
-    queryKey: ["commercial-documents", organizationId, dossierId],
-    queryFn: () =>
-      api.get<CommercialDocument[]>(`${base}/commercial-documents`),
-    enabled: canInvoicesView,
   });
   const invoices = useQuery({
     queryKey: ["business-invoices", organizationId, dossierId],
@@ -124,14 +114,6 @@ export function DossierCommercialPanel({
         >
           {canInvoicesView && (
             <Tab
-              value="documents"
-              label={`${t("Documents commerciaux")} (${commercialDocuments.data?.length ?? 0})`}
-              icon={<DescriptionOutlined />}
-              iconPosition="start"
-            />
-          )}
-          {canInvoicesView && (
-            <Tab
               value="invoices"
               label={`${t("Factures")} (${invoices.data?.length ?? 0})`}
               icon={<ReceiptLongOutlined />}
@@ -162,28 +144,6 @@ export function DossierCommercialPanel({
           saisir les factures et règlements.
         </Alert>
       )}
-      {tab === "documents" && canInvoicesView && (
-        <CommercialDocumentsPanel
-          organizationId={organizationId}
-          dossierId={dossierId}
-          documents={commercialDocuments.data ?? []}
-          parties={parties.data ?? []}
-          accounts={accounts.data ?? []}
-          vatRates={vatRates.data ?? []}
-          loading={
-            commercialDocuments.isLoading ||
-            parties.isLoading ||
-            accounts.isLoading ||
-            vatRates.isLoading
-          }
-          archived={archived}
-          canManage={canInvoicesManage}
-          onPrepareInvoice={(seed) => {
-            setInvoiceSeed(seed);
-            setTab("invoices");
-          }}
-        />
-      )}
       {tab === "invoices" && canInvoicesView && (
         <InvoicesPanel
           organizationId={organizationId}
@@ -206,8 +166,8 @@ export function DossierCommercialPanel({
           canManage={canInvoicesManage && !missingReferences}
           canValidate={canInvoicesValidate}
           canPost={canAccountingPost}
-          draftSeed={invoiceSeed}
-          onDraftSeedConsumed={() => setInvoiceSeed(null)}
+          draftSeed={null}
+          onDraftSeedConsumed={() => undefined}
         />
       )}
       {tab === "parties" && canThirdPartiesView && (

@@ -106,6 +106,14 @@ const formatDateTime = (value?: string | null) =>
     : "—";
 
 const documentOrigin = (document: AccountingDocument) => {
+  if (document.ingestionSource === "GENERATED") {
+    return {
+      label: "Émise par le client",
+      detail: document.uploadedBy.name,
+      color: "info" as const,
+      icon: <PersonOutlineRounded fontSize="small" />,
+    };
+  }
   switch (document.uploadedBy?.type) {
     case "CLIENT":
       return {

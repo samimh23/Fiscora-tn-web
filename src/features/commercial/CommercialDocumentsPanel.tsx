@@ -27,7 +27,6 @@ import {
   DeleteOutlineRounded,
   DescriptionOutlined,
   EditOutlined,
-  ReceiptLongOutlined,
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
 import type {
@@ -38,7 +37,6 @@ import type {
   ThirdParty,
 } from "../../types/api";
 import { money, shortDate } from "./options";
-import type { InvoiceDraftSeed } from "./InvoicesPanel";
 
 type Direction = CommercialDocument["direction"];
 type Kind = CommercialDocument["kind"];
@@ -89,6 +87,7 @@ const kindLabels: Record<Kind, string> = {
   COMMANDE: "Commande",
   BON_LIVRAISON: "Bon de livraison",
   BON_RECEPTION: "Bon de réception",
+  FACTURE: "Facture",
 };
 const statusLabels: Record<CommercialDocument["status"], string> = {
   BROUILLON: "Brouillon",
@@ -97,7 +96,7 @@ const statusLabels: Record<CommercialDocument["status"], string> = {
   ANNULE: "Annulé",
 };
 const allowedKinds: Record<Direction, Kind[]> = {
-  VENTE: ["DEVIS", "COMMANDE", "BON_LIVRAISON"],
+  VENTE: ["DEVIS", "COMMANDE", "BON_LIVRAISON", "FACTURE"],
   ACHAT: ["COMMANDE", "BON_RECEPTION"],
 };
 const nextKind = (document: CommercialDocument): Kind | null => {
@@ -105,6 +104,8 @@ const nextKind = (document: CommercialDocument): Kind | null => {
     return "COMMANDE";
   if (document.direction === "VENTE" && document.kind === "COMMANDE")
     return "BON_LIVRAISON";
+  if (document.direction === "VENTE" && document.kind === "BON_LIVRAISON")
+    return "FACTURE";
   if (document.direction === "ACHAT" && document.kind === "COMMANDE")
     return "BON_RECEPTION";
   return null;
@@ -114,6 +115,7 @@ const numberPrefix: Record<Kind, string> = {
   COMMANDE: "CMD",
   BON_LIVRAISON: "BL",
   BON_RECEPTION: "BR",
+  FACTURE: "FAC",
 };
 
 function DocumentDialog({
@@ -536,7 +538,6 @@ export function CommercialDocumentsPanel({
   loading,
   archived,
   canManage,
-  onPrepareInvoice,
 }: {
   organizationId: string;
   dossierId: string;
@@ -547,7 +548,6 @@ export function CommercialDocumentsPanel({
   loading: boolean;
   archived: boolean;
   canManage: boolean;
-  onPrepareInvoice: (seed: InvoiceDraftSeed) => void;
 }) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -606,26 +606,6 @@ export function CommercialDocumentsPanel({
         reason instanceof ApiError ? reason.message : "Conversion impossible.",
       ),
   });
-  const prepareInvoice = (document: CommercialDocument) =>
-    onPrepareInvoice({
-      sourceCommercialDocumentId: document.id,
-      type: document.direction,
-      number: `FAC-${document.number}`,
-      invoiceDate: today(),
-      thirdPartyId: document.thirdPartyId,
-      lines: document.lines.map((line) => ({
-        accountId: line.accountId ?? "",
-        description: line.description,
-        quantity: line.quantity,
-        unitPrice: line.unitPrice,
-        discountRate: line.discountRate,
-        vatCode: line.vatCode ?? "",
-        vatRate: line.vatRate,
-        exciseRate: "",
-      })),
-      notes: `Créée depuis ${kindLabels[document.kind]} ${document.number}`,
-    });
-
   return (
     <>
       <Card>
@@ -642,7 +622,9 @@ export function CommercialDocumentsPanel({
           <Box>
             <Typography variant="h3">Cycle commercial</Typography>
             <Typography variant="body2" color="text.secondary">
-              Devis, commandes et livraisons convertis sans ressaisie.
+              Créez vos devis, commandes, livraisons et factures sans
+              ressaisie. Une facture émise est envoyée automatiquement au
+              cabinet.
             </Typography>
           </Box>
           <Stack direction="row" spacing={1}>
@@ -736,9 +718,6 @@ export function CommercialDocumentsPanel({
         )}
         {filtered.map((document) => {
           const target = nextKind(document);
-          const finalDocument =
-            document.kind === "BON_LIVRAISON" ||
-            document.kind === "BON_RECEPTION";
           return (
             <Box
               key={document.id}
@@ -771,6 +750,15 @@ export function CommercialDocumentsPanel({
                     color={document.direction === "VENTE" ? "success" : "info"}
                     variant="outlined"
                   />
+                  {document.kind === "FACTURE" &&
+                    document.accountingDocumentId && (
+                      <Chip
+                        size="small"
+                        label="Transmise au cabinet"
+                        color="info"
+                        variant="outlined"
+                      />
+                    )}
                   <Chip
                     size="small"
                     label={statusLabels[document.status]}
@@ -833,7 +821,7 @@ export function CommercialDocumentsPanel({
                         action.mutate({ document, type: "confirm" })
                       }
                     >
-                      Confirmer
+                      {document.kind === "FACTURE" ? "Émettre" : "Confirmer"}
                     </Button>
                   </>
                 )}
@@ -850,19 +838,6 @@ export function CommercialDocumentsPanel({
                       }
                     >
                       Créer {kindLabels[target].toLowerCase()}
-                    </Button>
-                  )}
-                {canManage &&
-                  !archived &&
-                  document.status === "CONFIRME" &&
-                  finalDocument && (
-                    <Button
-                      size="small"
-                      variant="contained"
-                      startIcon={<ReceiptLongOutlined />}
-                      onClick={() => prepareInvoice(document)}
-                    >
-                      Préparer la facture
                     </Button>
                   )}
                 {canManage &&

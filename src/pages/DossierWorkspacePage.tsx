@@ -66,10 +66,10 @@ const headings: Record<
       "Centralisez les fichiers reçus et contrôlez les pièces manquantes.",
   },
   commercial: {
-    eyebrow: "Cycle commercial",
-    title: "Achats & ventes",
+    eyebrow: "Traitement comptable",
+    title: "Factures & règlements",
     description:
-      "Gérez les tiers, factures, avoirs, règlements et écritures générées.",
+      "Contrôlez les factures reçues, les règlements et les écritures générées.",
   },
   banking: {
     eyebrow: "Trésorerie",
@@ -89,7 +89,7 @@ const moduleSteps: Record<WorkspaceModule, string[]> = {
   tasks: ["Créer le travail", "Affecter", "Valider"],
   obligations: ["Préparer", "Réviser", "Déposer"],
   documents: ["Collecter", "Contrôler", "Classer"],
-  commercial: ["Saisir", "Valider", "Comptabiliser"],
+  commercial: ["Contrôler", "Comptabiliser", "Rapprocher"],
   banking: ["Importer", "Matcher", "Valider"],
   declarations: ["Calculer", "Contrôler", "Déclarer"],
 };

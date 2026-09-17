@@ -125,7 +125,7 @@ const navSections: Array<{
         permission: "documents.validate",
       },
       {
-        label: "Achats & ventes",
+        label: "Factures & règlements",
         path: "/factures",
         icon: ReceiptLongOutlined,
         permission: "business_invoices.view",

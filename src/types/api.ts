@@ -507,7 +507,7 @@ export interface AccountingDocument {
     type: "CLIENT" | "CABINET" | "EMAIL" | "UNKNOWN";
     name: string;
   };
-  ingestionSource?: "UPLOAD" | "EMAIL";
+  ingestionSource?: "UPLOAD" | "EMAIL" | "GENERATED";
   sourceEmail?: string | null;
   sourceSubject?: string | null;
   sourceMessageId?: string | null;
@@ -760,7 +760,12 @@ export interface CommercialDocumentLine {
 export interface CommercialDocument {
   id: string;
   direction: "ACHAT" | "VENTE";
-  kind: "DEVIS" | "COMMANDE" | "BON_LIVRAISON" | "BON_RECEPTION";
+  kind:
+    | "DEVIS"
+    | "COMMANDE"
+    | "BON_LIVRAISON"
+    | "BON_RECEPTION"
+    | "FACTURE";
   status: "BROUILLON" | "CONFIRME" | "CONVERTI" | "ANNULE";
   number: string;
   issueDate: string;
@@ -774,6 +779,7 @@ export interface CommercialDocument {
   sourceDocumentId: string | null;
   convertedToDocumentId: string | null;
   businessInvoiceId: string | null;
+  accountingDocumentId: string | null;
   notes: string | null;
   lines: CommercialDocumentLine[];
 }

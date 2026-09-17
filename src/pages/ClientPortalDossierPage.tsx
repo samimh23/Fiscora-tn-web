@@ -58,6 +58,7 @@ import {
 } from "@mui/icons-material";
 import { api, downloadApiFile } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { ClientCommercialWorkspace } from "../features/commercial/ClientCommercialWorkspace";
 import type {
   AccountingDocument,
   BusinessInvoice,
@@ -278,6 +279,7 @@ export function ClientPortalDossierPage() {
     fees: 5,
     statements: 6,
     messages: 7,
+    sales: 8,
   };
   const [tab, setTab] = useState(
     tabNames[searchParams.get("tab") ?? "overview"] ?? 0,
@@ -599,6 +601,7 @@ export function ClientPortalDossierPage() {
             <Tab label="Honoraires" />
             <Tab label="États financiers" />
             <Tab label="Messages" />
+            <Tab label="Ventes & facturation" />
           </Tabs>
         </Box>
         <Divider />
@@ -1361,6 +1364,14 @@ export function ClientPortalDossierPage() {
                 </Alert>
               )}
             </Box>
+          )}
+
+          {tab === 8 && (
+            <ClientCommercialWorkspace
+              organizationId={organizationId}
+              dossierId={dossierId}
+              archived={dossier.data.status === "ARCHIVE"}
+            />
           )}
         </CardContent>
       </Card>

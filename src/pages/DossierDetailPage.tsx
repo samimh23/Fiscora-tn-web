@@ -235,7 +235,7 @@ export function DossierDetailPage() {
         ...(can("business_invoices.view") ||
         can("third_parties.view") ||
         can("payments.view")
-          ? [{ value: "commercial", label: "Achats & ventes" }]
+          ? [{ value: "commercial", label: "Factures & règlements" }]
           : []),
         ...(can("accounting.view") ||
         can("reports.view") ||
