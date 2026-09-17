@@ -106,6 +106,14 @@ const formatDateTime = (value?: string | null) =>
     : "—";
 
 const documentOrigin = (document: AccountingDocument) => {
+  if (document.ingestionSource === "PUBLIC_LINK") {
+    return {
+      label: "Déposé via le lien sécurisé",
+      detail: document.sourceEmail ?? document.uploadedBy.name,
+      color: "info" as const,
+      icon: <PersonOutlineRounded fontSize="small" />,
+    };
+  }
   if (document.ingestionSource === "GENERATED") {
     return {
       label: "Émise par le client",
@@ -248,9 +256,14 @@ export function DossierDocumentsPanel({
     useState("BOITE_RECEPTION");
   const [expectationDueOn, setExpectationDueOn] = useState("");
   const [expectationMessage, setExpectationMessage] = useState("");
+  const [expectationRecipientEmail, setExpectationRecipientEmail] =
+    useState("");
   const [rejectTarget, setRejectTarget] =
     useState<MissingDocumentExpectation | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [resendTarget, setResendTarget] =
+    useState<MissingDocumentExpectation | null>(null);
+  const [resendEmail, setResendEmail] = useState("");
   const [receiveSelections, setReceiveSelections] = useState<
     Record<string, string>
   >({});
@@ -478,11 +491,13 @@ export function DossierDocumentsPanel({
       document,
       id,
       documentId,
+      recipientEmail,
     }: {
       type: string;
       document?: AccountingDocument;
       id?: string;
       documentId?: string;
+      recipientEmail?: string;
     }) => {
       if (type === "delete" && document)
         return api.delete(
@@ -509,6 +524,14 @@ export function DossierDocumentsPanel({
             category: expectationCategory,
             dueOn: expectationDueOn || null,
             message: expectationMessage.trim() || null,
+            recipientEmail: expectationRecipientEmail.trim() || null,
+          },
+        );
+      if (type === "resend" && id)
+        return api.post(
+          `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/missing/${id}/resend`,
+          {
+            recipientEmail: recipientEmail?.trim() || undefined,
           },
         );
       if (type === "receive" && id && documentId)
@@ -536,10 +559,15 @@ export function DossierDocumentsPanel({
         setExpectationLabel("");
         setExpectationDueOn("");
         setExpectationMessage("");
+        setExpectationRecipientEmail("");
       }
       if (variables.type === "reject") {
         setRejectTarget(null);
         setRejectReason("");
+      }
+      if (variables.type === "resend") {
+        setResendTarget(null);
+        setResendEmail("");
       }
       setError("");
       await refresh();
@@ -1422,6 +1450,38 @@ export function DossierDocumentsPanel({
                       Correction demandée : {entry.rejectionReason}
                     </Typography>
                   )}
+                  {entry.deliveryStatus === "ENVOYEE" &&
+                    entry.recipientEmail && (
+                      <Typography
+                        variant="caption"
+                        color="success.main"
+                        sx={{ display: "block" }}
+                      >
+                        Lien sécurisé envoyé à {entry.recipientEmail}
+                        {entry.publicTokenExpiresAtUtc
+                          ? ` · expire le ${formatDateTime(entry.publicTokenExpiresAtUtc)}`
+                          : ""}
+                      </Typography>
+                    )}
+                  {entry.deliveryStatus === "PORTAIL" && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: "block" }}
+                    >
+                      Visible dans le portail du client assigné
+                    </Typography>
+                  )}
+                  {entry.deliveryStatus === "ECHEC" && (
+                    <Typography
+                      variant="caption"
+                      color="error"
+                      sx={{ display: "block" }}
+                    >
+                      L’e-mail n’a pas été envoyé
+                      {entry.deliveryError ? ` · ${entry.deliveryError}` : ""}
+                    </Typography>
+                  )}
                 </Box>
                 <Chip
                   label={entry.receivedDocumentId ? "Reçu" : "Manquant"}
@@ -1471,6 +1531,24 @@ export function DossierDocumentsPanel({
                       }
                     >
                       Annuler
+                    </Button>
+                  )}
+                {canUpload &&
+                  !archived &&
+                  !entry.receivedDocumentId &&
+                  !["VALIDEE", "ANNULEE"].includes(entry.status ?? "") && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      disabled={action.isPending}
+                      onClick={() => {
+                        setResendTarget(entry);
+                        setResendEmail(entry.recipientEmail ?? "");
+                      }}
+                    >
+                      {entry.recipientEmail
+                        ? "Renvoyer le lien"
+                        : "Envoyer par e-mail"}
                     </Button>
                   )}
               </Box>
@@ -2233,6 +2311,20 @@ export function DossierDocumentsPanel({
             multiline
             minRows={3}
           />
+          <TextField
+            type="email"
+            label="E-mail du destinataire"
+            value={expectationRecipientEmail}
+            onChange={(event) =>
+              setExpectationRecipientEmail(event.target.value)
+            }
+            placeholder="client@exemple.com"
+            helperText="Sans compte Fiscora : un lien sécurisé valable 7 jours sera envoyé. Laissez vide seulement si un utilisateur du portail est déjà assigné à ce dossier."
+          />
+          <Alert severity="info">
+            Le client n’a pas besoin de créer un compte. Le lien ne permet de
+            déposer qu’un seul fichier pour cette demande.
+          </Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setExpectationOpen(false)}>Annuler</Button>
@@ -2241,7 +2333,50 @@ export function DossierDocumentsPanel({
             disabled={!expectationLabel.trim()}
             onClick={() => action.mutate({ type: "expectation" })}
           >
-            Ajouter
+            Envoyer la demande
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={Boolean(resendTarget)}
+        onClose={() => setResendTarget(null)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>
+          {resendTarget?.recipientEmail
+            ? "Renvoyer un nouveau lien"
+            : "Envoyer la demande par e-mail"}
+        </DialogTitle>
+        <DialogContent sx={{ pt: "12px !important" }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            L’ancien lien sera remplacé. Le nouveau lien expirera dans 7 jours
+            et acceptera un seul fichier.
+          </Typography>
+          <TextField
+            autoFocus
+            fullWidth
+            type="email"
+            label="E-mail du destinataire"
+            value={resendEmail}
+            onChange={(event) => setResendEmail(event.target.value)}
+            placeholder="client@exemple.com"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setResendTarget(null)}>Annuler</Button>
+          <Button
+            variant="contained"
+            disabled={!resendEmail.trim() || action.isPending}
+            onClick={() =>
+              action.mutate({
+                type: "resend",
+                id: resendTarget?.id,
+                recipientEmail: resendEmail,
+              })
+            }
+          >
+            Envoyer
           </Button>
         </DialogActions>
       </Dialog>

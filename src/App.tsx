@@ -118,6 +118,11 @@ const AcceptInvitationPage = lazy(() =>
     default: module.AcceptInvitationPage,
   })),
 );
+const PublicDocumentUploadPage = lazy(() =>
+  import("./pages/PublicDocumentUploadPage").then((module) => ({
+    default: module.PublicDocumentUploadPage,
+  })),
+);
 const PasswordResetRequestPage = lazy(() =>
   import("./pages/PasswordResetPage").then((module) => ({
     default: module.PasswordResetRequestPage,
@@ -265,6 +270,11 @@ const router = createBrowserRouter([
   {
     path: "/invitation/:token",
     element: lazyPage(<AcceptInvitationPage />),
+    errorElement: <RouteErrorPage />,
+  },
+  {
+    path: "/depot-document/:token",
+    element: lazyPage(<PublicDocumentUploadPage />),
     errorElement: <RouteErrorPage />,
   },
   {

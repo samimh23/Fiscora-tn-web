@@ -507,7 +507,7 @@ export interface AccountingDocument {
     type: "CLIENT" | "CABINET" | "EMAIL" | "UNKNOWN";
     name: string;
   };
-  ingestionSource?: "UPLOAD" | "EMAIL" | "GENERATED";
+  ingestionSource?: "UPLOAD" | "EMAIL" | "GENERATED" | "PUBLIC_LINK";
   sourceEmail?: string | null;
   sourceSubject?: string | null;
   sourceMessageId?: string | null;
@@ -604,6 +604,12 @@ export interface MissingDocumentExpectation {
   category: string;
   dueOn: string | null;
   message: string | null;
+  recipientEmail: string | null;
+  publicTokenExpiresAtUtc: string | null;
+  publicTokenUsedAtUtc: string | null;
+  deliveryStatus: "PORTAIL" | "ENVOYEE" | "ECHEC";
+  deliveryError: string | null;
+  sentAtUtc: string | null;
   status: "DEMANDEE" | "RECUE" | "VALIDEE" | "REJETEE" | "ANNULEE";
   requestedByUserId: string | null;
   requestedAtUtc: string | null;
@@ -612,6 +618,20 @@ export interface MissingDocumentExpectation {
   rejectedAtUtc: string | null;
   rejectionReason: string | null;
   cancelledAtUtc: string | null;
+}
+
+export interface PublicDocumentRequestPreview {
+  label: string;
+  category: string;
+  periodYear: number;
+  periodMonth: number;
+  dueOn: string | null;
+  message: string | null;
+  dossierName: string;
+  organizationName: string;
+  expiresAtUtc: string | null;
+  status: "OPEN" | "EXPIRED" | "RECEIVED";
+  canUpload: boolean;
 }
 
 export interface BillingSummary {
