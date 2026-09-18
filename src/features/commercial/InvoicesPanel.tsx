@@ -28,6 +28,7 @@ import {
   ReceiptLongOutlined,
 } from "@mui/icons-material";
 import { api, ApiError, downloadApiFile } from "../../api/client";
+import { SearchableSelect } from "../../components/SearchableSelect";
 import type {
   AccountingJournal,
   BusinessInvoice,
@@ -506,65 +507,48 @@ function InvoiceDialog({
             onChange={(event) => set("dueDate", event.target.value)}
             slotProps={{ inputLabel: { shrink: true } }}
           />
-          <TextField
-            select
+          <SearchableSelect
             label={form.type === "VENTE" ? "Client" : "Fournisseur"}
             value={form.thirdPartyId}
-            onChange={(event) => selectParty(event.target.value)}
+            onChange={selectParty}
+            options={availableParties.map((party) => ({
+              value: party.id,
+              label: party.name,
+            }))}
             required
-          >
-            <MenuItem value="">Sélectionner…</MenuItem>
-            {availableParties.map((party) => (
-              <MenuItem key={party.id} value={party.id}>
-                {party.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
+          />
+          <SearchableSelect
             label="Journal"
             value={form.journalId}
-            onChange={(event) => set("journalId", event.target.value)}
+            onChange={(value) => set("journalId", value)}
+            options={availableJournals.map((journal) => ({
+              value: journal.id,
+              label: `${journal.code} — ${journal.name}`,
+            }))}
             required
-          >
-            <MenuItem value="">Sélectionner…</MenuItem>
-            {availableJournals.map((journal) => (
-              <MenuItem key={journal.id} value={journal.id}>
-                {journal.code} — {journal.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
+          />
+          <SearchableSelect
             label="Compte tiers"
             value={form.thirdPartyAccountId}
-            onChange={(event) => set("thirdPartyAccountId", event.target.value)}
+            onChange={(value) => set("thirdPartyAccountId", value)}
+            options={postingAccounts.map((account) => ({
+              value: account.id,
+              label: `${account.code} — ${account.name}`,
+            }))}
             required
-          >
-            <MenuItem value="">Sélectionner…</MenuItem>
-            {postingAccounts.map((account) => (
-              <MenuItem key={account.id} value={account.id}>
-                {account.code} — {account.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
           {form.kind === "AVOIR" && (
-            <TextField
-              select
+            <SearchableSelect
               label="Facture d’origine"
               value={form.originalInvoiceId}
-              onChange={(event) => set("originalInvoiceId", event.target.value)}
+              onChange={(value) => set("originalInvoiceId", value)}
+              options={originals.map((item) => ({
+                value: item.id,
+                label: `${item.number} — ${item.thirdPartyName} — solde ${money(item.outstandingAmount)}`,
+              }))}
               required
               sx={{ gridColumn: { md: "span 2" } }}
-            >
-              <MenuItem value="">Sélectionner…</MenuItem>
-              {originals.map((item) => (
-                <MenuItem key={item.id} value={item.id}>
-                  {item.number} — {item.thirdPartyName} — solde{" "}
-                  {money(item.outstandingAmount)}
-                </MenuItem>
-              ))}
-            </TextField>
+            />
           )}
         </Box>
 
@@ -585,22 +569,16 @@ function InvoiceDialog({
                   alignItems: "center",
                 }}
               >
-                <TextField
-                  select
+                <SearchableSelect
                   size="small"
                   label="Compte"
                   value={line.accountId}
-                  onChange={(event) =>
-                    updateLine(index, "accountId", event.target.value)
-                  }
-                >
-                  <MenuItem value="">Sélectionner…</MenuItem>
-                  {postingAccounts.map((account) => (
-                    <MenuItem key={account.id} value={account.id}>
-                      {account.code} — {account.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  onChange={(value) => updateLine(index, "accountId", value)}
+                  options={postingAccounts.map((account) => ({
+                    value: account.id,
+                    label: `${account.code} — ${account.name}`,
+                  }))}
+                />
                 <TextField
                   size="small"
                   label="Description"
@@ -753,52 +731,40 @@ function InvoiceDialog({
             gap: 2,
           }}
         >
-          <TextField
-            select
+          <SearchableSelect
             label="Compte TVA"
             value={form.vatAccountId}
-            onChange={(event) => set("vatAccountId", event.target.value)}
-          >
-            <MenuItem value="">Aucun</MenuItem>
-            {postingAccounts.map((account) => (
-              <MenuItem key={account.id} value={account.id}>
-                {account.code} — {account.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
+            onChange={(value) => set("vatAccountId", value)}
+            options={postingAccounts.map((account) => ({
+              value: account.id,
+              label: `${account.code} — ${account.name}`,
+            }))}
+          />
+          <SearchableSelect
             label="Compte timbre"
             value={form.stampAccountId}
-            onChange={(event) => set("stampAccountId", event.target.value)}
-          >
-            <MenuItem value="">Aucun</MenuItem>
-            {postingAccounts.map((account) => (
-              <MenuItem key={account.id} value={account.id}>
-                {account.code} — {account.name}
-              </MenuItem>
-            ))}
-          </TextField>
+            onChange={(value) => set("stampAccountId", value)}
+            options={postingAccounts.map((account) => ({
+              value: account.id,
+              label: `${account.code} — ${account.name}`,
+            }))}
+          />
           <TextField
             label="Timbre manuel (TND)"
             value={form.stampDuty}
             onChange={(event) => set("stampDuty", event.target.value)}
             helperText="Vide = taux officiel configuré"
           />
-          <TextField
-            select
+          <SearchableSelect
             label="Compte droit de consommation"
             value={form.exciseAccountId}
-            onChange={(event) => set("exciseAccountId", event.target.value)}
+            onChange={(value) => set("exciseAccountId", value)}
+            options={postingAccounts.map((account) => ({
+              value: account.id,
+              label: `${account.code} — ${account.name}`,
+            }))}
             helperText="Requis si un taux est saisi sur une ligne"
-          >
-            <MenuItem value="">Aucun</MenuItem>
-            {postingAccounts.map((account) => (
-              <MenuItem key={account.id} value={account.id}>
-                {account.code} — {account.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
           <TextField
             select
             label="Nature de retenue"
@@ -822,42 +788,30 @@ function InvoiceDialog({
                 onChange={(event) => set("withholdingBase", event.target.value)}
                 helperText="Vide = total HT"
               />
-              <TextField
-                select
+              <SearchableSelect
                 label="Compte retenue"
                 value={form.withholdingAccountId}
-                onChange={(event) =>
-                  set("withholdingAccountId", event.target.value)
-                }
-              >
-                <MenuItem value="">Sélectionner…</MenuItem>
-                {postingAccounts.map((account) => (
-                  <MenuItem key={account.id} value={account.id}>
-                    {account.code} — {account.name}
-                  </MenuItem>
-                ))}
-              </TextField>
+                onChange={(value) => set("withholdingAccountId", value)}
+                options={postingAccounts.map((account) => ({
+                  value: account.id,
+                  label: `${account.code} — ${account.name}`,
+                }))}
+              />
             </>
           )}
           {form.type === "ACHAT" && (
-            <TextField
-              select
+            <SearchableSelect
               label="Attestation de suspension de TVA"
               value={form.vatSuspensionCertificateId}
-              onChange={(event) =>
-                set("vatSuspensionCertificateId", event.target.value)
-              }
-              helperText="Achat effectué sans TVA au titre d’une attestation détenue par le dossier"
-            >
-              <MenuItem value="">Aucune</MenuItem>
-              {vatSuspensionCertificates
+              onChange={(value) => set("vatSuspensionCertificateId", value)}
+              options={vatSuspensionCertificates
                 .filter((item) => item.currentStatus === "ACTIVE")
-                .map((item) => (
-                  <MenuItem key={item.id} value={item.id}>
-                    {item.number} — restant {item.remainingBase} TND
-                  </MenuItem>
-                ))}
-            </TextField>
+                .map((item) => ({
+                  value: item.id,
+                  label: `${item.number} — restant ${item.remainingBase} TND`,
+                }))}
+              helperText="Achat effectué sans TVA au titre d’une attestation détenue par le dossier"
+            />
           )}
           <TextField
             label="Notes"

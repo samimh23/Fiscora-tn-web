@@ -7,14 +7,12 @@ import {
   Card,
   Checkbox,
   Chip,
-  MenuItem,
   Stack,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   Typography,
 } from "@mui/material";
 import { LinkOffRounded, LinkRounded } from "@mui/icons-material";
@@ -25,6 +23,7 @@ import type {
   LedgerAccount,
 } from "../../types/api";
 import { money, shortDate } from "./options";
+import { SearchableSelect } from "../../components/SearchableSelect";
 
 export function ReconciliationsPanel({
   organizationId,
@@ -143,24 +142,20 @@ export function ReconciliationsPanel({
               exactement équilibré.
             </Typography>
           </Box>
-          <TextField
-            select
-            size="small"
+          <SearchableSelect
             label="Compte à lettrer"
             value={accountId}
-            onChange={(event) => {
-              setAccountId(event.target.value);
+            onChange={(value) => {
+              setAccountId(value);
               setSelected([]);
             }}
+            options={candidateAccounts.map((account) => ({
+              value: account.id,
+              label: `${account.code} — ${account.name}`,
+            }))}
+            placeholder="Rechercher un compte…"
             sx={{ minWidth: 310 }}
-          >
-            <MenuItem value="">Sélectionner un compte…</MenuItem>
-            {candidateAccounts.map((account) => (
-              <MenuItem key={account.id} value={account.id}>
-                {account.code} — {account.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
         </Stack>
         {accountId && (
           <>

@@ -22,6 +22,7 @@ import {
   TaskAltRounded,
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
+import { SearchableSelect } from "../../components/SearchableSelect";
 import type {
   AccountingJournal,
   AccountingPeriod,
@@ -445,45 +446,36 @@ export function PeriodClosingPanel({
             Cette action clôture toutes les périodes et génère automatiquement
             la clôture et l’ouverture de l’exercice suivant.
           </Alert>
-          <TextField
-            select
+          <SearchableSelect
             label="Journal de clôture (OD)"
             value={closingJournalId}
-            onChange={(event) => setClosingJournalId(event.target.value)}
-          >
-            <MenuItem value="">Sélectionner…</MenuItem>
-            {odJournals.map((journal) => (
-              <MenuItem key={journal.id} value={journal.id}>
-                {journal.code} — {journal.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
+            onChange={setClosingJournalId}
+            options={odJournals.map((journal) => ({
+              value: journal.id,
+              label: `${journal.code} — ${journal.name}`,
+            }))}
+            placeholder="Rechercher un journal…"
+          />
+          <SearchableSelect
             label="Journal d’ouverture (OD)"
             value={openingJournalId}
-            onChange={(event) => setOpeningJournalId(event.target.value)}
-          >
-            <MenuItem value="">Sélectionner…</MenuItem>
-            {odJournals.map((journal) => (
-              <MenuItem key={journal.id} value={journal.id}>
-                {journal.code} — {journal.name}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
+            onChange={setOpeningJournalId}
+            options={odJournals.map((journal) => ({
+              value: journal.id,
+              label: `${journal.code} — ${journal.name}`,
+            }))}
+            placeholder="Rechercher un journal…"
+          />
+          <SearchableSelect
             label="Compte de résultat"
             value={resultAccountId}
-            onChange={(event) => setResultAccountId(event.target.value)}
-          >
-            <MenuItem value="">Sélectionner…</MenuItem>
-            {equityAccounts.map((account) => (
-              <MenuItem key={account.id} value={account.id}>
-                {account.code} — {account.name}
-              </MenuItem>
-            ))}
-          </TextField>
+            onChange={setResultAccountId}
+            options={equityAccounts.map((account) => ({
+              value: account.id,
+              label: `${account.code} — ${account.name}`,
+            }))}
+            placeholder="Rechercher un compte…"
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setCloseOpen(false)}>Annuler</Button>

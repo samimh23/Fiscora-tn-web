@@ -20,6 +20,7 @@ import {
 import { DownloadRounded, SearchRounded } from "@mui/icons-material";
 import type { AccountingJournal, JournalEntry } from "../../types/api";
 import { money, shortDate } from "./options";
+import { SearchableSelect } from "../../components/SearchableSelect";
 
 const firstDayOfYear = () => `${new Date().getFullYear()}-01-01`;
 const today = () => new Date().toISOString().slice(0, 10);
@@ -211,20 +212,19 @@ export function AccountingJournalPanel({
           onChange={(event) => setTo(event.target.value)}
           slotProps={{ inputLabel: { shrink: true } }}
         />
-        <TextField
-          select
-          size="small"
+        <SearchableSelect
           label="Journal"
           value={journalId}
-          onChange={(event) => setJournalId(event.target.value)}
-        >
-          <MenuItem value="TOUS">Tous les journaux</MenuItem>
-          {journals.map((journal) => (
-            <MenuItem key={journal.id} value={journal.id}>
-              {journal.code} — {journal.name}
-            </MenuItem>
-          ))}
-        </TextField>
+          onChange={setJournalId}
+          options={[
+            { value: "TOUS", label: "Tous les journaux" },
+            ...journals.map((journal) => ({
+              value: journal.id,
+              label: `${journal.code} — ${journal.name}`,
+            })),
+          ]}
+          placeholder="Rechercher un journal…"
+        />
         <TextField
           size="small"
           placeholder="Pièce, libellé, compte ou tiers…"

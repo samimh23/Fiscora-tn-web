@@ -31,6 +31,7 @@ import {
   SwapVertRounded,
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
+import { SearchableSelect } from "../../components/SearchableSelect";
 import type {
   AccountingJournal,
   CostCenter,
@@ -213,20 +214,16 @@ function EntryDialog({
             gap: 2,
           }}
         >
-          <TextField
-            select
+          <SearchableSelect
             label="Journal"
             value={journalId}
-            onChange={(event) => setJournalId(event.target.value)}
+            onChange={setJournalId}
+            options={journals.map((journal) => ({
+              value: journal.id,
+              label: `${journal.code} — ${journal.name}`,
+            }))}
             required
-          >
-            <MenuItem value="">Sélectionner…</MenuItem>
-            {journals.map((journal) => (
-              <MenuItem key={journal.id} value={journal.id}>
-                {journal.code} — {journal.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
           <TextField
             label="Date"
             type="date"
@@ -262,26 +259,20 @@ function EntryDialog({
                   alignItems: "center",
                 }}
               >
-                <TextField
-                  select
+                <SearchableSelect
                   size="small"
                   label="Compte"
                   value={line.accountId}
-                  onChange={(event) =>
-                    updateLine(index, "accountId", event.target.value)
-                  }
-                >
-                  <MenuItem value="">Sélectionner…</MenuItem>
-                  {accounts
+                  onChange={(value) => updateLine(index, "accountId", value)}
+                  options={accounts
                     .filter(
                       (account) => account.allowsPosting && account.isActive,
                     )
-                    .map((account) => (
-                      <MenuItem key={account.id} value={account.id}>
-                        {account.code} — {account.name}
-                      </MenuItem>
-                    ))}
-                </TextField>
+                    .map((account) => ({
+                      value: account.id,
+                      label: `${account.code} — ${account.name}`,
+                    }))}
+                />
                 <TextField
                   size="small"
                   label="Libellé"
@@ -314,24 +305,18 @@ function EntryDialog({
                     updateLine(index, "thirdPartyName", event.target.value)
                   }
                 />
-                <TextField
-                  select
+                <SearchableSelect
                   size="small"
                   label="Centre de coût"
                   value={line.costCenterId}
-                  onChange={(event) =>
-                    updateLine(index, "costCenterId", event.target.value)
-                  }
-                >
-                  <MenuItem value="">Aucun</MenuItem>
-                  {costCenters
+                  onChange={(value) => updateLine(index, "costCenterId", value)}
+                  options={costCenters
                     .filter((cc) => cc.isActive)
-                    .map((cc) => (
-                      <MenuItem key={cc.id} value={cc.id}>
-                        {cc.code} — {cc.name}
-                      </MenuItem>
-                    ))}
-                </TextField>
+                    .map((cc) => ({
+                      value: cc.id,
+                      label: `${cc.code} — ${cc.name}`,
+                    }))}
+                />
                 <Tooltip title="Supprimer">
                   <span>
                     <IconButton

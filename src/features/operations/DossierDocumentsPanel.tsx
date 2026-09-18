@@ -13,7 +13,6 @@ import {
   FormControlLabel,
   IconButton,
   MenuItem,
-  Select,
   Switch,
   Skeleton,
   TextField,
@@ -35,6 +34,7 @@ import {
   VisibilityOutlined,
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
+import { SearchableSelect } from "../../components/SearchableSelect";
 import type {
   AccountingDocument,
   BankAccount,
@@ -672,6 +672,12 @@ export function DossierDocumentsPanel({
           Boolean(item) && typeof item === "object" && !Array.isArray(item),
       )
     : [];
+  const reviewAdditionalFields = Array.isArray(reviewDraft.additional_fields)
+    ? reviewDraft.additional_fields.filter(
+        (item): item is Record<string, unknown> =>
+          Boolean(item) && typeof item === "object" && !Array.isArray(item),
+      )
+    : [];
   const isBankReview = reviewDraft.document_type === "bank_statement";
   const reviewBankStatement =
     reviewDraft.bank_statement &&
@@ -776,6 +782,85 @@ export function DossierDocumentsPanel({
     taxes[index][field] = value.trim() ? value : null;
     setReviewDraft({ ...reviewDraft, other_taxes: taxes });
   };
+  const addReviewTax = () =>
+    setReviewDraft({
+      ...reviewDraft,
+      other_taxes: [
+        ...reviewTaxes.map((item) => ({ ...item })),
+        { label: null, amount: null },
+      ],
+    });
+  const removeReviewTax = (index: number) =>
+    setReviewDraft({
+      ...reviewDraft,
+      other_taxes: reviewTaxes
+        .filter((_, itemIndex) => itemIndex !== index)
+        .map((item) => ({ ...item })),
+    });
+  const updateReviewLine = (
+    index: number,
+    field:
+      | "description"
+      | "quantity"
+      | "unit_price"
+      | "tax_rate"
+      | "line_total",
+    value: string,
+  ) => {
+    const lines = reviewLines.map((item) => ({ ...item }));
+    lines[index][field] = value.trim() ? value : null;
+    setReviewDraft({ ...reviewDraft, line_items: lines });
+  };
+  const addReviewLine = () =>
+    setReviewDraft({
+      ...reviewDraft,
+      line_items: [
+        ...reviewLines.map((item) => ({ ...item })),
+        {
+          description: null,
+          quantity: null,
+          unit_price: null,
+          tax_rate: null,
+          line_total: null,
+        },
+      ],
+    });
+  const duplicateReviewLine = (index: number) => {
+    const lines = reviewLines.map((item) => ({ ...item }));
+    lines.splice(index + 1, 0, { ...lines[index] });
+    setReviewDraft({ ...reviewDraft, line_items: lines });
+  };
+  const removeReviewLine = (index: number) =>
+    setReviewDraft({
+      ...reviewDraft,
+      line_items: reviewLines
+        .filter((_, itemIndex) => itemIndex !== index)
+        .map((item) => ({ ...item })),
+    });
+  const updateAdditionalField = (
+    index: number,
+    field: "label" | "value",
+    value: string,
+  ) => {
+    const fields = reviewAdditionalFields.map((item) => ({ ...item }));
+    fields[index][field] = value.trim() ? value : null;
+    setReviewDraft({ ...reviewDraft, additional_fields: fields });
+  };
+  const addAdditionalField = () =>
+    setReviewDraft({
+      ...reviewDraft,
+      additional_fields: [
+        ...reviewAdditionalFields.map((item) => ({ ...item })),
+        { label: null, value: null },
+      ],
+    });
+  const removeAdditionalField = (index: number) =>
+    setReviewDraft({
+      ...reviewDraft,
+      additional_fields: reviewAdditionalFields
+        .filter((_, itemIndex) => itemIndex !== index)
+        .map((item) => ({ ...item })),
+    });
   const receivedDocuments = documents.data ?? [];
   const clientDocumentCount = receivedDocuments.filter(
     (document) => document.uploadedBy?.type === "CLIENT",
@@ -1604,25 +1689,23 @@ export function DossierDocumentsPanel({
               !["VALIDEE", "ANNULEE"].includes(entry.status ?? "") &&
               documents.data?.length ? (
                 <Box sx={{ display: "flex", gap: 1, mt: 1.2 }}>
-                  <Select
+                  <SearchableSelect
+                    label="Document reçu"
                     size="small"
-                    displayEmpty
-                    fullWidth
                     value={receiveSelections[entry.id] ?? ""}
-                    onChange={(event) =>
+                    onChange={(value) =>
                       setReceiveSelections({
                         ...receiveSelections,
-                        [entry.id]: event.target.value,
+                        [entry.id]: value,
                       })
                     }
-                  >
-                    <MenuItem value="">Associer un document…</MenuItem>
-                    {documents.data.map((document) => (
-                      <MenuItem key={document.id} value={document.id}>
-                        {document.originalName}
-                      </MenuItem>
-                    ))}
-                  </Select>
+                    options={documents.data.map((document) => ({
+                      value: document.id,
+                      label: document.originalName,
+                    }))}
+                    placeholder="Rechercher un document…"
+                    sx={{ flex: 1 }}
+                  />
                   <Button
                     size="small"
                     disabled={!receiveSelections[entry.id]}
@@ -1959,28 +2042,22 @@ export function DossierDocumentsPanel({
                 </Alert>
               )}
               {isBankReview && (
-                <TextField
-                  select
-                  size="small"
+                <SearchableSelect
                   label="Compte bancaire de destination"
                   value={reviewBankAccountId}
-                  onChange={(event) =>
-                    setReviewBankAccountId(event.target.value)
-                  }
+                  onChange={setReviewBankAccountId}
+                  options={(bankAccounts.data ?? []).map((account) => ({
+                    value: account.id,
+                    label: `${account.name} · ${account.iban || account.currency}`,
+                  }))}
+                  placeholder="Rechercher un compte bancaire…"
                   helperText={
                     bankAccounts.data?.length
                       ? "Le compte est proposé automatiquement lorsque l’IBAN correspond."
                       : "Créez d’abord un compte bancaire dans Production > Banque."
                   }
-                  fullWidth
-                  sx={{ mb: 2 }}
-                >
-                  {(bankAccounts.data ?? []).map((account) => (
-                    <MenuItem key={account.id} value={account.id}>
-                      {account.name} · {account.iban || account.currency}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  sx={{ mb: 2, width: "100%" }}
+                />
               )}
               <Box
                 sx={{
@@ -2131,19 +2208,43 @@ export function DossierDocumentsPanel({
                   </Box>
                 </Box>
               )}
-              {!isBankReview && reviewTaxes.length > 0 && (
+              {!isBankReview && (
                 <Box sx={{ mt: 2.5 }}>
-                  <Typography variant="h4" sx={{ mb: 1 }}>
-                    Autres taxes et prélèvements
-                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <Typography variant="h4">
+                      Autres taxes et prélèvements
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AddRounded />}
+                      onClick={addReviewTax}
+                    >
+                      Ajouter une taxe
+                    </Button>
+                  </Box>
+                  {!reviewTaxes.length && (
+                    <Typography variant="body2" color="text.secondary">
+                      Aucune taxe complémentaire détectée.
+                    </Typography>
+                  )}
                   <Box sx={{ display: "grid", gap: 1 }}>
                     {reviewTaxes.map((tax, index) => (
                       <Box
                         key={index}
                         sx={{
                           display: "grid",
-                          gridTemplateColumns: "minmax(0, 1fr) 150px",
+                          gridTemplateColumns: "minmax(0, 1fr) 150px auto",
                           gap: 1,
+                          alignItems: "center",
                         }}
                       >
                         <TextField
@@ -2162,16 +2263,50 @@ export function DossierDocumentsPanel({
                             updateReviewTax(index, "amount", event.target.value)
                           }
                         />
+                        <Tooltip title="Supprimer la taxe">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            aria-label="Supprimer la taxe"
+                            onClick={() => removeReviewTax(index)}
+                          >
+                            <DeleteOutlineRounded fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       </Box>
                     ))}
                   </Box>
                 </Box>
               )}
-              {!isBankReview && reviewLines.length > 0 && (
+              {!isBankReview && (
                 <Box sx={{ mt: 2.5 }}>
-                  <Typography variant="h4" sx={{ mb: 1 }}>
-                    Lignes détectées ({reviewLines.length})
-                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <Typography variant="h4">
+                      Lignes détectées ({reviewLines.length})
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AddRounded />}
+                      onClick={addReviewLine}
+                    >
+                      Ajouter une ligne
+                    </Button>
+                  </Box>
+                  {!reviewLines.length && (
+                    <Alert severity="warning" sx={{ mb: 1 }}>
+                      Aucune ligne détectée. Ajoutez les lignes visibles sur la
+                      pièce avant de confirmer.
+                    </Alert>
+                  )}
                   <Box
                     sx={{
                       overflowX: "auto",
@@ -2183,6 +2318,7 @@ export function DossierDocumentsPanel({
                     <Box
                       component="table"
                       sx={{
+                        minWidth: 900,
                         width: "100%",
                         borderCollapse: "collapse",
                         "& th, & td": {
@@ -2200,21 +2336,146 @@ export function DossierDocumentsPanel({
                         <tr>
                           <th>Description</th>
                           <th>Qté</th>
-                          <th>Prix</th>
+                          <th>Prix unitaire</th>
+                          <th>TVA</th>
                           <th>Total</th>
+                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
                         {reviewLines.map((line, index) => (
                           <tr key={index}>
-                            <td>{String(line.description ?? "—")}</td>
-                            <td>{String(line.quantity ?? "—")}</td>
-                            <td>{String(line.unit_price ?? "—")}</td>
-                            <td>{String(line.line_total ?? "—")}</td>
+                            {(
+                              [
+                                "description",
+                                "quantity",
+                                "unit_price",
+                                "tax_rate",
+                                "line_total",
+                              ] as const
+                            ).map((field) => (
+                              <td key={field}>
+                                <TextField
+                                  size="small"
+                                  value={String(line[field] ?? "")}
+                                  onChange={(event) =>
+                                    updateReviewLine(
+                                      index,
+                                      field,
+                                      event.target.value,
+                                    )
+                                  }
+                                  sx={{
+                                    minWidth:
+                                      field === "description" ? 220 : 105,
+                                  }}
+                                />
+                              </td>
+                            ))}
+                            <td>
+                              <Box sx={{ display: "flex", gap: 0.25 }}>
+                                <Tooltip title="Dupliquer la ligne">
+                                  <IconButton
+                                    size="small"
+                                    aria-label="Dupliquer la ligne"
+                                    onClick={() => duplicateReviewLine(index)}
+                                  >
+                                    <ContentCopyRounded fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Supprimer la ligne">
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    aria-label="Supprimer la ligne"
+                                    onClick={() => removeReviewLine(index)}
+                                  >
+                                    <DeleteOutlineRounded fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </Box>
+                  </Box>
+                </Box>
+              )}
+              {!isBankReview && (
+                <Box sx={{ mt: 2.5 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="h4">Champs supplémentaires</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Informations visibles qui ne font pas partie des champs
+                        comptables standards.
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AddRounded />}
+                      onClick={addAdditionalField}
+                    >
+                      Ajouter un champ
+                    </Button>
+                  </Box>
+                  <Box sx={{ display: "grid", gap: 1 }}>
+                    {reviewAdditionalFields.map((field, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr) auto",
+                          gap: 1,
+                          alignItems: "center",
+                        }}
+                      >
+                        <TextField
+                          size="small"
+                          label="Nom du champ"
+                          value={String(field.label ?? "")}
+                          onChange={(event) =>
+                            updateAdditionalField(
+                              index,
+                              "label",
+                              event.target.value,
+                            )
+                          }
+                        />
+                        <TextField
+                          size="small"
+                          label="Valeur"
+                          value={String(field.value ?? "")}
+                          onChange={(event) =>
+                            updateAdditionalField(
+                              index,
+                              "value",
+                              event.target.value,
+                            )
+                          }
+                        />
+                        <Tooltip title="Supprimer le champ">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            aria-label="Supprimer le champ"
+                            onClick={() => removeAdditionalField(index)}
+                          >
+                            <DeleteOutlineRounded fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    ))}
                   </Box>
                 </Box>
               )}
@@ -2328,19 +2589,19 @@ export function DossierDocumentsPanel({
             ))}
           </TextField>
           {missing.length > 0 && (
-            <TextField
-              select
+            <SearchableSelect
               label="Document attendu correspondant"
               value={expectationId}
-              onChange={(event) => setExpectationId(event.target.value)}
-            >
-              <MenuItem value="">Aucun</MenuItem>
-              {missing.map((entry) => (
-                <MenuItem key={entry.id} value={entry.id}>
-                  {entry.label}
-                </MenuItem>
-              ))}
-            </TextField>
+              onChange={setExpectationId}
+              options={[
+                { value: "", label: "Aucun" },
+                ...missing.map((entry) => ({
+                  value: entry.id,
+                  label: entry.label,
+                })),
+              ]}
+              placeholder="Rechercher une demande…"
+            />
           )}
           <FormControlLabel
             control={

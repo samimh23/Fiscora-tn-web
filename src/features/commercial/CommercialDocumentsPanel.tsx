@@ -29,6 +29,7 @@ import {
   EditOutlined,
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
+import { SearchableSelect } from "../../components/SearchableSelect";
 import type {
   CommercialDocument,
   CommercialDocumentLine,
@@ -328,20 +329,16 @@ function DocumentDialog({
             onChange={(event) => set("validUntil", event.target.value)}
             slotProps={{ inputLabel: { shrink: true } }}
           />
-          <TextField
-            select
+          <SearchableSelect
             label={form.direction === "VENTE" ? "Client" : "Fournisseur"}
             value={form.thirdPartyId}
-            onChange={(event) => set("thirdPartyId", event.target.value)}
+            onChange={(value) => set("thirdPartyId", value)}
+            options={partiesForDirection.map((party) => ({
+              value: party.id,
+              label: party.name,
+            }))}
             required
-          >
-            <MenuItem value="">Sélectionner…</MenuItem>
-            {partiesForDirection.map((party) => (
-              <MenuItem key={party.id} value={party.id}>
-                {party.name}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
           <TextField
             label="Devise"
             value={form.currencyCode}
@@ -374,22 +371,16 @@ function DocumentDialog({
                   alignItems: "center",
                 }}
               >
-                <TextField
-                  select
+                <SearchableSelect
                   size="small"
                   label="Compte (facultatif)"
                   value={line.accountId}
-                  onChange={(event) =>
-                    updateLine(index, "accountId", event.target.value)
-                  }
-                >
-                  <MenuItem value="">À choisir à la facture</MenuItem>
-                  {postingAccounts.map((account) => (
-                    <MenuItem key={account.id} value={account.id}>
-                      {account.code} — {account.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  onChange={(value) => updateLine(index, "accountId", value)}
+                  options={postingAccounts.map((account) => ({
+                    value: account.id,
+                    label: `${account.code} — ${account.name}`,
+                  }))}
+                />
                 <TextField
                   size="small"
                   label="Désignation"

@@ -37,6 +37,7 @@ import {
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
 import { BankMatchSuggestion } from "./BankMatchSuggestion";
+import { SearchableSelect } from "../../components/SearchableSelect";
 import type {
   AccountingJournal,
   Bank,
@@ -214,36 +215,28 @@ function BankAccountDialog({
           helperText="IBAN tunisien : TN + 22 chiffres, ou RIB tunisien : 20 chiffres."
           sx={{ gridColumn: "1 / -1" }}
         />
-        <TextField
-          select
+        <SearchableSelect
           label="Compte comptable banque"
           value={ledgerAccountId}
-          onChange={(event) => setLedgerAccountId(event.target.value)}
-        >
-          <MenuItem value="">Sélectionner…</MenuItem>
-          {accounts
+          onChange={setLedgerAccountId}
+          options={accounts
             .filter((account) => account.isActive && account.allowsPosting)
-            .map((account) => (
-              <MenuItem key={account.id} value={account.id}>
-                {account.code} — {account.name}
-              </MenuItem>
-            ))}
-        </TextField>
-        <TextField
-          select
+            .map((account) => ({
+              value: account.id,
+              label: `${account.code} — ${account.name}`,
+            }))}
+        />
+        <SearchableSelect
           label="Journal de banque"
           value={journalId}
-          onChange={(event) => setJournalId(event.target.value)}
-        >
-          <MenuItem value="">Sélectionner…</MenuItem>
-          {journals
+          onChange={setJournalId}
+          options={journals
             .filter((journal) => journal.type === "BANQUE")
-            .map((journal) => (
-              <MenuItem key={journal.id} value={journal.id}>
-                {journal.code} — {journal.name}
-              </MenuItem>
-            ))}
-        </TextField>
+            .map((journal) => ({
+              value: journal.id,
+              label: `${journal.code} — ${journal.name}`,
+            }))}
+        />
         <TextField
           select
           label="Devise"
@@ -396,19 +389,15 @@ function BankRuleDialog({
             <MenuItem value="CREDIT">Crédit</MenuItem>
           </TextField>
         </Box>
-        <TextField
-          select
+        <SearchableSelect
           label="Compte suggéré"
           value={suggestedAccountId}
-          onChange={(event) => setSuggestedAccountId(event.target.value)}
-        >
-          <MenuItem value="">Sélectionner…</MenuItem>
-          {postingAccounts.map((account) => (
-            <MenuItem key={account.id} value={account.id}>
-              {account.code} — {account.name}
-            </MenuItem>
-          ))}
-        </TextField>
+          onChange={setSuggestedAccountId}
+          options={postingAccounts.map((account) => ({
+            value: account.id,
+            label: `${account.code} — ${account.name}`,
+          }))}
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Annuler</Button>
@@ -692,19 +681,17 @@ function ImportDialog({
             {error}
           </Alert>
         )}
-        <TextField
-          select
+        <SearchableSelect
           label="Compte bancaire"
           value={bankAccountId}
-          onChange={(event) => setBankAccountId(event.target.value)}
+          onChange={setBankAccountId}
+          options={bankAccounts.map((account) => ({
+            value: account.id,
+            label: `${account.name} — ${account.bank?.name ?? "Banque non renseignée"}`,
+          }))}
+          placeholder="Rechercher un compte bancaire…"
           sx={{ gridColumn: "1 / -1" }}
-        >
-          {bankAccounts.map((account) => (
-            <MenuItem key={account.id} value={account.id}>
-              {account.name} — {account.bank?.name}
-            </MenuItem>
-          ))}
-        </TextField>
+        />
         <TextField
           label="Début de période"
           type="date"
@@ -924,37 +911,28 @@ function MatchDialog({
           </Typography>
         </Card>
         {mode === "payment" && (
-          <TextField
-            select
+          <SearchableSelect
             label="Règlement comptabilisé"
             value={selection}
-            onChange={(event) => setSelection(event.target.value)}
-          >
-            <MenuItem value="">Sélectionner…</MenuItem>
-            {paymentCandidates.map((payment) => (
-              <MenuItem key={payment.id} value={payment.id}>
-                {payment.thirdParty.name} — {shortDate(payment.paymentDate)} —{" "}
-                {money(payment.amount)}
-                {payment.reference ? ` — ${payment.reference}` : ""}
-              </MenuItem>
-            ))}
-          </TextField>
+            onChange={setSelection}
+            options={paymentCandidates.map((payment) => ({
+              value: payment.id,
+              label: `${payment.thirdParty.name} — ${shortDate(payment.paymentDate)} — ${money(payment.amount)}${payment.reference ? ` — ${payment.reference}` : ""}`,
+            }))}
+            placeholder="Rechercher un règlement…"
+          />
         )}
         {mode === "entry" && (
-          <TextField
-            select
+          <SearchableSelect
             label="Écriture comptabilisée"
             value={selection}
-            onChange={(event) => setSelection(event.target.value)}
-          >
-            <MenuItem value="">Sélectionner…</MenuItem>
-            {entryCandidates.map((entry) => (
-              <MenuItem key={entry.id} value={entry.id}>
-                {entry.pieceReference} — {shortDate(entry.entryDate)} —{" "}
-                {entry.description}
-              </MenuItem>
-            ))}
-          </TextField>
+            onChange={setSelection}
+            options={entryCandidates.map((entry) => ({
+              value: entry.id,
+              label: `${entry.pieceReference} — ${shortDate(entry.entryDate)} — ${entry.description}`,
+            }))}
+            placeholder="Rechercher une écriture…"
+          />
         )}
         {mode === "generate" && (
           <>
@@ -966,26 +944,23 @@ function MatchDialog({
                 {transaction.ruleSuggestion.confidence}%).
               </Alert>
             )}
-            <TextField
-              select
+            <SearchableSelect
               label="Compte de contrepartie"
               value={selection}
-              onChange={(event) => setSelection(event.target.value)}
-            >
-              <MenuItem value="">Sélectionner…</MenuItem>
-              {accounts
+              onChange={setSelection}
+              options={accounts
                 .filter(
                   (account) =>
                     account.isActive &&
                     account.allowsPosting &&
                     account.id !== statement.bankAccount.ledgerAccountId,
                 )
-                .map((account) => (
-                  <MenuItem key={account.id} value={account.id}>
-                    {account.code} — {account.name}
-                  </MenuItem>
-                ))}
-            </TextField>
+                .map((account) => ({
+                  value: account.id,
+                  label: `${account.code} — ${account.name}`,
+                }))}
+              placeholder="Rechercher un compte…"
+            />
             <TextField
               label="Description de l’écriture"
               value={description}

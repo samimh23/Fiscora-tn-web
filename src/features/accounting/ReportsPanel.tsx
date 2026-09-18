@@ -27,6 +27,7 @@ import {
   VisibilityOutlined,
 } from "@mui/icons-material";
 import { api, downloadApiFile } from "../../api/client";
+import { SearchableSelect } from "../../components/SearchableSelect";
 import type {
   AgedBalanceRow,
   FinancialSummary,
@@ -448,21 +449,20 @@ export function ReportsPanel({
         {tab === "ledger" && !ledger.isLoading && (
           <>
             <Box sx={{ p: 2 }}>
-              <TextField
-                select
-                size="small"
+              <SearchableSelect
                 label="Compte"
                 value={accountFilter}
-                onChange={(event) => setAccountFilter(event.target.value)}
+                onChange={setAccountFilter}
+                options={[
+                  { value: "", label: "Tous les comptes" },
+                  ...accounts.map((account) => ({
+                    value: account,
+                    label: account,
+                  })),
+                ]}
+                placeholder="Rechercher un compte…"
                 sx={{ minWidth: 320 }}
-              >
-                <MenuItem value="">Tous les comptes</MenuItem>
-                {accounts.map((account) => (
-                  <MenuItem key={account} value={account}>
-                    {account}
-                  </MenuItem>
-                ))}
-              </TextField>
+              />
             </Box>
             {ledgerRows.map((row) => (
               <Box

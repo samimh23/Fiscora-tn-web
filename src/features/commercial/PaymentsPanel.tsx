@@ -35,6 +35,7 @@ import type {
 import { money, paymentStatusLabels, shortDate } from "./options";
 import { useFeedback } from "../../feedback/useFeedback";
 import { UnsavedChangesDialog } from "../../components/UnsavedChangesDialog";
+import { SearchableSelect } from "../../components/SearchableSelect";
 import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 
 type AllocationMap = Record<string, string>;
@@ -249,19 +250,15 @@ function PaymentDialog({
           <MenuItem value="ENCAISSEMENT">Encaissement client</MenuItem>
           <MenuItem value="DECAISSEMENT">Décaissement fournisseur</MenuItem>
         </TextField>
-        <TextField
-          select
+        <SearchableSelect
           label={receipt ? "Client" : "Fournisseur"}
           value={thirdPartyId}
-          onChange={(event) => changeParty(event.target.value)}
-        >
-          <MenuItem value="">Sélectionner…</MenuItem>
-          {availableParties.map((party) => (
-            <MenuItem key={party.id} value={party.id}>
-              {party.name}
-            </MenuItem>
-          ))}
-        </TextField>
+          onChange={changeParty}
+          options={availableParties.map((party) => ({
+            value: party.id,
+            label: party.name,
+          }))}
+        />
         <TextField
           label="Date"
           type="date"
@@ -307,45 +304,33 @@ function PaymentDialog({
             />
           </>
         )}
-        <TextField
-          select
+        <SearchableSelect
           label="Journal banque / caisse"
           value={journalId}
-          onChange={(event) => setJournalId(event.target.value)}
-        >
-          <MenuItem value="">Sélectionner…</MenuItem>
-          {paymentJournals.map((journal) => (
-            <MenuItem key={journal.id} value={journal.id}>
-              {journal.code} — {journal.name}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          select
+          onChange={setJournalId}
+          options={paymentJournals.map((journal) => ({
+            value: journal.id,
+            label: `${journal.code} — ${journal.name}`,
+          }))}
+        />
+        <SearchableSelect
           label="Compte banque / caisse"
           value={cashAccountId}
-          onChange={(event) => setCashAccountId(event.target.value)}
-        >
-          <MenuItem value="">Sélectionner…</MenuItem>
-          {postingAccounts.map((account) => (
-            <MenuItem key={account.id} value={account.id}>
-              {account.code} — {account.name}
-            </MenuItem>
-          ))}
-        </TextField>
-        <TextField
-          select
+          onChange={setCashAccountId}
+          options={postingAccounts.map((account) => ({
+            value: account.id,
+            label: `${account.code} — ${account.name}`,
+          }))}
+        />
+        <SearchableSelect
           label="Compte tiers"
           value={thirdPartyAccountId}
-          onChange={(event) => setThirdPartyAccountId(event.target.value)}
-        >
-          <MenuItem value="">Sélectionner…</MenuItem>
-          {postingAccounts.map((account) => (
-            <MenuItem key={account.id} value={account.id}>
-              {account.code} — {account.name}
-            </MenuItem>
-          ))}
-        </TextField>
+          onChange={setThirdPartyAccountId}
+          options={postingAccounts.map((account) => ({
+            value: account.id,
+            label: `${account.code} — ${account.name}`,
+          }))}
+        />
         <Box sx={{ gridColumn: "1 / -1", mt: 1 }}>
           <Typography sx={{ fontWeight: 700, mb: 1 }}>
             Affectation aux factures

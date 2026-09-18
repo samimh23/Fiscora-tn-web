@@ -26,6 +26,7 @@ import { api, ApiError } from "../../api/client";
 import type { LedgerAccount, ThirdParty } from "../../types/api";
 import { money, partyTypeLabels } from "./options";
 import { useLanguage } from "../../i18n/LanguageContext";
+import { SearchableSelect } from "../../components/SearchableSelect";
 
 type Form = {
   type: ThirdParty["type"];
@@ -369,37 +370,27 @@ export function ThirdPartiesPanel({
           />
           {(form.type === "CLIENT" ||
             form.type === "CLIENT_ET_FOURNISSEUR") && (
-            <TextField
-              select
+            <SearchableSelect
               label={t("Compte client (facultatif)")}
               value={form.receivableAccountId}
-              onChange={(event) =>
-                set("receivableAccountId", event.target.value)
-              }
-            >
-              <MenuItem value="">{t("Non défini")}</MenuItem>
-              {postingAccounts.map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.code} — {account.name}
-                </MenuItem>
-              ))}
-            </TextField>
+              onChange={(value) => set("receivableAccountId", value)}
+              options={postingAccounts.map((account) => ({
+                value: account.id,
+                label: `${account.code} — ${account.name}`,
+              }))}
+            />
           )}
           {(form.type === "FOURNISSEUR" ||
             form.type === "CLIENT_ET_FOURNISSEUR") && (
-            <TextField
-              select
+            <SearchableSelect
               label={t("Compte fournisseur (facultatif)")}
               value={form.payableAccountId}
-              onChange={(event) => set("payableAccountId", event.target.value)}
-            >
-              <MenuItem value="">{t("Non défini")}</MenuItem>
-              {postingAccounts.map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.code} — {account.name}
-                </MenuItem>
-              ))}
-            </TextField>
+              onChange={(value) => set("payableAccountId", value)}
+              options={postingAccounts.map((account) => ({
+                value: account.id,
+                label: `${account.code} — ${account.name}`,
+              }))}
+            />
           )}
         </DialogContent>
         <DialogActions>

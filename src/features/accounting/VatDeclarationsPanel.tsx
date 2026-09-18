@@ -26,6 +26,7 @@ import {
   UploadFileOutlined,
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
+import { SearchableSelect } from "../../components/SearchableSelect";
 import type {
   AccountingDocument,
   MonthlyDeclarationCalculation,
@@ -774,20 +775,20 @@ export function VatDeclarationsPanel({
             onChange={(event) => setFilingReference(event.target.value)}
             required
           />
-          <TextField
-            select
+          <SearchableSelect
             label="Justificatif déjà déposé dans Documents"
             value={receiptDocumentId}
-            onChange={(event) => setReceiptDocumentId(event.target.value)}
+            onChange={setReceiptDocumentId}
+            options={[
+              { value: "", label: "Aucun justificatif" },
+              ...(documents.data ?? []).map((document) => ({
+                value: document.id,
+                label: document.originalName,
+              })),
+            ]}
+            placeholder="Rechercher un document…"
             helperText="Optionnel maintenant, mais recommandé pour le dossier d’audit."
-          >
-            <MenuItem value="">Aucun justificatif</MenuItem>
-            {(documents.data ?? []).map((document) => (
-              <MenuItem key={document.id} value={document.id}>
-                {document.originalName}
-              </MenuItem>
-            ))}
-          </TextField>
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setFileOpen(false)}>Annuler</Button>
