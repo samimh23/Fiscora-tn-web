@@ -111,9 +111,11 @@ export function JournalsPanel({
           }}
         >
           <Box>
-            <Typography variant="h3">Journaux comptables</Typography>
+            <Typography variant="h3">Paramétrage des journaux</Typography>
             <Typography variant="body2" color="text.secondary">
-              Journaux utilisés pour classer et centraliser les écritures.
+              Définissez les codes et les types de journaux utilisés lors de la
+              saisie comptable. Les mouvements eux-mêmes se consultent dans
+              l’onglet Journal comptable.
             </Typography>
           </Box>
           {canManage && !archived && (

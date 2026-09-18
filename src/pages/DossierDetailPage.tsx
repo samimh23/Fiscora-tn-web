@@ -955,7 +955,6 @@ export function DossierDetailPage() {
       {tab === "accounting" &&
         (can("accounting.view") ||
           can("reports.view") ||
-          can("declarations.view") ||
           can("period_closing.view")) && (
           <DossierAccountingPanel
             organizationId={organizationId}
@@ -966,10 +965,6 @@ export function DossierDetailPage() {
             canAccountingPost={can("accounting.post")}
             canAccountsView={can("chart_of_accounts.view")}
             canReportsView={can("reports.view")}
-            canDeclarationsView={can("declarations.view")}
-            canDeclarationsManage={can("declarations.manage")}
-            canDeclarationsValidate={can("declarations.validate")}
-            canInvoicesView={can("business_invoices.view")}
             canPeriodView={can("period_closing.view")}
             canPeriodValidate={can("period_closing.validate")}
           />

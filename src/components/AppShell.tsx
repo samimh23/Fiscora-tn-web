@@ -41,24 +41,17 @@ import {
   AccountBalanceOutlined,
   AddRounded,
   AdminPanelSettingsOutlined,
-  ApartmentOutlined,
   AssessmentOutlined,
-  AutoAwesomeOutlined,
-  BadgeOutlined,
   BusinessCenterOutlined,
   CalendarMonthOutlined,
-  CloudDoneOutlined,
   CreditCardOutlined,
   DashboardOutlined,
   DescriptionOutlined,
   DoneAllRounded,
   ExpandLessRounded,
   ExpandMoreRounded,
-  FactCheckOutlined,
   FolderOutlined,
   GroupsOutlined,
-  ImportExportOutlined,
-  LanguageOutlined,
   MenuRounded,
   NotificationsNoneOutlined,
   PaidOutlined,
@@ -119,12 +112,6 @@ const navSections: Array<{
         permission: "documents.view",
       },
       {
-        label: "Assistant Fiscora",
-        path: "/assistant",
-        icon: AutoAwesomeOutlined,
-        permission: "documents.validate",
-      },
-      {
         label: "Factures & règlements",
         path: "/factures",
         icon: ReceiptLongOutlined,
@@ -137,34 +124,10 @@ const navSections: Array<{
         permission: "accounting.view",
       },
       {
-        label: "Migration",
-        path: "/migration",
-        icon: ImportExportOutlined,
-        permission: "accounting.view",
-      },
-      {
         label: "Banque",
         path: "/banque",
         icon: AccountBalanceOutlined,
         permission: "bank_reconciliation.view",
-      },
-      {
-        label: "Commerce extérieur",
-        path: "/commerce-exterieur",
-        icon: LanguageOutlined,
-        permission: "foreign_trade.view",
-      },
-      {
-        label: "Facturation TTN",
-        path: "/facturation-electronique",
-        icon: CloudDoneOutlined,
-        permission: "electronic_invoices.view",
-      },
-      {
-        label: "Immobilisations",
-        path: "/immobilisations",
-        icon: ApartmentOutlined,
-        permission: "fixed_assets.view",
       },
       {
         label: "États financiers",
@@ -192,18 +155,6 @@ const navSections: Array<{
         permission: "declarations.view",
       },
       {
-        label: "Fiscal annuel",
-        path: "/fiscal-annuel",
-        icon: ReceiptLongOutlined,
-        permission: "declarations.view",
-      },
-      {
-        label: "Paie",
-        path: "/paie",
-        icon: BadgeOutlined,
-        permission: "payroll.view",
-      },
-      {
         label: "Paramètres fiscaux",
         path: "/fiscalite",
         icon: SettingsOutlined,
@@ -213,7 +164,7 @@ const navSections: Array<{
   },
   {
     key: "cabinet",
-    label: "Cabinet",
+    label: "Travail du cabinet",
     icon: GroupsOutlined,
     items: [
       {
@@ -239,12 +190,6 @@ const navSections: Array<{
         path: "/rentabilite",
         icon: QueryStatsOutlined,
         permission: "profitability.view",
-      },
-      {
-        label: "Assurance qualité",
-        path: "/qualite",
-        icon: FactCheckOutlined,
-        permission: "quality_assurance.view",
       },
       {
         label: "Équipe & accès",

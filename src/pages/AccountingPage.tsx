@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link as RouterLink } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -31,6 +32,7 @@ import {
   AutoAwesomeRounded,
   EditOutlined,
   SearchRounded,
+  UploadFileOutlined,
 } from "@mui/icons-material";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
@@ -95,7 +97,7 @@ export function AccountingPage() {
   const { organization, can } = useAuth();
   const organizationId = organization?.id ?? "";
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState("chart");
+  const [tab, setTab] = useState("dossier");
   const [dossierId, setDossierId] = useDossierSelection();
   const [search, setSearch] = useState("");
   const [showInactive, setShowInactive] = useState(false);
@@ -250,7 +252,7 @@ export function AccountingPage() {
       <PageHeader
         eyebrow="Production comptable"
         title="Comptabilité"
-        description="Plan NC 01, exercices, écritures, contrôle et rapports propres à chaque dossier client."
+        description="Consultez le journal, saisissez et validez les écritures, puis produisez les états du dossier."
         action={<DossierSelector value={dossierId} onChange={setDossierId} />}
       />
       {!dossierId && (
@@ -271,11 +273,32 @@ export function AccountingPage() {
         </Alert>
       )}
       <Card sx={{ mb: 2 }}>
-        <Tabs value={tab} onChange={(_, value) => setTab(value)} sx={{ px: 2 }}>
-          <Tab value="chart" label="Plan comptable du dossier" />
-          <Tab value="costcenters" label="Centres de coût" />
-          <Tab value="dossier" label="Production comptable" />
-        </Tabs>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          sx={{ alignItems: { md: "center" }, pr: { md: 1.5 } }}
+        >
+          <Tabs
+            value={tab}
+            onChange={(_, value) => setTab(value)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{ px: 2, flex: 1 }}
+          >
+            <Tab value="dossier" label="Tenue comptable" />
+            <Tab value="chart" label="Plan comptable du dossier" />
+            <Tab value="costcenters" label="Centres de coût" />
+          </Tabs>
+          {dossierId && can("accounting.manage") && (
+            <Button
+              component={RouterLink}
+              to={`/migration?dossierId=${dossierId}`}
+              startIcon={<UploadFileOutlined />}
+              sx={{ m: { xs: 1.5, md: 0 } }}
+            >
+              Importer Excel / CSV
+            </Button>
+          )}
+        </Stack>
       </Card>
 
       {tab === "chart" && dossierId && (
@@ -616,10 +639,6 @@ export function AccountingPage() {
               canAccountingPost={can("accounting.post")}
               canAccountsView={can("chart_of_accounts.view")}
               canReportsView={can("reports.view")}
-              canDeclarationsView={can("declarations.view")}
-              canDeclarationsManage={can("declarations.manage")}
-              canDeclarationsValidate={can("declarations.validate")}
-              canInvoicesView={can("business_invoices.view")}
               canPeriodView={can("period_closing.view")}
               canPeriodValidate={can("period_closing.validate")}
             />

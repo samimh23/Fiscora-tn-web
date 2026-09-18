@@ -3,10 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { Alert, Box, Card, Tab, Tabs } from "@mui/material";
 import {
   AccountBalanceOutlined,
-  CalculateOutlined,
   LinkRounded,
   LockOutlined,
   MenuBookOutlined,
+  SettingsOutlined,
   SwapVertRounded,
 } from "@mui/icons-material";
 import { api } from "../../api/client";
@@ -16,14 +16,19 @@ import type {
   LedgerAccount,
 } from "../../types/api";
 import { EntriesPanel } from "./EntriesPanel";
+import { AccountingJournalPanel } from "./AccountingJournalPanel";
 import { JournalsPanel } from "./JournalsPanel";
 import { PeriodClosingPanel } from "./PeriodClosingPanel";
 import { ReconciliationsPanel } from "./ReconciliationsPanel";
 import { ReportsPanel } from "./ReportsPanel";
-import { VatDeclarationsPanel } from "./VatDeclarationsPanel";
 
 type AccountingTab =
-  "entries" | "journals" | "reconciliations" | "reports" | "tax" | "periods";
+  | "entries"
+  | "journal"
+  | "journals"
+  | "reconciliations"
+  | "reports"
+  | "periods";
 
 export function DossierAccountingPanel(props: {
   organizationId: string;
@@ -34,10 +39,6 @@ export function DossierAccountingPanel(props: {
   canAccountingPost: boolean;
   canAccountsView: boolean;
   canReportsView: boolean;
-  canDeclarationsView: boolean;
-  canDeclarationsManage: boolean;
-  canDeclarationsValidate: boolean;
-  canInvoicesView: boolean;
   canPeriodView: boolean;
   canPeriodValidate: boolean;
   initialTab?: AccountingTab;
@@ -51,22 +52,12 @@ export function DossierAccountingPanel(props: {
     canAccountingPost,
     canAccountsView,
     canReportsView,
-    canDeclarationsView,
-    canDeclarationsManage,
-    canDeclarationsValidate,
-    canInvoicesView,
     canPeriodView,
     canPeriodValidate,
   } = props;
   const initial =
     props.initialTab ??
-    (canAccountingView
-      ? "entries"
-      : canReportsView
-        ? "reports"
-        : canDeclarationsView
-          ? "tax"
-          : "periods");
+    (canAccountingView ? "journal" : canReportsView ? "reports" : "periods");
   const [tab, setTab] = useState<AccountingTab>(initial);
   const base = `/api/organizations/${organizationId}/dossiers/${dossierId}`;
   const journals = useQuery({
@@ -96,17 +87,17 @@ export function DossierAccountingPanel(props: {
         >
           {canAccountingView && (
             <Tab
-              value="entries"
-              label={`Écritures (${entries.data?.length ?? 0})`}
-              icon={<SwapVertRounded />}
+              value="journal"
+              label="Journal comptable"
+              icon={<MenuBookOutlined />}
               iconPosition="start"
             />
           )}
           {canAccountingView && (
             <Tab
-              value="journals"
-              label={`Journaux (${journals.data?.length ?? 0})`}
-              icon={<MenuBookOutlined />}
+              value="entries"
+              label={`Saisie & validation (${entries.data?.length ?? 0})`}
+              icon={<SwapVertRounded />}
               iconPosition="start"
             />
           )}
@@ -126,11 +117,11 @@ export function DossierAccountingPanel(props: {
               iconPosition="start"
             />
           )}
-          {canDeclarationsView && (
+          {canAccountingView && (
             <Tab
-              value="tax"
-              label="Déclaration mensuelle"
-              icon={<CalculateOutlined />}
+              value="journals"
+              label={`Paramétrage (${journals.data?.length ?? 0})`}
+              icon={<SettingsOutlined />}
               iconPosition="start"
             />
           )}
@@ -164,6 +155,13 @@ export function DossierAccountingPanel(props: {
           canPost={canAccountingPost}
         />
       )}
+      {tab === "journal" && canAccountingView && (
+        <AccountingJournalPanel
+          entries={entries.data ?? []}
+          journals={journals.data ?? []}
+          loading={entries.isLoading || journals.isLoading}
+        />
+      )}
       {tab === "journals" && canAccountingView && (
         <JournalsPanel
           organizationId={organizationId}
@@ -185,16 +183,6 @@ export function DossierAccountingPanel(props: {
       )}
       {tab === "reports" && canReportsView && (
         <ReportsPanel organizationId={organizationId} dossierId={dossierId} />
-      )}
-      {tab === "tax" && canDeclarationsView && (
-        <VatDeclarationsPanel
-          organizationId={organizationId}
-          dossierId={dossierId}
-          archived={archived}
-          canManage={canDeclarationsManage}
-          canValidate={canDeclarationsValidate}
-          canInvoicesView={canInvoicesView}
-        />
       )}
       {tab === "periods" && canPeriodView && (
         <PeriodClosingPanel

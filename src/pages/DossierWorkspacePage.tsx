@@ -1,28 +1,17 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link as RouterLink, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
-  Button,
   Card,
   CardContent,
   Chip,
-  Divider,
   Skeleton,
   Stack,
   Typography,
 } from "@mui/material";
-import {
-  AccountBalanceOutlined,
-  ArticleOutlined,
-  AssignmentTurnedInOutlined,
-  BusinessRounded,
-  CalendarMonthRounded,
-  DescriptionOutlined,
-  ReceiptLongOutlined,
-  ShieldOutlined,
-} from "@mui/icons-material";
+import { BusinessRounded } from "@mui/icons-material";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { DossierSelector } from "../components/WorkspaceTools";
@@ -32,7 +21,7 @@ import { DossierObligationsPanel } from "../features/operations/DossierObligatio
 import { DossierDocumentsPanel } from "../features/operations/DossierDocumentsPanel";
 import { DossierCommercialPanel } from "../features/commercial/DossierCommercialPanel";
 import { DossierBankReconciliationPanel } from "../features/banking/DossierBankReconciliationPanel";
-import { DossierAccountingPanel } from "../features/accounting/DossierAccountingPanel";
+import { VatDeclarationsPanel } from "../features/accounting/VatDeclarationsPanel";
 import type { DossierAssignment, DossierSummary } from "../types/api";
 
 type WorkspaceModule =
@@ -85,13 +74,12 @@ const headings: Record<
   },
 };
 
-const moduleSteps: Record<WorkspaceModule, string[]> = {
-  tasks: ["Créer le travail", "Affecter", "Valider"],
+const moduleSteps: Partial<Record<WorkspaceModule, string[]>> = {
+  tasks: ["Créer", "Affecter", "Valider"],
   obligations: ["Préparer", "Réviser", "Déposer"],
   documents: ["Collecter", "Contrôler", "Classer"],
   commercial: ["Contrôler", "Comptabiliser", "Rapprocher"],
-  banking: ["Importer", "Matcher", "Valider"],
-  declarations: ["Calculer", "Contrôler", "Déclarer"],
+  banking: ["Importer", "Rapprocher", "Valider"],
 };
 
 function statusLabel(status: string) {
@@ -107,34 +95,8 @@ function DossierContextCard({
   dossier: DossierSummary;
   module: WorkspaceModule;
 }) {
-  const steps = moduleSteps[module];
-  const quickLinks = [
-    {
-      label: "Fiche dossier",
-      icon: <BusinessRounded />,
-      to: `/dossiers/${dossier.id}`,
-    },
-    {
-      label: "Documents",
-      icon: <ArticleOutlined />,
-      to: `/documents?dossierId=${dossier.id}`,
-    },
-    {
-      label: "Factures",
-      icon: <ReceiptLongOutlined />,
-      to: `/factures?dossierId=${dossier.id}`,
-    },
-    {
-      label: "Banque",
-      icon: <AccountBalanceOutlined />,
-      to: `/banque?dossierId=${dossier.id}`,
-    },
-    {
-      label: "Qualité",
-      icon: <ShieldOutlined />,
-      to: `/qualite?dossierId=${dossier.id}`,
-    },
-  ];
+  const compact = module === "declarations";
+  const steps = moduleSteps[module] ?? [];
 
   return (
     <Card sx={{ mb: 2.5 }}>
@@ -149,7 +111,7 @@ function DossierContextCard({
             display: "grid",
             gridTemplateColumns: {
               xs: "1fr",
-              lg: "minmax(0, 1.35fr) minmax(320px, .75fr)",
+              lg: compact ? "1fr" : "minmax(0, 1.35fr) minmax(320px, .75fr)",
             },
             gap: 2,
             alignItems: "center",
@@ -194,61 +156,41 @@ function DossierContextCard({
             </Typography>
           </Box>
 
-          <Box
-            sx={{
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: 3,
-              p: 1.5,
-              bgcolor: "#fbfaf6",
-            }}
-          >
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ fontWeight: 700, letterSpacing: ".08em" }}
+          {!compact && (
+            <Box
+              sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 3,
+                p: 1.5,
+                bgcolor: "#fbfaf6",
+              }}
             >
-              FLUX DE TRAVAIL
-            </Typography>
-            <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap" }}>
-              {steps.map((step, index) => (
-                <Chip
-                  key={step}
-                  icon={
-                    index === 0 ? (
-                      <DescriptionOutlined />
-                    ) : index === 1 ? (
-                      <AssignmentTurnedInOutlined />
-                    ) : (
-                      <CalendarMonthRounded />
-                    )
-                  }
-                  label={`${index + 1}. ${step}`}
-                  variant={index === 0 ? "filled" : "outlined"}
-                  color={index === 0 ? "primary" : "default"}
-                  size="small"
-                />
-              ))}
-            </Stack>
-          </Box>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontWeight: 700, letterSpacing: ".08em" }}
+              >
+                FLUX DE TRAVAIL
+              </Typography>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ mt: 1, flexWrap: "wrap" }}
+              >
+                {steps.map((step, index) => (
+                  <Chip
+                    key={step}
+                    label={`${index + 1}. ${step}`}
+                    color={index === 0 ? "primary" : "default"}
+                    variant={index === 0 ? "filled" : "outlined"}
+                    size="small"
+                  />
+                ))}
+              </Stack>
+            </Box>
+          )}
         </Box>
-
-        <Divider sx={{ my: 2 }} />
-        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-          {quickLinks.map((link) => (
-            <Button
-              key={link.label}
-              component={RouterLink}
-              to={link.to}
-              size="small"
-              variant="outlined"
-              startIcon={link.icon}
-              sx={{ borderColor: "divider", bgcolor: "#fffdf8" }}
-            >
-              {link.label}
-            </Button>
-          ))}
-        </Stack>
       </CardContent>
     </Card>
   );
@@ -403,22 +345,13 @@ export function DossierWorkspacePage({ module }: { module: WorkspaceModule }) {
         />
       )}
       {dossier.data && module === "declarations" && (
-        <DossierAccountingPanel
+        <VatDeclarationsPanel
           organizationId={organizationId}
           dossierId={dossierId}
           archived={archived}
-          initialTab="tax"
-          canAccountingView={can("accounting.view")}
-          canAccountingManage={can("accounting.manage")}
-          canAccountingPost={can("accounting.post")}
-          canAccountsView={can("chart_of_accounts.view")}
-          canReportsView={can("reports.view")}
-          canDeclarationsView={can("declarations.view")}
-          canDeclarationsManage={can("declarations.manage")}
-          canDeclarationsValidate={can("declarations.validate")}
+          canManage={can("declarations.manage")}
+          canValidate={can("declarations.validate")}
           canInvoicesView={can("business_invoices.view")}
-          canPeriodView={can("period_closing.view")}
-          canPeriodValidate={can("period_closing.validate")}
         />
       )}
     </>
