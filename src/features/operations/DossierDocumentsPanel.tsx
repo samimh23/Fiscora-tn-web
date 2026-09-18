@@ -436,7 +436,12 @@ export function DossierDocumentsPanel({
       setReviewDraft({});
       setReviewComment("");
       setError("");
-      await refresh();
+      await Promise.all([
+        refresh(),
+        queryClient.invalidateQueries({
+          queryKey: ["document-extraction-reviews", organizationId, dossierId],
+        }),
+      ]);
     },
     onError: (reason) =>
       setError(
@@ -695,6 +700,47 @@ export function DossierDocumentsPanel({
   ) => {
     const transactions = reviewTransactions.map((item) => ({ ...item }));
     transactions[index][field] = value.trim() ? value : null;
+    if (field === "debit" || field === "credit")
+      transactions[index].amount = null;
+    setReviewDraft({
+      ...reviewDraft,
+      bank_statement: { ...reviewBankStatement, transactions },
+    });
+  };
+  const addReviewTransaction = () => {
+    const transactions = [
+      ...reviewTransactions.map((item) => ({ ...item })),
+      {
+        transaction_date: null,
+        value_date: null,
+        description: null,
+        reference: null,
+        debit: null,
+        credit: null,
+        amount: null,
+        balance: null,
+      },
+    ];
+    setReviewDraft({
+      ...reviewDraft,
+      bank_statement: { ...reviewBankStatement, transactions },
+    });
+  };
+  const duplicateReviewTransaction = (index: number) => {
+    const transactions = reviewTransactions.map((item) => ({ ...item }));
+    transactions.splice(index + 1, 0, {
+      ...transactions[index],
+      amount: null,
+    });
+    setReviewDraft({
+      ...reviewDraft,
+      bank_statement: { ...reviewBankStatement, transactions },
+    });
+  };
+  const removeReviewTransaction = (index: number) => {
+    const transactions = reviewTransactions
+      .filter((_, itemIndex) => itemIndex !== index)
+      .map((item) => ({ ...item }));
     setReviewDraft({
       ...reviewDraft,
       bank_statement: { ...reviewBankStatement, transactions },
@@ -1962,9 +2008,27 @@ export function DossierDocumentsPanel({
               </Box>
               {isBankReview && reviewTransactions.length > 0 && (
                 <Box sx={{ mt: 2.5 }}>
-                  <Typography variant="h4" sx={{ mb: 1 }}>
-                    Opérations détectées ({reviewTransactions.length})
-                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1,
+                    }}
+                  >
+                    <Typography variant="h4">
+                      Opérations détectées ({reviewTransactions.length})
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AddRounded />}
+                      onClick={addReviewTransaction}
+                    >
+                      Ajouter une opération
+                    </Button>
+                  </Box>
                   <Box
                     sx={{
                       overflowX: "auto",
@@ -1976,7 +2040,7 @@ export function DossierDocumentsPanel({
                     <Box
                       component="table"
                       sx={{
-                        minWidth: 980,
+                        minWidth: 1160,
                         width: "100%",
                         borderCollapse: "collapse",
                         "& th, & td": {
@@ -1995,8 +2059,10 @@ export function DossierDocumentsPanel({
                           <th>Valeur</th>
                           <th>Libellé</th>
                           <th>Référence</th>
-                          <th>Montant</th>
+                          <th>Débit</th>
+                          <th>Crédit</th>
                           <th>Solde</th>
+                          <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -2008,7 +2074,8 @@ export function DossierDocumentsPanel({
                                 "value_date",
                                 "description",
                                 "reference",
-                                "amount",
+                                "debit",
+                                "credit",
                                 "balance",
                               ] as const
                             ).map((field) => (
@@ -2030,6 +2097,33 @@ export function DossierDocumentsPanel({
                                 />
                               </td>
                             ))}
+                            <td>
+                              <Box sx={{ display: "flex", gap: 0.25 }}>
+                                <Tooltip title="Dupliquer pour scinder la ligne">
+                                  <IconButton
+                                    size="small"
+                                    aria-label="Dupliquer pour scinder la ligne"
+                                    onClick={() =>
+                                      duplicateReviewTransaction(index)
+                                    }
+                                  >
+                                    <ContentCopyRounded fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                                <Tooltip title="Supprimer l’opération">
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    aria-label="Supprimer l’opération"
+                                    onClick={() =>
+                                      removeReviewTransaction(index)
+                                    }
+                                  >
+                                    <DeleteOutlineRounded fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -2146,7 +2240,9 @@ export function DossierDocumentsPanel({
               requestExtraction.mutate(reviewTarget.documentId)
             }
           >
-            Relire avec l’IA
+            {requestExtraction.isPending
+              ? "Relance en cours…"
+              : "Relire avec l’IA"}
           </Button>
           <Button
             onClick={() => setReviewTarget(null)}
