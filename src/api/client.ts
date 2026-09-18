@@ -94,7 +94,17 @@ export async function apiRequest<T>(
   }
   if (!response.ok) throw await parseError(response);
   if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+  const payload = await response.text();
+  if (!payload.trim()) return null as T;
+  try {
+    return JSON.parse(payload) as T;
+  } catch {
+    throw new ApiError(
+      response.status,
+      "Le serveur a renvoyé une réponse illisible.",
+      { path, contentType: response.headers.get("content-type") },
+    );
+  }
 }
 
 export async function downloadApiFile(path: string, filename: string) {
