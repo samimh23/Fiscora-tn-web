@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -234,6 +235,7 @@ export function DossierDocumentsPanel({
   canUpload: boolean;
   canValidate: boolean;
 }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [year, setYear] = useState(currentYear);
   const [month, setMonth] = useState(currentMonth);
@@ -249,6 +251,9 @@ export function DossierDocumentsPanel({
   const [previewSheet, setPreviewSheet] = useState(0);
   const [files, setFiles] = useState<File[]>([]);
   const [uploadCategory, setUploadCategory] = useState("BOITE_RECEPTION");
+  const [scanIntent, setScanIntent] = useState<"invoice" | "bank" | null>(
+    null,
+  );
   const [shareWithClient, setShareWithClient] = useState(false);
   const [expectationId, setExpectationId] = useState("");
   const [expectationLabel, setExpectationLabel] = useState("");
@@ -405,6 +410,11 @@ export function DossierDocumentsPanel({
           data,
         );
         results.push(result);
+        if (scanIntent) {
+          await api.post(
+            `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${result.id}/extraction`,
+          );
+        }
       }
       if (expectationId)
         await api.patch(
@@ -416,6 +426,7 @@ export function DossierDocumentsPanel({
       setUploadOpen(false);
       setFiles([]);
       setExpectationId("");
+      setScanIntent(null);
       setError("");
       await refresh();
     },
@@ -426,6 +437,25 @@ export function DossierDocumentsPanel({
           : "Téléversement impossible.",
       ),
   });
+  useEffect(() => {
+    const requestedScan = searchParams.get("scan");
+    if (
+      !canUpload ||
+      !canValidate ||
+      archived ||
+      (requestedScan !== "invoice" && requestedScan !== "bank")
+    )
+      return;
+    setScanIntent(requestedScan);
+    setUploadCategory(
+      requestedScan === "bank" ? "RELEVES_BANCAIRES" : "FACTURES_ACHATS",
+    );
+    setFiles([]);
+    setUploadOpen(true);
+    const next = new URLSearchParams(searchParams);
+    next.delete("scan");
+    setSearchParams(next, { replace: true });
+  }, [archived, canUpload, canValidate, searchParams, setSearchParams]);
   const requestExtraction = useMutation({
     mutationFn: (documentId: string) =>
       api.post(
@@ -2546,11 +2576,24 @@ export function DossierDocumentsPanel({
       </Dialog>
       <Dialog
         open={uploadOpen}
-        onClose={upload.isPending ? undefined : () => setUploadOpen(false)}
+        onClose={
+          upload.isPending
+            ? undefined
+            : () => {
+                setUploadOpen(false);
+                setScanIntent(null);
+              }
+        }
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>Ajouter un document au dossier</DialogTitle>
+        <DialogTitle>
+          {scanIntent === "invoice"
+            ? "Scanner une facture avec l’IA"
+            : scanIntent === "bank"
+              ? "Scanner un relevé bancaire avec l’IA"
+              : "Ajouter un document au dossier"}
+        </DialogTitle>
         <DialogContent sx={{ display: "grid", gap: 2, pt: "12px !important" }}>
           {error && <Alert severity="error">{error}</Alert>}
           <Button
@@ -2560,12 +2603,14 @@ export function DossierDocumentsPanel({
           >
             {files.length
               ? `${files.length} fichier(s) sélectionné(s)`
-              : "Choisir un ou plusieurs fichiers"}
+              : scanIntent
+                ? "Choisir une image JPEG ou PNG"
+                : "Choisir un ou plusieurs fichiers"}
             <input
               hidden
               type="file"
-              multiple
-              accept={accepted}
+              multiple={!scanIntent}
+              accept={scanIntent ? ".jpg,.jpeg,.png,image/jpeg,image/png" : accepted}
               onChange={(event) =>
                 setFiles(Array.from(event.target.files ?? []))
               }
@@ -2613,17 +2658,32 @@ export function DossierDocumentsPanel({
             label="Rendre ce document visible dans le portail client"
           />
           <Typography variant="caption" color="text.secondary">
-            PDF, images, Excel, XML ou CSV · 20 Mo maximum.
+            {scanIntent
+              ? "L’image sera ajoutée au dossier puis envoyée immédiatement à l’extraction IA. Une validation humaine restera obligatoire."
+              : "PDF, images, Excel, XML ou CSV · 20 Mo maximum."}
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setUploadOpen(false)}>Annuler</Button>
+          <Button
+            onClick={() => {
+              setUploadOpen(false);
+              setScanIntent(null);
+            }}
+          >
+            Annuler
+          </Button>
           <Button
             variant="contained"
             onClick={() => upload.mutate()}
             disabled={!files.length || upload.isPending}
           >
-            {upload.isPending ? "Ajout…" : "Ajouter au dossier"}
+            {upload.isPending
+              ? scanIntent
+                ? "Envoi à l’IA…"
+                : "Ajout…"
+              : scanIntent
+                ? "Scanner avec l’IA"
+                : "Ajouter au dossier"}
           </Button>
         </DialogActions>
       </Dialog>

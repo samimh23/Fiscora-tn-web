@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   Alert,
   Autocomplete,
@@ -593,13 +594,16 @@ function ImportDialog({
   organizationId,
   dossierId,
   bankAccounts,
+  canScan,
 }: {
   open: boolean;
   onClose: () => void;
   organizationId: string;
   dossierId: string;
   bankAccounts: BankAccount[];
+  canScan: boolean;
 }) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const now = new Date();
   const first = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -739,6 +743,20 @@ function ImportDialog({
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
             />
           </Button>
+          {canScan && (
+            <Button
+              variant="outlined"
+              startIcon={<AutoAwesomeRounded />}
+              onClick={() =>
+                navigate(
+                  `/documents?dossierId=${encodeURIComponent(dossierId)}&scan=bank`,
+                )
+              }
+              sx={{ ml: 1 }}
+            >
+              Scanner une image avec l’IA
+            </Button>
+          )}
           <Typography
             variant="caption"
             color="text.secondary"
@@ -1038,6 +1056,7 @@ export function DossierBankReconciliationPanel({
   canAccountingView,
   canAccountingPost,
   canPaymentsView,
+  canScanDocuments,
 }: {
   organizationId: string;
   dossierId: string;
@@ -1048,6 +1067,7 @@ export function DossierBankReconciliationPanel({
   canAccountingView: boolean;
   canAccountingPost: boolean;
   canPaymentsView: boolean;
+  canScanDocuments: boolean;
 }) {
   const queryClient = useQueryClient();
   const [accountOpen, setAccountOpen] = useState(false);
@@ -1828,6 +1848,7 @@ export function DossierBankReconciliationPanel({
           organizationId={organizationId}
           dossierId={dossierId}
           bankAccounts={bankAccounts.data ?? []}
+          canScan={canScanDocuments}
         />
       )}
       {match && selected && (

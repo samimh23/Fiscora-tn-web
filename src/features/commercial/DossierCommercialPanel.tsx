@@ -36,6 +36,7 @@ export function DossierCommercialPanel({
   canFiscalSettingsView,
   canPaymentsView,
   canPaymentsManage,
+  canScanDocuments,
 }: {
   organizationId: string;
   dossierId: string;
@@ -51,6 +52,7 @@ export function DossierCommercialPanel({
   canFiscalSettingsView: boolean;
   canPaymentsView: boolean;
   canPaymentsManage: boolean;
+  canScanDocuments: boolean;
 }) {
   const { t } = useLanguage();
   const initial = canInvoicesView
@@ -164,6 +166,7 @@ export function DossierCommercialPanel({
           }
           archived={archived}
           canManage={canInvoicesManage && !missingReferences}
+          canScan={canScanDocuments}
           canValidate={canInvoicesValidate}
           canPost={canAccountingPost}
           draftSeed={null}

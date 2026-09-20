@@ -329,6 +329,9 @@ export function DossierWorkspacePage({ module }: { module: WorkspaceModule }) {
           canFiscalSettingsView={can("fiscal_settings.view")}
           canPaymentsView={can("payments.view")}
           canPaymentsManage={can("payments.manage")}
+          canScanDocuments={
+            can("documents.upload") && can("documents.validate")
+          }
         />
       )}
       {dossier.data && module === "banking" && (
@@ -342,6 +345,9 @@ export function DossierWorkspacePage({ module }: { module: WorkspaceModule }) {
           canAccountingView={can("accounting.view")}
           canAccountingPost={can("accounting.post")}
           canPaymentsView={can("payments.view")}
+          canScanDocuments={
+            can("documents.upload") && can("documents.validate")
+          }
         />
       )}
       {dossier.data && module === "declarations" && (

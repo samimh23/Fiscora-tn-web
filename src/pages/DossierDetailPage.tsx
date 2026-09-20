@@ -949,6 +949,9 @@ export function DossierDetailPage() {
             canFiscalSettingsView={can("fiscal_settings.view")}
             canPaymentsView={can("payments.view")}
             canPaymentsManage={can("payments.manage")}
+            canScanDocuments={
+              can("documents.upload") && can("documents.validate")
+            }
           />
         )}
 
@@ -981,6 +984,9 @@ export function DossierDetailPage() {
           canAccountingView={can("accounting.view")}
           canAccountingPost={can("accounting.post")}
           canPaymentsView={can("payments.view")}
+          canScanDocuments={
+            can("documents.upload") && can("documents.validate")
+          }
         />
       )}
 

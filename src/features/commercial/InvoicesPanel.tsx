@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -21,6 +22,7 @@ import {
 } from "@mui/material";
 import {
   AddRounded,
+  AutoAwesomeRounded,
   CheckCircleOutlineRounded,
   DeleteOutlineRounded,
   EditOutlined,
@@ -902,6 +904,7 @@ export function InvoicesPanel({
   loading,
   archived,
   canManage,
+  canScan,
   canValidate,
   canPost,
   draftSeed,
@@ -918,11 +921,13 @@ export function InvoicesPanel({
   loading: boolean;
   archived: boolean;
   canManage: boolean;
+  canScan: boolean;
   canValidate: boolean;
   canPost: boolean;
   draftSeed?: InvoiceDraftSeed | null;
   onDraftSeedConsumed?: () => void;
 }) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<BusinessInvoice | null>(null);
@@ -1034,16 +1039,31 @@ export function InvoicesPanel({
               <MenuItem value="ACHAT">Achats</MenuItem>
             </TextField>
             {canManage && !archived && (
-              <Button
-                variant="contained"
-                startIcon={<AddRounded />}
-                onClick={() => {
-                  setSelected(null);
-                  setDialogOpen(true);
-                }}
-              >
-                Nouvelle facture
-              </Button>
+              <>
+                {canScan && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<AutoAwesomeRounded />}
+                    onClick={() =>
+                      navigate(
+                        `/documents?dossierId=${encodeURIComponent(dossierId)}&scan=invoice`,
+                      )
+                    }
+                  >
+                    Scanner par IA
+                  </Button>
+                )}
+                <Button
+                  variant="contained"
+                  startIcon={<AddRounded />}
+                  onClick={() => {
+                    setSelected(null);
+                    setDialogOpen(true);
+                  }}
+                >
+                  Nouvelle facture
+                </Button>
+              </>
             )}
           </Stack>
         </Box>
