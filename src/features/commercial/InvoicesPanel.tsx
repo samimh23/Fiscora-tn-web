@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
   Button,
   Card,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -33,12 +33,14 @@ import { api, ApiError, downloadApiFile } from "../../api/client";
 import { SearchableSelect } from "../../components/SearchableSelect";
 import type {
   AccountingJournal,
+  AccountingDocument,
   BusinessInvoice,
   BusinessInvoiceLine,
   FiscalVatRate,
   FiscalWithholdingRate,
   LedgerAccount,
   ThirdParty,
+  DocumentExtractionJob,
 } from "../../types/api";
 import {
   invoiceStatusLabels,
@@ -52,11 +54,22 @@ type DraftLine = Pick<
   "accountId" | "description" | "quantity" | "unitPrice" | "discountRate"
 > & { vatCode: string; vatRate: string; exciseRate: string };
 export interface InvoiceDraftSeed {
-  sourceCommercialDocumentId: string;
+  sourceCommercialDocumentId?: string;
+  sourceDocumentId?: string;
   type: "ACHAT" | "VENTE";
   number: string;
   invoiceDate: string;
   thirdPartyId: string;
+  thirdPartyName?: string;
+  thirdPartyTaxIdentifier?: string;
+  currencyCode?: string;
+  stampDuty?: string;
+  journalId?: string;
+  thirdPartyAccountId?: string;
+  vatAccountId?: string;
+  stampAccountId?: string;
+  exciseAccountId?: string;
+  extractionData?: Record<string, unknown>;
   notes: string;
   lines: DraftLine[];
 }
@@ -68,6 +81,8 @@ type Form = {
   invoiceDate: string;
   dueDate: string;
   thirdPartyId: string;
+  thirdPartyName: string;
+  thirdPartyTaxIdentifier: string;
   originalInvoiceId: string;
   journalId: string;
   thirdPartyAccountId: string;
@@ -82,6 +97,7 @@ type Form = {
   withholdingNature: string;
   withholdingBase: string;
   sourceCommercialDocumentId: string;
+  sourceDocumentId: string;
   notes: string;
   lines: DraftLine[];
 };
@@ -104,6 +120,8 @@ const emptyForm = (): Form => ({
   invoiceDate: today(),
   dueDate: "",
   thirdPartyId: "",
+  thirdPartyName: "",
+  thirdPartyTaxIdentifier: "",
   originalInvoiceId: "",
   journalId: "",
   thirdPartyAccountId: "",
@@ -118,9 +136,112 @@ const emptyForm = (): Form => ({
   withholdingNature: "",
   withholdingBase: "",
   sourceCommercialDocumentId: "",
+  sourceDocumentId: "",
   notes: "",
   lines: [emptyLine()],
 });
+
+const recordValue = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+
+const printedNumber = (value: unknown, fallback = ""): string => {
+  if (value === null || value === undefined || value === "") return fallback;
+  return String(value).replace(/\s/g, "").replace(",", ".");
+};
+
+const normalizedRate = (value: unknown): string => {
+  const raw = printedNumber(value).replace("%", "");
+  const number = Number(raw);
+  if (!Number.isFinite(number)) return "0.00000";
+  return (number > 1 ? number / 100 : number).toFixed(5);
+};
+
+function invoiceSeedFromExtraction(
+  data: Record<string, unknown>,
+  documentId: string,
+  parties: ThirdParty[],
+  accounts: LedgerAccount[],
+  journals: AccountingJournal[],
+): InvoiceDraftSeed {
+  const supplier = recordValue(data.supplier);
+  const supplierName = String(supplier.name ?? "").trim();
+  const supplierTaxId = String(supplier.tax_id ?? "").trim();
+  const comparable = (value: string) =>
+    value.toLocaleLowerCase("fr").replace(/[^a-z0-9]/g, "");
+  const party = parties.find(
+    (candidate) =>
+      (supplierTaxId && candidate.taxIdentifier === supplierTaxId) ||
+      (supplierName && comparable(candidate.name) === comparable(supplierName)),
+  );
+  const posting = accounts.filter(
+    (account) => account.isActive && account.allowsPosting,
+  );
+  const account = (...codes: string[]) =>
+    posting.find((item) => codes.includes(item.code)) ??
+    posting.find((item) => codes.some((code) => item.code.startsWith(code)));
+  const purchaseAccount = account("607", "606", "604");
+  const lineItems = Array.isArray(data.line_items)
+    ? data.line_items.map(recordValue)
+    : [];
+  const subtotal = Number(printedNumber(data.subtotal_excl_tax));
+  const fodec = Number(printedNumber(data.fodec_amount));
+  const fodecRate =
+    Number.isFinite(subtotal) && subtotal > 0 && Number.isFinite(fodec)
+      ? (fodec / subtotal).toFixed(5)
+      : "";
+  const lines = lineItems.length
+    ? lineItems.map((line) => {
+        const quantity = printedNumber(line.quantity, "1.000");
+        const total = Number(printedNumber(line.line_total));
+        const unitPrice = printedNumber(
+          line.unit_price,
+          Number.isFinite(total) && Number(quantity)
+            ? String(total / Number(quantity))
+            : "",
+        );
+        return {
+          accountId: purchaseAccount?.id ?? "",
+          description: String(line.description ?? "Article extrait par IA"),
+          quantity,
+          unitPrice,
+          discountRate: "0.00000",
+          vatCode: "",
+          vatRate: normalizedRate(line.tax_rate),
+          exciseRate: fodecRate,
+        };
+      })
+    : [
+        {
+          ...emptyLine(),
+          accountId: purchaseAccount?.id ?? "",
+          description: "Facture extraite par IA",
+          unitPrice: printedNumber(data.subtotal_excl_tax),
+        },
+      ];
+
+  return {
+    sourceDocumentId: documentId,
+    type: "ACHAT",
+    number: String(data.document_number ?? ""),
+    invoiceDate: String(data.issue_date ?? today()),
+    thirdPartyId: party?.id ?? "",
+    thirdPartyName: party?.name ?? supplierName,
+    thirdPartyTaxIdentifier: party?.taxIdentifier ?? supplierTaxId,
+    currencyCode: String(data.currency ?? "TND").slice(0, 3).toUpperCase(),
+    stampDuty: printedNumber(data.stamp_tax),
+    journalId: journals.find((journal) => journal.type === "ACHATS")?.id,
+    thirdPartyAccountId:
+      party?.payableAccountId ?? account("4011", "401")?.id,
+    vatAccountId: account("43666", "4366")?.id,
+    stampAccountId: account("437")?.id,
+    exciseAccountId: account("43668", "437")?.id,
+    extractionData: data,
+    notes: "Créée depuis une extraction IA — document source conservé.",
+    lines,
+  };
+}
 
 function statusColor(
   status: BusinessInvoice["status"],
@@ -169,6 +290,8 @@ function InvoiceDialog({
           invoiceDate: invoice.invoiceDate,
           dueDate: invoice.dueDate ?? "",
           thirdPartyId: invoice.thirdPartyId ?? "",
+          thirdPartyName: invoice.thirdPartyName,
+          thirdPartyTaxIdentifier: invoice.thirdPartyTaxIdentifier ?? "",
           originalInvoiceId: invoice.originalInvoiceId ?? "",
           journalId: invoice.journalId,
           thirdPartyAccountId: invoice.thirdPartyAccountId,
@@ -186,6 +309,7 @@ function InvoiceDialog({
           withholdingNature: "",
           withholdingBase: invoice.withholdingBase,
           sourceCommercialDocumentId: invoice.sourceCommercialDocumentId ?? "",
+          sourceDocumentId: invoice.sourceDocumentId ?? "",
           notes: invoice.notes ?? "",
           lines: invoice.lines.map((line) => ({
             accountId: line.accountId,
@@ -211,19 +335,32 @@ function InvoiceDialog({
               .toISOString()
               .slice(0, 10),
             thirdPartyId: draftSeed.thirdPartyId,
+            thirdPartyName: draftSeed.thirdPartyName ?? "",
+            thirdPartyTaxIdentifier:
+              draftSeed.thirdPartyTaxIdentifier ?? "",
             thirdPartyAccountId:
+              draftSeed.thirdPartyAccountId ??
               parties.find((party) => party.id === draftSeed.thirdPartyId)?.[
                 draftSeed.type === "VENTE"
                   ? "receivableAccountId"
                   : "payableAccountId"
-              ] ?? "",
+              ] ??
+              "",
             journalId:
+              draftSeed.journalId ??
               journals.find(
                 (journal) =>
                   journal.type ===
                   (draftSeed.type === "VENTE" ? "VENTES" : "ACHATS"),
               )?.id ?? "",
-            sourceCommercialDocumentId: draftSeed.sourceCommercialDocumentId,
+            sourceCommercialDocumentId:
+              draftSeed.sourceCommercialDocumentId ?? "",
+            sourceDocumentId: draftSeed.sourceDocumentId ?? "",
+            currencyCode: draftSeed.currencyCode ?? "TND",
+            stampDuty: draftSeed.stampDuty ?? "",
+            vatAccountId: draftSeed.vatAccountId ?? "",
+            stampAccountId: draftSeed.stampAccountId ?? "",
+            exciseAccountId: draftSeed.exciseAccountId ?? "",
             notes: draftSeed.notes,
             lines: draftSeed.lines,
           }
@@ -303,6 +440,8 @@ function InvoiceDialog({
       ...current,
       type,
       thirdPartyId: "",
+      thirdPartyName: "",
+      thirdPartyTaxIdentifier: "",
       originalInvoiceId: "",
       journalId: "",
       thirdPartyAccountId: "",
@@ -312,6 +451,8 @@ function InvoiceDialog({
     setForm((current) => ({
       ...current,
       thirdPartyId: id,
+      thirdPartyName: party?.name ?? "",
+      thirdPartyTaxIdentifier: party?.taxIdentifier ?? "",
       thirdPartyAccountId: party
         ? ((current.type === "VENTE"
             ? party.receivableAccountId
@@ -327,9 +468,9 @@ function InvoiceDialog({
       ),
     }));
   const mutation = useMutation({
-    mutationFn: () => {
-      if (!selectedParty)
-        throw new Error("Sélectionnez un client ou fournisseur.");
+    mutationFn: async () => {
+      if (!selectedParty && !form.thirdPartyName.trim())
+        throw new Error("Renseignez le client ou fournisseur.");
       const body = {
         type: form.type,
         nature: form.nature,
@@ -337,13 +478,16 @@ function InvoiceDialog({
         number: form.number.trim(),
         invoiceDate: form.invoiceDate,
         dueDate: form.dueDate || undefined,
-        thirdPartyId: form.thirdPartyId,
+        thirdPartyId: form.thirdPartyId || undefined,
         originalInvoiceId:
           form.kind === "AVOIR"
             ? form.originalInvoiceId || undefined
             : undefined,
-        thirdPartyName: selectedParty.name,
-        thirdPartyTaxIdentifier: selectedParty.taxIdentifier || undefined,
+        thirdPartyName: selectedParty?.name ?? form.thirdPartyName.trim(),
+        thirdPartyTaxIdentifier:
+          selectedParty?.taxIdentifier ||
+          form.thirdPartyTaxIdentifier.trim() ||
+          undefined,
         journalId: form.journalId,
         thirdPartyAccountId: form.thirdPartyAccountId,
         vatAccountId: form.vatAccountId || undefined,
@@ -365,6 +509,7 @@ function InvoiceDialog({
         withholdingBase: form.withholdingBase || undefined,
         sourceCommercialDocumentId:
           form.sourceCommercialDocumentId || undefined,
+        sourceDocumentId: form.sourceDocumentId || undefined,
         notes: form.notes.trim() || undefined,
         lines: form.lines.map((line) => ({
           accountId: line.accountId,
@@ -378,14 +523,90 @@ function InvoiceDialog({
         })),
       };
       const base = `/api/organizations/${organizationId}/dossiers/${dossierId}/business-invoices`;
-      return invoice
-        ? api.put<BusinessInvoice>(`${base}/${invoice.id}`, body)
-        : api.post<BusinessInvoice>(base, body);
+      const saved = invoice
+        ? await api.put<BusinessInvoice>(`${base}/${invoice.id}`, body)
+        : await api.post<BusinessInvoice>(base, body);
+      if (
+        !invoice &&
+        form.sourceDocumentId &&
+        draftSeed?.extractionData
+      ) {
+        const stamp = Number(form.stampDuty) || 0;
+        const correctedData = {
+          ...draftSeed.extractionData,
+          document_type:
+            form.kind === "AVOIR" ? "credit_note" : "invoice",
+          supplier: {
+            ...recordValue(draftSeed.extractionData.supplier),
+            name: selectedParty?.name ?? form.thirdPartyName.trim(),
+            tax_id:
+              selectedParty?.taxIdentifier ||
+              form.thirdPartyTaxIdentifier.trim() ||
+              null,
+          },
+          document_number: form.number.trim(),
+          issue_date: form.invoiceDate,
+          currency: form.currencyCode,
+          subtotal_excl_tax: calculation.net.toFixed(3),
+          tax_amount: calculation.vat.toFixed(3),
+          fodec_amount: calculation.excise.toFixed(3),
+          stamp_tax: stamp.toFixed(3),
+          other_taxes: [],
+          total_incl_tax: (
+            calculation.net +
+            calculation.excise +
+            calculation.vat +
+            stamp
+          ).toFixed(3),
+          amount_due: (
+            calculation.net +
+            calculation.excise +
+            calculation.vat +
+            stamp
+          ).toFixed(3),
+          line_items: form.lines.map((line) => ({
+            description: line.description.trim(),
+            quantity: line.quantity,
+            unit_price: line.unitPrice,
+            tax_rate: line.vatRate,
+            line_total: (
+              (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0)
+            ).toFixed(3),
+          })),
+        };
+        await api
+          .patch(
+            `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${form.sourceDocumentId}/extraction/review`,
+            {
+              decision: "APPROUVER",
+              correctedData,
+              comment:
+                "Extraction approuvée lors de la création de la facture métier",
+            },
+          )
+          // The business invoice is already safely created at this point. If
+          // classification refresh fails, keep the invoice and leave the
+          // source document visible in Collecte for a later review.
+          .catch(() => undefined);
+      }
+      return saved;
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["business-invoices", organizationId, dossierId],
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["business-invoices", organizationId, dossierId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["dossier-documents", organizationId, dossierId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: [
+            "document-extraction-reviews",
+            organizationId,
+            dossierId,
+          ],
+        }),
+      ]);
       onClose();
     },
     onError: (reason) =>
@@ -400,7 +621,7 @@ function InvoiceDialog({
   const valid = Boolean(
     form.number.trim() &&
     form.invoiceDate &&
-    form.thirdPartyId &&
+    (form.thirdPartyId || form.thirdPartyName.trim()) &&
     form.journalId &&
     form.thirdPartyAccountId &&
     form.lines.length &&
@@ -424,6 +645,13 @@ function InvoiceDialog({
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
+          </Alert>
+        )}
+        {form.sourceDocumentId && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Données préremplies par l’IA. « Enregistrer le brouillon » créera
+            une vraie facture métier liée à la pièce originale ; vérifiez les
+            comptes proposés avant de continuer.
           </Alert>
         )}
         {form.vatSuspensionCertificateId && (
@@ -517,8 +745,29 @@ function InvoiceDialog({
               value: party.id,
               label: party.name,
             }))}
-            required
+            helperText={
+              form.thirdPartyId
+                ? "Tiers existant lié à la facture"
+                : "Optionnel : choisissez un tiers existant ou saisissez son nom"
+            }
           />
+          {!form.thirdPartyId && (
+            <TextField
+              label={form.type === "VENTE" ? "Nom du client" : "Nom du fournisseur"}
+              value={form.thirdPartyName}
+              onChange={(event) => set("thirdPartyName", event.target.value)}
+              required
+            />
+          )}
+          {!form.thirdPartyId && (
+            <TextField
+              label="Matricule fiscal du tiers"
+              value={form.thirdPartyTaxIdentifier}
+              onChange={(event) =>
+                set("thirdPartyTaxIdentifier", event.target.value)
+              }
+            />
+          )}
           <SearchableSelect
             label="Journal"
             value={form.journalId}
@@ -927,10 +1176,16 @@ export function InvoicesPanel({
   draftSeed?: InvoiceDraftSeed | null;
   onDraftSeedConsumed?: () => void;
 }) {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<BusinessInvoice | null>(null);
+  const [aiDraftSeed, setAiDraftSeed] = useState<InvoiceDraftSeed | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
+  const [scanFile, setScanFile] = useState<File | null>(null);
+  const [scanDocument, setScanDocument] = useState<AccountingDocument | null>(
+    null,
+  );
+  const [scanError, setScanError] = useState("");
   const [filter, setFilter] = useState("TOUTES");
   const [error, setError] = useState("");
   const [matchingInvoice, setMatchingInvoice] =
@@ -973,9 +1228,11 @@ export function InvoicesPanel({
     setSelected(null);
     setDialogOpen(true);
   }, [draftSeed]);
+  const activeDraftSeed = aiDraftSeed ?? draftSeed ?? null;
   const closeDialog = () => {
     setDialogOpen(false);
-    onDraftSeedConsumed?.();
+    if (aiDraftSeed) setAiDraftSeed(null);
+    else onDraftSeedConsumed?.();
   };
   const filtered = invoices.filter(
     (invoice) => filter === "TOUTES" || invoice.type === filter,
@@ -1005,6 +1262,95 @@ export function InvoicesPanel({
         reason instanceof ApiError ? reason.message : "Action impossible.",
       ),
   });
+  const scanJob = useQuery({
+    queryKey: [
+      "invoice-ai-extraction",
+      organizationId,
+      dossierId,
+      scanDocument?.id,
+    ],
+    queryFn: () =>
+      api.get<DocumentExtractionJob>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${scanDocument!.id}/extraction`,
+      ),
+    enabled: Boolean(scanDocument),
+    refetchInterval: (query) =>
+      ["EN_ATTENTE", "EN_COURS"].includes(query.state.data?.status ?? "")
+        ? 2500
+        : false,
+    retry: false,
+  });
+  const uploadForExtraction = useMutation({
+    mutationFn: async () => {
+      if (!scanFile) throw new Error("Choisissez une image ou un PDF.");
+      if (scanFile.size > 20 * 1024 * 1024)
+        throw new Error("Le fichier ne doit pas dépasser 20 Mo.");
+      const data = new FormData();
+      data.append("file", scanFile);
+      data.append("category", "FACTURES_ACHATS");
+      data.append("periodYear", String(new Date().getFullYear()));
+      data.append("periodMonth", String(new Date().getMonth() + 1));
+      data.append("isClientVisible", "false");
+      const document = await api.upload<AccountingDocument>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents`,
+        data,
+      );
+      await api.post(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${document.id}/extraction`,
+      );
+      return document;
+    },
+    onSuccess: (document) => {
+      setScanError("");
+      setScanDocument(document);
+    },
+    onError: (reason) =>
+      setScanError(
+        reason instanceof ApiError || reason instanceof Error
+          ? reason.message
+          : "Impossible de lancer la lecture IA.",
+      ),
+  });
+  const prepareAiInvoice = useMutation({
+    mutationFn: async () => {
+      if (!scanDocument || !scanJob.data?.normalizedData)
+        throw new Error("Les données extraites ne sont pas disponibles.");
+      if (
+        !["invoice", "credit_note", "receipt"].includes(
+          String(scanJob.data.normalizedData.document_type),
+        )
+      )
+        throw new Error("Le document détecté n’est pas une facture.");
+      return invoiceSeedFromExtraction(
+        scanJob.data.normalizedData,
+        scanDocument.id,
+        parties,
+        accounts,
+        journals,
+      );
+    },
+    onSuccess: (seed) => {
+      setScanOpen(false);
+      setScanFile(null);
+      setScanDocument(null);
+      setSelected(null);
+      setAiDraftSeed(seed);
+      setDialogOpen(true);
+    },
+    onError: (reason) =>
+      setScanError(
+        reason instanceof ApiError || reason instanceof Error
+          ? reason.message
+          : "Impossible de préparer la facture.",
+      ),
+  });
+  const closeScan = () => {
+    if (uploadForExtraction.isPending || prepareAiInvoice.isPending) return;
+    setScanOpen(false);
+    setScanFile(null);
+    setScanDocument(null);
+    setScanError("");
+  };
 
   return (
     <>
@@ -1044,11 +1390,7 @@ export function InvoicesPanel({
                   <Button
                     variant="outlined"
                     startIcon={<AutoAwesomeRounded />}
-                    onClick={() =>
-                      navigate(
-                        `/documents?dossierId=${encodeURIComponent(dossierId)}&scan=invoice`,
-                      )
-                    }
+                    onClick={() => setScanOpen(true)}
                   >
                     Scanner par IA
                   </Button>
@@ -1256,13 +1598,18 @@ export function InvoicesPanel({
       </Card>
       {dialogOpen && (
         <InvoiceDialog
-          key={selected?.id ?? draftSeed?.sourceCommercialDocumentId ?? "new"}
+          key={
+            selected?.id ??
+            activeDraftSeed?.sourceDocumentId ??
+            activeDraftSeed?.sourceCommercialDocumentId ??
+            "new"
+          }
           open={dialogOpen}
           onClose={closeDialog}
           organizationId={organizationId}
           dossierId={dossierId}
           invoice={selected}
-          draftSeed={draftSeed}
+          draftSeed={activeDraftSeed}
           invoices={invoices}
           parties={parties}
           accounts={accounts}
@@ -1271,6 +1618,92 @@ export function InvoicesPanel({
           withholdingRates={withholdingRates}
         />
       )}
+      <Dialog open={scanOpen} onClose={closeScan} fullWidth maxWidth="sm">
+        <DialogTitle>Scanner une facture avec l’IA</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Alert severity="info">
+              La pièce reste attachée au dossier. Après lecture, vous vérifiez
+              les données comptables avant de créer le brouillon de facture.
+            </Alert>
+            {scanError && <Alert severity="error">{scanError}</Alert>}
+            {!scanDocument && (
+              <Button variant="outlined" component="label">
+                {scanFile ? scanFile.name : "Choisir une image ou un PDF"}
+                <input
+                  hidden
+                  type="file"
+                  accept="image/jpeg,image/png,application/pdf"
+                  onChange={(event) => {
+                    setScanFile(event.target.files?.[0] ?? null);
+                    setScanError("");
+                  }}
+                />
+              </Button>
+            )}
+            {scanDocument &&
+              ["EN_ATTENTE", "EN_COURS"].includes(
+                scanJob.data?.status ?? "EN_ATTENTE",
+              ) && (
+                <Stack
+                  direction="row"
+                  spacing={1.5}
+                  sx={{ alignItems: "center" }}
+                >
+                  <CircularProgress size={22} />
+                  <Typography>
+                    L’IA lit la facture… Cette étape peut prendre quelques
+                    instants.
+                  </Typography>
+                </Stack>
+              )}
+            {scanJob.isError && (
+              <Alert severity="error">
+                Impossible de lire l’état de l’extraction.
+              </Alert>
+            )}
+            {scanJob.data?.status === "ECHEC" && (
+              <Alert severity="error">
+                {scanJob.data.lastError || "La lecture IA a échoué."}
+              </Alert>
+            )}
+            {scanJob.data?.status === "A_REVOIR" && (
+              <Alert severity="success">
+                Lecture terminée. Cliquez sur « Préparer la facture » : les
+                champs, lignes et taxes seront préremplis et resteront
+                modifiables avant création.
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeScan}>Annuler</Button>
+          {!scanDocument ? (
+            <Button
+              variant="contained"
+              disabled={!scanFile || uploadForExtraction.isPending}
+              onClick={() => uploadForExtraction.mutate()}
+            >
+              {uploadForExtraction.isPending
+                ? "Envoi…"
+                : "Lire avec l’IA"}
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              disabled={
+                scanJob.data?.status !== "A_REVOIR" ||
+                prepareAiInvoice.isPending
+              }
+              onClick={() => prepareAiInvoice.mutate()}
+            >
+              {prepareAiInvoice.isPending
+                ? "Préparation…"
+                : "Préparer la facture"}
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
       <Dialog
         open={Boolean(matchingInvoice)}
         onClose={() => setMatchingInvoice(null)}
