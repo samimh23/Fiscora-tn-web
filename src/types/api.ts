@@ -563,6 +563,7 @@ export interface DocumentExtractionJob {
   attemptCount: number;
   availableAtUtc: string;
   modelName: string | null;
+  sourceData: Record<string, unknown> | null;
   normalizedData: Record<string, unknown> | null;
   validationIssues: ExtractionValidationIssue[];
   lastError: string | null;

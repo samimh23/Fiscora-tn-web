@@ -48,6 +48,11 @@ import {
   settlementStatusLabels,
   shortDate,
 } from "./options";
+import {
+  applyExtractionMapping,
+  buildExtractionMapping,
+  readExtractionMappingTemplate,
+} from "../operations/extractionMapping";
 
 type DraftLine = Pick<
   BusinessInvoiceLine,
@@ -1424,14 +1429,22 @@ export function InvoicesPanel({
     mutationFn: async () => {
       if (!scanDocument || !scanJob.data?.normalizedData)
         throw new Error("Les données extraites ne sont pas disponibles.");
+      const source =
+        scanJob.data.sourceData ?? scanJob.data.normalizedData;
+      const mapping = buildExtractionMapping(
+        source,
+        "invoice",
+        readExtractionMappingTemplate(organizationId, "invoice"),
+      );
+      const mappedData = applyExtractionMapping(source, mapping);
       if (
         !["invoice", "credit_note", "receipt"].includes(
-          String(scanJob.data.normalizedData.document_type),
+          String(mappedData.document_type),
         )
       )
         throw new Error("Le document détecté n’est pas une facture.");
       return invoiceSeedFromExtraction(
-        scanJob.data.normalizedData,
+        mappedData,
         scanDocument.id,
         parties,
         accounts,
@@ -1779,8 +1792,8 @@ export function InvoicesPanel({
             {scanJob.data?.status === "A_REVOIR" && (
               <Alert severity="success">
                 Lecture terminée. Cliquez sur « Préparer la facture » : les
-                champs, lignes et taxes seront préremplis et resteront
-                modifiables avant création.
+                champs et lignes seront d’abord mappés vers le format Fiscora,
+                puis resteront modifiables avant création.
               </Alert>
             )}
           </Stack>
