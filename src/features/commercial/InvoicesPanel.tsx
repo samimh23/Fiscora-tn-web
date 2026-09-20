@@ -164,6 +164,11 @@ const normalizedRate = (value: unknown): string => {
   return (number > 1 ? number / 100 : number).toFixed(5);
 };
 
+const extractedNumber = (value: unknown): number => {
+  const printed = printedNumber(value);
+  return printed ? Number(printed) : Number.NaN;
+};
+
 function invoiceSeedFromExtraction(
   data: Record<string, unknown>,
   documentId: string,
@@ -216,27 +221,72 @@ function invoiceSeedFromExtraction(
   const lineItems = Array.isArray(data.line_items)
     ? data.line_items.map(recordValue)
     : [];
-  const declaredSubtotal = Number(printedNumber(data.subtotal_excl_tax));
-  const tax = Number(printedNumber(data.tax_amount));
-  const fodec = Number(printedNumber(data.fodec_amount));
-  const stamp = Number(printedNumber(data.stamp_tax));
-  const total = Number(printedNumber(data.total_incl_tax));
-  const components =
+  const declaredGrossSubtotal = extractedNumber(
+    data.gross_subtotal_excl_tax,
+  );
+  const declaredDiscountAmount = extractedNumber(data.global_discount_amount);
+  const declaredDiscountRate = data.global_discount_rate == null
+    ? Number.NaN
+    : Number(normalizedRate(data.global_discount_rate));
+  const declaredSubtotal = extractedNumber(data.subtotal_excl_tax);
+  const tax = extractedNumber(data.tax_amount);
+  const fodec = extractedNumber(data.fodec_amount);
+  const stamp = extractedNumber(data.stamp_tax);
+  const total = extractedNumber(data.total_incl_tax);
+  const calculatedBeforeStamp =
     (Number.isFinite(declaredSubtotal) ? declaredSubtotal : 0) +
     (Number.isFinite(tax) ? tax : 0) +
-    (Number.isFinite(fodec) ? fodec : 0) +
-    (Number.isFinite(stamp) ? stamp : 0);
+    (Number.isFinite(fodec) ? fodec : 0);
+  const matchesBeforeStamp =
+    Number.isFinite(total) && Math.abs(calculatedBeforeStamp - total) <= 0.02;
+  const matchesWithStamp =
+    Number.isFinite(total) &&
+    Math.abs(
+      calculatedBeforeStamp + (Number.isFinite(stamp) ? stamp : 0) - total,
+    ) <= 0.02;
   const derivedSubtotal =
     Number.isFinite(total) && Number.isFinite(tax)
-      ? total - tax - (Number.isFinite(fodec) ? fodec : 0) -
-        (Number.isFinite(stamp) ? stamp : 0)
+      ? total - tax - (Number.isFinite(fodec) ? fodec : 0)
       : declaredSubtotal;
-  // Some Tunisian invoices label a stamp-inclusive amount as "Total HT" or
-  // print line prices TTC. Prefer the arithmetically coherent net amount.
-  const subtotal =
-    Number.isFinite(total) && Math.abs(components - total) > 0.02
-      ? derivedSubtotal
-      : declaredSubtotal;
+  // New extractions distinguish gross HT, the global discount and the taxable
+  // base. Older extractions sometimes put gross HT in subtotal_excl_tax; when
+  // its arithmetic cannot match either TTC convention, recover the net base.
+  const subtotalFromDiscount =
+    Number.isFinite(declaredGrossSubtotal) &&
+    Number.isFinite(declaredDiscountAmount)
+      ? declaredGrossSubtotal - declaredDiscountAmount
+      : Number.isFinite(declaredGrossSubtotal) &&
+          Number.isFinite(declaredDiscountRate)
+        ? declaredGrossSubtotal * (1 - declaredDiscountRate)
+        : Number.NaN;
+  const subtotal = Number.isFinite(declaredGrossSubtotal)
+    ? Number.isFinite(declaredSubtotal)
+      ? declaredSubtotal
+      : Number.isFinite(subtotalFromDiscount)
+        ? subtotalFromDiscount
+        : derivedSubtotal
+    : matchesBeforeStamp || matchesWithStamp
+      ? declaredSubtotal
+      : derivedSubtotal;
+  const grossSubtotal = Number.isFinite(declaredGrossSubtotal)
+    ? declaredGrossSubtotal
+    : Number.isFinite(declaredDiscountAmount) && Number.isFinite(subtotal)
+      ? subtotal + declaredDiscountAmount
+      : Number.isFinite(declaredSubtotal) && Number.isFinite(subtotal) &&
+          declaredSubtotal > subtotal
+        ? declaredSubtotal
+        : subtotal;
+  const discountAmount = Number.isFinite(declaredDiscountAmount)
+    ? declaredDiscountAmount
+    : Number.isFinite(grossSubtotal) && Number.isFinite(subtotal)
+      ? Math.max(0, grossSubtotal - subtotal)
+      : 0;
+  const globalDiscountRate =
+    Number.isFinite(declaredDiscountRate) && declaredDiscountRate > 0
+      ? declaredDiscountRate
+      : Number.isFinite(grossSubtotal) && grossSubtotal > 0
+        ? discountAmount / grossSubtotal
+        : 0;
   const fodecRate =
     Number.isFinite(subtotal) && subtotal > 0 && Number.isFinite(fodec)
       ? (fodec / subtotal).toFixed(5)
@@ -256,8 +306,11 @@ function invoiceSeedFromExtraction(
     ? lineItems.map((line, index) => {
         const quantity = printedNumber(line.quantity, "1.000");
         const total = Number(printedNumber(line.line_total));
+        const lineDiscountRate = Number(
+          normalizedRate(line.discount_rate ?? globalDiscountRate),
+        );
         const allocatedNet =
-          Number.isFinite(subtotal) && totalWeight > 0
+          globalDiscountRate <= 0 && Number.isFinite(subtotal) && totalWeight > 0
             ? (subtotal * lineWeights[index]) / totalWeight
             : Number.NaN;
         const unitPrice = Number.isFinite(allocatedNet) && Number(quantity)
@@ -273,7 +326,9 @@ function invoiceSeedFromExtraction(
           description: String(line.description ?? "Article extrait par IA"),
           quantity,
           unitPrice,
-          discountRate: "0.00000",
+          discountRate: Number.isFinite(lineDiscountRate)
+            ? lineDiscountRate.toFixed(5)
+            : "0.00000",
           vatCode: "",
           vatRate: normalizedRate(line.tax_rate),
           exciseRate: fodecRate,
@@ -284,9 +339,12 @@ function invoiceSeedFromExtraction(
           ...emptyLine(),
           accountId: purchaseAccount?.id ?? "",
           description: "Facture extraite par IA",
-          unitPrice: Number.isFinite(subtotal)
-            ? subtotal.toFixed(3)
+          unitPrice: Number.isFinite(grossSubtotal)
+            ? grossSubtotal.toFixed(3)
             : printedNumber(data.subtotal_excl_tax),
+          discountRate: Number.isFinite(globalDiscountRate)
+            ? globalDiscountRate.toFixed(5)
+            : "0.00000",
         },
       ];
 
@@ -634,6 +692,23 @@ function InvoiceDialog({
         draftSeed?.extractionData
       ) {
         const stamp = Number(form.stampDuty) || 0;
+        const grossSubtotal = form.lines.reduce(
+          (sum, line) =>
+            sum +
+            (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0),
+          0,
+        );
+        const discountAmount = Math.max(0, grossSubtotal - calculation.net);
+        const discountRates = form.lines.map(
+          (line) => Number(line.discountRate) || 0,
+        );
+        const globalDiscountRate =
+          discountRates.length > 0 &&
+          discountRates.every(
+            (rate) => Math.abs(rate - discountRates[0]) < 0.000005,
+          )
+            ? discountRates[0]
+            : null;
         const correctedData = {
           ...draftSeed.extractionData,
           document_type:
@@ -649,6 +724,12 @@ function InvoiceDialog({
           document_number: form.number.trim(),
           issue_date: form.invoiceDate,
           currency: form.currencyCode,
+          gross_subtotal_excl_tax: grossSubtotal.toFixed(3),
+          global_discount_amount: discountAmount.toFixed(3),
+          global_discount_rate:
+            globalDiscountRate == null
+              ? null
+              : globalDiscountRate.toFixed(5),
           subtotal_excl_tax: calculation.net.toFixed(3),
           tax_amount: calculation.vat.toFixed(3),
           fodec_amount: calculation.excise.toFixed(3),
@@ -657,8 +738,7 @@ function InvoiceDialog({
           total_incl_tax: (
             calculation.net +
             calculation.excise +
-            calculation.vat +
-            stamp
+            calculation.vat
           ).toFixed(3),
           amount_due: (
             calculation.net +
@@ -670,9 +750,12 @@ function InvoiceDialog({
             description: line.description.trim(),
             quantity: line.quantity,
             unit_price: line.unitPrice,
+            discount_rate: line.discountRate,
             tax_rate: line.vatRate,
             line_total: (
-              (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0)
+              (Number(line.quantity) || 0) *
+              (Number(line.unitPrice) || 0) *
+              (1 - (Number(line.discountRate) || 0))
             ).toFixed(3),
           })),
         };

@@ -95,9 +95,24 @@ const invoiceTargets: ExtractionMappingTarget[] = [
     aliases: ["currency", "currency_code", "devise", "monnaie"],
   },
   {
+    path: "gross_subtotal_excl_tax",
+    label: "Total HT avant remise",
+    aliases: ["gross_subtotal_excl_tax", "gross_subtotal", "gross_ht", "total_ht", "montant_ht"],
+  },
+  {
+    path: "global_discount_amount",
+    label: "Remise globale",
+    aliases: ["global_discount_amount", "discount_amount", "remise_globale", "montant_remise", "remise"],
+  },
+  {
+    path: "global_discount_rate",
+    label: "Taux de remise globale",
+    aliases: ["global_discount_rate", "discount_rate", "taux_remise", "remise_pourcentage"],
+  },
+  {
     path: "subtotal_excl_tax",
-    label: "Montant HT",
-    aliases: ["subtotal_excl_tax", "subtotal", "total_ht", "montant_ht", "base_tva"],
+    label: "Base HT après remise",
+    aliases: ["subtotal_excl_tax", "subtotal", "net_ht", "taxable_base", "base_tva"],
   },
   {
     path: "tax_amount",
@@ -177,6 +192,7 @@ const invoiceRowTargets: ExtractionMappingTarget[] = [
   { path: "description", label: "Description", required: true, aliases: ["description", "designation", "libelle", "item", "article"] },
   { path: "quantity", label: "Quantité", aliases: ["quantity", "qty", "qte", "quantite"] },
   { path: "unit_price", label: "Prix unitaire", aliases: ["unit_price", "price", "prix_unitaire", "pu", "pu_ht", "pu_ttc"] },
+  { path: "discount_rate", label: "Remise", aliases: ["discount_rate", "discount", "remise", "taux_remise"] },
   { path: "tax_rate", label: "Taux TVA", aliases: ["tax_rate", "vat_rate", "tva", "taux_tva"] },
   { path: "line_total", label: "Total ligne", aliases: ["line_total", "total", "amount", "montant", "total_ligne"] },
 ];

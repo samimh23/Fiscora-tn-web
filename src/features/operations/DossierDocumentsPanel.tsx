@@ -191,12 +191,15 @@ const extractionFields = [
   { path: "supplier.name", label: "Fournisseur" },
   { path: "document_number", label: "Numéro" },
   { path: "issue_date", label: "Date d’émission" },
-  { path: "subtotal_excl_tax", label: "Montant HT" },
+  { path: "gross_subtotal_excl_tax", label: "Total HT avant remise" },
+  { path: "global_discount_amount", label: "Remise globale" },
+  { path: "global_discount_rate", label: "Taux de remise" },
+  { path: "subtotal_excl_tax", label: "Base HT après remise" },
   { path: "tax_amount", label: "TVA" },
   { path: "fodec_amount", label: "FODEC" },
   { path: "stamp_tax", label: "Timbre" },
   { path: "total_incl_tax", label: "Total TTC" },
-  { path: "amount_due", label: "Montant dû" },
+  { path: "amount_due", label: "Net à payer" },
 ] as const;
 
 const bankExtractionFields = [
@@ -235,6 +238,49 @@ const writePath = (
   });
   cursor[keys[keys.length - 1]] = value.trim() ? value : null;
   return copy;
+};
+
+type ExtractionEvidence = {
+  page: number;
+  text: string;
+  bbox: [number, number, number, number];
+};
+
+const extractionEvidence = (
+  source: Record<string, unknown>,
+  requestedPath: string,
+): ExtractionEvidence | null => {
+  const evidence = source._evidence;
+  if (!evidence || typeof evidence !== "object" || Array.isArray(evidence))
+    return null;
+  const records = evidence as Record<string, unknown>;
+  const candidates = [requestedPath];
+  const segments = requestedPath.split(".");
+  if (segments.length > 2) candidates.push(segments.slice(0, -1).join("."));
+  for (const path of candidates) {
+    const candidate = records[path];
+    if (!candidate || typeof candidate !== "object" || Array.isArray(candidate))
+      continue;
+    const record = candidate as Record<string, unknown>;
+    const bbox = record.bbox;
+    if (
+      !Array.isArray(bbox) ||
+      bbox.length !== 4 ||
+      !bbox.every((value) => typeof value === "number" && Number.isFinite(value))
+    )
+      continue;
+    const normalized = bbox.map((value) =>
+      Math.min(1000, Math.max(0, value)),
+    ) as [number, number, number, number];
+    if (normalized[2] <= normalized[0] || normalized[3] <= normalized[1])
+      continue;
+    return {
+      page: typeof record.page === "number" ? record.page : 1,
+      text: typeof record.text === "string" ? record.text : "",
+      bbox: normalized,
+    };
+  }
+  return null;
 };
 
 export function DossierDocumentsPanel({
@@ -299,6 +345,7 @@ export function DossierDocumentsPanel({
   const [mappingExpanded, setMappingExpanded] = useState(false);
   const [mappingApplied, setMappingApplied] = useState(true);
   const [mappingMessage, setMappingMessage] = useState("");
+  const [highlightedEvidencePath, setHighlightedEvidencePath] = useState("");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewBankAccountId, setReviewBankAccountId] = useState("");
   const [error, setError] = useState("");
@@ -492,6 +539,7 @@ export function DossierDocumentsPanel({
       setMappingExpanded(false);
       setMappingApplied(true);
       setMappingMessage("");
+      setHighlightedEvidencePath("");
       setReviewComment("");
       setError("");
       await Promise.all([
@@ -535,6 +583,7 @@ export function DossierDocumentsPanel({
       setMappingExpanded(false);
       setMappingApplied(true);
       setMappingMessage("");
+      setHighlightedEvidencePath("");
       setReviewComment("");
       setReviewBankAccountId("");
       setError("");
@@ -711,6 +760,7 @@ export function DossierDocumentsPanel({
     setReviewMapping(mapping);
     setMappingExpanded(false);
     setMappingApplied(true);
+    setHighlightedEvidencePath("");
     setMappingMessage(
       savedMapping
         ? "Le modèle de mapping enregistré pour cette organisation a été appliqué."
@@ -767,6 +817,20 @@ export function DossierDocumentsPanel({
         reviewMapping.collection.sourcePath,
       )
     : [];
+  const evidenceRecord =
+    reviewSource._evidence &&
+    typeof reviewSource._evidence === "object" &&
+    !Array.isArray(reviewSource._evidence)
+      ? (reviewSource._evidence as Record<string, unknown>)
+      : {};
+  const evidenceCount = Object.keys(evidenceRecord).length;
+  const highlightedEvidence = highlightedEvidencePath
+    ? extractionEvidence(reviewSource, highlightedEvidencePath)
+    : null;
+  const focusEvidence = (...paths: string[]) => {
+    const available = paths.find((path) => extractionEvidence(reviewSource, path));
+    setHighlightedEvidencePath(available ?? paths[0] ?? "");
+  };
   const missingRequiredMappings = [
     ...extractionMappingTargets(mappingKind)
       .filter((target) => target.required && !reviewMapping.fields[target.path])
@@ -972,6 +1036,7 @@ export function DossierDocumentsPanel({
       | "description"
       | "quantity"
       | "unit_price"
+      | "discount_rate"
       | "tax_rate"
       | "line_total",
     value: string,
@@ -989,6 +1054,7 @@ export function DossierDocumentsPanel({
           description: null,
           quantity: null,
           unit_price: null,
+          discount_rate: null,
           tax_rate: null,
           line_total: null,
         },
@@ -2165,18 +2231,72 @@ export function DossierDocumentsPanel({
               {reviewPreview.data?.kind === "image" &&
                 reviewPreview.data.url && (
                   <Box
-                    component="img"
-                    src={reviewPreview.data.url}
-                    alt={reviewPreview.data.originalName}
                     sx={{
-                      width: "100%",
+                      position: "relative",
+                      display: "inline-block",
+                      maxWidth: "100%",
                       maxHeight: 720,
-                      objectFit: "contain",
                       m: "auto",
-                      bgcolor: "common.white",
-                      boxShadow: 1,
+                      lineHeight: 0,
                     }}
-                  />
+                  >
+                    <Box
+                      component="img"
+                      src={reviewPreview.data.url}
+                      alt={reviewPreview.data.originalName}
+                      sx={{
+                        display: "block",
+                        maxWidth: "100%",
+                        maxHeight: 720,
+                        width: "auto",
+                        height: "auto",
+                        bgcolor: "common.white",
+                        boxShadow: 1,
+                      }}
+                    />
+                    {highlightedEvidence && highlightedEvidence.page === 1 && (
+                      <>
+                        <Box
+                          aria-label={`Zone extraite ${highlightedEvidence.text}`}
+                          sx={{
+                            position: "absolute",
+                            pointerEvents: "none",
+                            left: `${highlightedEvidence.bbox[0] / 10}%`,
+                            top: `${highlightedEvidence.bbox[1] / 10}%`,
+                            width: `${(highlightedEvidence.bbox[2] - highlightedEvidence.bbox[0]) / 10}%`,
+                            height: `${(highlightedEvidence.bbox[3] - highlightedEvidence.bbox[1]) / 10}%`,
+                            border: "3px solid",
+                            borderColor: "warning.main",
+                            bgcolor: "rgba(255, 193, 7, 0.2)",
+                            boxShadow: "0 0 0 2px rgba(255,255,255,.9)",
+                            zIndex: 2,
+                          }}
+                        />
+                        {highlightedEvidence.text && (
+                          <Box
+                            sx={{
+                              position: "absolute",
+                              pointerEvents: "none",
+                              left: `${highlightedEvidence.bbox[0] / 10}%`,
+                              top: `${highlightedEvidence.bbox[1] / 10}%`,
+                              transform: "translateY(-100%)",
+                              maxWidth: 260,
+                              px: 1,
+                              py: 0.5,
+                              bgcolor: "warning.main",
+                              color: "warning.contrastText",
+                              fontSize: 12,
+                              fontWeight: 700,
+                              lineHeight: 1.2,
+                              zIndex: 3,
+                            }}
+                          >
+                            {highlightedEvidence.text}
+                          </Box>
+                        )}
+                      </>
+                    )}
+                  </Box>
                 )}
               {reviewPreview.data?.kind === "pdf" && reviewPreview.data.url && (
                 <Box
@@ -2195,6 +2315,18 @@ export function DossierDocumentsPanel({
                 Corrigez les champs inexacts. Les contrôles comptables seront
                 relancés lors de l’approbation.
               </Typography>
+              {evidenceCount > 0 ? (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  Cliquez dans un champ ou une ligne pour surligner sa source
+                  sur la pièce ({evidenceCount} zone(s) détectée(s)).
+                </Alert>
+              ) : (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  Cette extraction ne contient pas encore de coordonnées
+                  visuelles. Cliquez sur « Relire avec l’IA » pour générer les
+                  zones à surligner.
+                </Alert>
+              )}
               <Card variant="outlined" sx={{ mb: 2 }}>
                 <Box
                   sx={{
@@ -2461,6 +2593,12 @@ export function DossierDocumentsPanel({
                     size="small"
                     label={field.label}
                     value={readPath(reviewDraft, field.path)}
+                    onFocus={() =>
+                      focusEvidence(
+                        field.path,
+                        reviewMapping.fields[field.path] ?? "",
+                      )
+                    }
                     onChange={(event) =>
                       setReviewDraft(
                         writePath(reviewDraft, field.path, event.target.value),
@@ -2548,6 +2686,12 @@ export function DossierDocumentsPanel({
                                 <TextField
                                   size="small"
                                   value={String(transaction[field] ?? "")}
+                                  onFocus={() =>
+                                    focusEvidence(
+                                      `bank_statement.transactions.${index}.${field}`,
+                                      `bank_statement.transactions.${index}`,
+                                    )
+                                  }
                                   onChange={(event) =>
                                     updateReviewTransaction(
                                       index,
@@ -2639,6 +2783,12 @@ export function DossierDocumentsPanel({
                           size="small"
                           label="Libellé"
                           value={tax.label == null ? "" : String(tax.label)}
+                          onFocus={() =>
+                            focusEvidence(
+                              `other_taxes.${index}.label`,
+                              `other_taxes.${index}`,
+                            )
+                          }
                           onChange={(event) =>
                             updateReviewTax(index, "label", event.target.value)
                           }
@@ -2647,6 +2797,12 @@ export function DossierDocumentsPanel({
                           size="small"
                           label="Montant"
                           value={tax.amount == null ? "" : String(tax.amount)}
+                          onFocus={() =>
+                            focusEvidence(
+                              `other_taxes.${index}.amount`,
+                              `other_taxes.${index}`,
+                            )
+                          }
                           onChange={(event) =>
                             updateReviewTax(index, "amount", event.target.value)
                           }
@@ -2725,6 +2881,7 @@ export function DossierDocumentsPanel({
                           <th>Description</th>
                           <th>Qté</th>
                           <th>Prix unitaire</th>
+                          <th>Remise</th>
                           <th>TVA</th>
                           <th>Total</th>
                           <th>Actions</th>
@@ -2738,6 +2895,7 @@ export function DossierDocumentsPanel({
                                 "description",
                                 "quantity",
                                 "unit_price",
+                                "discount_rate",
                                 "tax_rate",
                                 "line_total",
                               ] as const
@@ -2746,6 +2904,12 @@ export function DossierDocumentsPanel({
                                 <TextField
                                   size="small"
                                   value={String(line[field] ?? "")}
+                                  onFocus={() =>
+                                    focusEvidence(
+                                      `line_items.${index}.${field}`,
+                                      `line_items.${index}`,
+                                    )
+                                  }
                                   onChange={(event) =>
                                     updateReviewLine(
                                       index,
