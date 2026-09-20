@@ -433,6 +433,9 @@ function InvoiceDialog({
         : emptyForm(),
   );
   const [error, setError] = useState("");
+  const [autoCreatedParty, setAutoCreatedParty] = useState<ThirdParty | null>(
+    null,
+  );
   const set = <K extends keyof Form>(key: K, value: Form[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
   const postingAccounts = accounts.filter(
@@ -455,7 +458,9 @@ function InvoiceDialog({
       item.status === "COMPTABILISEE" &&
       Number(item.outstandingAmount) > 0,
   );
-  const selectedParty = parties.find((party) => party.id === form.thirdPartyId);
+  const selectedParty =
+    parties.find((party) => party.id === form.thirdPartyId) ??
+    (autoCreatedParty?.id === form.thirdPartyId ? autoCreatedParty : undefined);
   const applicableVatRates = vatRates.filter(
     (rate) =>
       rate.effectiveFrom <= form.invoiceDate &&
@@ -501,7 +506,8 @@ function InvoiceDialog({
       ),
     [form.lines],
   );
-  const changeType = (type: Form["type"]) =>
+  const changeType = (type: Form["type"]) => {
+    setAutoCreatedParty(null);
     setForm((current) => ({
       ...current,
       type,
@@ -512,8 +518,10 @@ function InvoiceDialog({
       journalId: "",
       thirdPartyAccountId: "",
     }));
+  };
   const selectParty = (id: string) => {
     const party = parties.find((entry) => entry.id === id);
+    setAutoCreatedParty(null);
     setForm((current) => ({
       ...current,
       thirdPartyId: id,
@@ -537,6 +545,29 @@ function InvoiceDialog({
     mutationFn: async () => {
       if (!selectedParty && !form.thirdPartyName.trim())
         throw new Error("Renseignez le client ou fournisseur.");
+      let linkedParty = selectedParty;
+      if (!linkedParty && form.sourceDocumentId) {
+        linkedParty = await api.post<ThirdParty>(
+          `/api/organizations/${organizationId}/dossiers/${dossierId}/third-parties`,
+          {
+            type: form.type === "VENTE" ? "CLIENT" : "FOURNISSEUR",
+            name: form.thirdPartyName.trim(),
+            taxIdentifier:
+              form.thirdPartyTaxIdentifier.trim() || undefined,
+            ...(form.type === "VENTE"
+              ? { receivableAccountId: form.thirdPartyAccountId }
+              : { payableAccountId: form.thirdPartyAccountId }),
+          },
+        );
+        setAutoCreatedParty(linkedParty);
+        setForm((current) => ({
+          ...current,
+          thirdPartyId: linkedParty?.id ?? "",
+          thirdPartyName: linkedParty?.name ?? current.thirdPartyName,
+          thirdPartyTaxIdentifier:
+            linkedParty?.taxIdentifier ?? current.thirdPartyTaxIdentifier,
+        }));
+      }
       const body = {
         type: form.type,
         nature: form.nature,
@@ -544,14 +575,14 @@ function InvoiceDialog({
         number: form.number.trim(),
         invoiceDate: form.invoiceDate,
         dueDate: form.dueDate || undefined,
-        thirdPartyId: form.thirdPartyId || undefined,
+        thirdPartyId: linkedParty?.id,
         originalInvoiceId:
           form.kind === "AVOIR"
             ? form.originalInvoiceId || undefined
             : undefined,
-        thirdPartyName: selectedParty?.name ?? form.thirdPartyName.trim(),
+        thirdPartyName: linkedParty?.name ?? form.thirdPartyName.trim(),
         thirdPartyTaxIdentifier:
-          selectedParty?.taxIdentifier ||
+          linkedParty?.taxIdentifier ||
           form.thirdPartyTaxIdentifier.trim() ||
           undefined,
         journalId: form.journalId,
@@ -604,9 +635,9 @@ function InvoiceDialog({
             form.kind === "AVOIR" ? "credit_note" : "invoice",
           supplier: {
             ...recordValue(draftSeed.extractionData.supplier),
-            name: selectedParty?.name ?? form.thirdPartyName.trim(),
+            name: linkedParty?.name ?? form.thirdPartyName.trim(),
             tax_id:
-              selectedParty?.taxIdentifier ||
+              linkedParty?.taxIdentifier ||
               form.thirdPartyTaxIdentifier.trim() ||
               null,
           },
@@ -661,6 +692,9 @@ function InvoiceDialog({
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["business-invoices", organizationId, dossierId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["third-parties", organizationId, dossierId],
         }),
         queryClient.invalidateQueries({
           queryKey: ["dossier-documents", organizationId, dossierId],
@@ -720,6 +754,15 @@ function InvoiceDialog({
             comptes proposés avant de continuer.
           </Alert>
         )}
+        {form.sourceDocumentId &&
+          !form.thirdPartyId &&
+          Boolean(form.thirdPartyName.trim()) && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Le tiers « {form.thirdPartyName.trim()} » n’existe pas encore.
+              Il sera créé et lié automatiquement à cette facture lors de
+              l’enregistrement du brouillon.
+            </Alert>
+          )}
         {form.vatSuspensionCertificateId && (
           <Alert severity="info" sx={{ mb: 2 }}>
             Mention légale obligatoire sur la facture fournisseur : « Achat en

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -39,6 +39,34 @@ import { SearchableSelect } from "../../components/SearchableSelect";
 import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 
 type AllocationMap = Record<string, string>;
+type PaymentFormDraft = {
+  direction: "ENCAISSEMENT" | "DECAISSEMENT";
+  thirdPartyId: string;
+  paymentDate: string;
+  method: string;
+  reference: string;
+  instrumentNumber: string;
+  instrumentBank: string;
+  instrumentDueDate: string;
+  journalId: string;
+  cashAccountId: string;
+  thirdPartyAccountId: string;
+  allocations: AllocationMap;
+};
+
+const readPaymentDraft = (key: string): PaymentFormDraft | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const value = window.localStorage.getItem(key);
+    return value ? (JSON.parse(value) as PaymentFormDraft) : null;
+  } catch {
+    return null;
+  }
+};
+
+const removePaymentDraft = (key: string) => {
+  if (typeof window !== "undefined") window.localStorage.removeItem(key);
+};
 const isInstrumentMethod = (method: string) => {
   const normalized = method.trim().toLowerCase();
   return (
@@ -80,20 +108,38 @@ function PaymentDialog({
   const queryClient = useQueryClient();
   const { showFeedback } = useFeedback();
   const today = new Date().toISOString().slice(0, 10);
+  const draftKey = `fiscora:payment-draft:${organizationId}:${dossierId}`;
+  const restoredDraft = useMemo(() => readPaymentDraft(draftKey), [draftKey]);
   const [direction, setDirection] = useState<"ENCAISSEMENT" | "DECAISSEMENT">(
-    "ENCAISSEMENT",
+    restoredDraft?.direction ?? "ENCAISSEMENT",
   );
-  const [thirdPartyId, setThirdPartyId] = useState("");
-  const [paymentDate, setPaymentDate] = useState(today);
-  const [method, setMethod] = useState("Virement");
-  const [reference, setReference] = useState("");
-  const [instrumentNumber, setInstrumentNumber] = useState("");
-  const [instrumentBank, setInstrumentBank] = useState("");
-  const [instrumentDueDate, setInstrumentDueDate] = useState("");
-  const [journalId, setJournalId] = useState("");
-  const [cashAccountId, setCashAccountId] = useState("");
-  const [thirdPartyAccountId, setThirdPartyAccountId] = useState("");
-  const [allocations, setAllocations] = useState<AllocationMap>({});
+  const [thirdPartyId, setThirdPartyId] = useState(
+    restoredDraft?.thirdPartyId ?? "",
+  );
+  const [paymentDate, setPaymentDate] = useState(
+    restoredDraft?.paymentDate ?? today,
+  );
+  const [method, setMethod] = useState(restoredDraft?.method ?? "Virement");
+  const [reference, setReference] = useState(restoredDraft?.reference ?? "");
+  const [instrumentNumber, setInstrumentNumber] = useState(
+    restoredDraft?.instrumentNumber ?? "",
+  );
+  const [instrumentBank, setInstrumentBank] = useState(
+    restoredDraft?.instrumentBank ?? "",
+  );
+  const [instrumentDueDate, setInstrumentDueDate] = useState(
+    restoredDraft?.instrumentDueDate ?? "",
+  );
+  const [journalId, setJournalId] = useState(restoredDraft?.journalId ?? "");
+  const [cashAccountId, setCashAccountId] = useState(
+    restoredDraft?.cashAccountId ?? "",
+  );
+  const [thirdPartyAccountId, setThirdPartyAccountId] = useState(
+    restoredDraft?.thirdPartyAccountId ?? "",
+  );
+  const [allocations, setAllocations] = useState<AllocationMap>(
+    restoredDraft?.allocations ?? {},
+  );
   const [error, setError] = useState("");
   const receipt = direction === "ENCAISSEMENT";
   const availableParties = parties.filter(
@@ -175,6 +221,7 @@ function PaymentDialog({
         },
       ),
     onSuccess: async () => {
+      removePaymentDraft(draftKey);
       await queryClient.invalidateQueries({
         queryKey: ["third-party-payments", organizationId, dossierId],
       });
@@ -212,19 +259,60 @@ function PaymentDialog({
     thirdPartyAccountId ||
     Object.keys(allocations).length,
   );
-  const closeGuard = useUnsavedChangesGuard(
-    open && isDirty && !mutation.isPending,
-    onClose,
+  const draftPayload = useMemo<PaymentFormDraft>(
+    () => ({
+      direction,
+      thirdPartyId,
+      paymentDate,
+      method,
+      reference,
+      instrumentNumber,
+      instrumentBank,
+      instrumentDueDate,
+      journalId,
+      cashAccountId,
+      thirdPartyAccountId,
+      allocations,
+    }),
+    [
+      allocations,
+      cashAccountId,
+      direction,
+      instrumentBank,
+      instrumentDueDate,
+      instrumentNumber,
+      journalId,
+      method,
+      paymentDate,
+      reference,
+      thirdPartyAccountId,
+      thirdPartyId,
+    ],
   );
+  useEffect(() => {
+    if (!open || typeof window === "undefined") return;
+    if (isDirty)
+      window.localStorage.setItem(draftKey, JSON.stringify(draftPayload));
+    else removePaymentDraft(draftKey);
+  }, [draftKey, draftPayload, isDirty, open]);
+
+  const keepForLater = () => {
+    if (isDirty && typeof window !== "undefined")
+      window.localStorage.setItem(draftKey, JSON.stringify(draftPayload));
+    onClose();
+  };
+  const discardDraft = () => {
+    removePaymentDraft(draftKey);
+    onClose();
+  };
 
   return (
-    <>
-      <Dialog
-        open={open}
-        onClose={mutation.isPending ? undefined : closeGuard.requestClose}
-        fullWidth
-        maxWidth="md"
-      >
+    <Dialog
+      open={open}
+      onClose={mutation.isPending ? undefined : keepForLater}
+      fullWidth
+      maxWidth="md"
+    >
       <DialogTitle>Nouveau règlement</DialogTitle>
       <DialogContent
         sx={{
@@ -239,6 +327,11 @@ function PaymentDialog({
             {error}
           </Alert>
         )}
+        <Alert severity="info" sx={{ gridColumn: "1 / -1" }}>
+          {restoredDraft
+            ? "Votre saisie précédente a été restaurée. Elle reste un brouillon local tant que vous ne créez pas le règlement."
+            : "La saisie est enregistrée automatiquement dans ce navigateur. Vous pourrez la reprendre plus tard si une information manque."}
+        </Alert>
         <TextField
           select
           label="Opération"
@@ -428,7 +521,14 @@ function PaymentDialog({
         </Card>
       </DialogContent>
       <DialogActions>
-        <Button onClick={closeGuard.requestClose}>Annuler</Button>
+        {isDirty && (
+          <Button color="error" onClick={discardDraft}>
+            Effacer le brouillon
+          </Button>
+        )}
+        <Button onClick={keepForLater}>
+          {isDirty ? "Continuer plus tard" : "Annuler"}
+        </Button>
         <Button
           variant="contained"
           disabled={!valid || mutation.isPending}
@@ -437,9 +537,7 @@ function PaymentDialog({
           {mutation.isPending ? "Enregistrement…" : "Créer le règlement"}
         </Button>
       </DialogActions>
-      </Dialog>
-      <UnsavedChangesDialog guard={closeGuard} />
-    </>
+    </Dialog>
   );
 }
 
