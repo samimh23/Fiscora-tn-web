@@ -57,6 +57,7 @@ export interface InvoiceDraftSeed {
   sourceCommercialDocumentId?: string;
   sourceDocumentId?: string;
   type: "ACHAT" | "VENTE";
+  nature?: "BIENS" | "SERVICES" | "MIXTE";
   number: string;
   invoiceDate: string;
   thirdPartyId: string;
@@ -178,29 +179,90 @@ function invoiceSeedFromExtraction(
   const posting = accounts.filter(
     (account) => account.isActive && account.allowsPosting,
   );
-  const account = (...codes: string[]) =>
-    posting.find((item) => codes.includes(item.code)) ??
-    posting.find((item) => codes.some((code) => item.code.startsWith(code)));
-  const purchaseAccount = account("607", "606", "604");
+  const account = (...codes: string[]) => {
+    for (const code of codes) {
+      const exact = posting.find((item) => item.code === code);
+      if (exact) return exact;
+    }
+    for (const code of codes) {
+      const child = posting.find((item) => item.code.startsWith(code));
+      if (child) return child;
+    }
+    return undefined;
+  };
+  const purchaseAccount =
+    account("607", "606", "604") ??
+    posting.find((item) => item.type === "Expense");
+  const supplierAccount =
+    account("4011", "401") ??
+    posting.find(
+      (item) => item.type === "Liability" && item.normalBalance === "Credit",
+    );
+  const vatAccount =
+    account("43666", "4366") ??
+    posting.find(
+      (item) => item.code.startsWith("436") && item.normalBalance === "Debit",
+    );
+  const stampAccount =
+    account("665") ??
+    posting.find(
+      (item) => item.type === "Expense" && item.code.startsWith("66"),
+    );
   const lineItems = Array.isArray(data.line_items)
     ? data.line_items.map(recordValue)
     : [];
-  const subtotal = Number(printedNumber(data.subtotal_excl_tax));
+  const declaredSubtotal = Number(printedNumber(data.subtotal_excl_tax));
+  const tax = Number(printedNumber(data.tax_amount));
   const fodec = Number(printedNumber(data.fodec_amount));
+  const stamp = Number(printedNumber(data.stamp_tax));
+  const total = Number(printedNumber(data.total_incl_tax));
+  const components =
+    (Number.isFinite(declaredSubtotal) ? declaredSubtotal : 0) +
+    (Number.isFinite(tax) ? tax : 0) +
+    (Number.isFinite(fodec) ? fodec : 0) +
+    (Number.isFinite(stamp) ? stamp : 0);
+  const derivedSubtotal =
+    Number.isFinite(total) && Number.isFinite(tax)
+      ? total - tax - (Number.isFinite(fodec) ? fodec : 0) -
+        (Number.isFinite(stamp) ? stamp : 0)
+      : declaredSubtotal;
+  // Some Tunisian invoices label a stamp-inclusive amount as "Total HT" or
+  // print line prices TTC. Prefer the arithmetically coherent net amount.
+  const subtotal =
+    Number.isFinite(total) && Math.abs(components - total) > 0.02
+      ? derivedSubtotal
+      : declaredSubtotal;
   const fodecRate =
     Number.isFinite(subtotal) && subtotal > 0 && Number.isFinite(fodec)
       ? (fodec / subtotal).toFixed(5)
       : "";
+  const lineWeights = lineItems.map((line) => {
+    const quantity = Number(printedNumber(line.quantity, "1")) || 1;
+    const printedTotal = Number(printedNumber(line.line_total));
+    const printedUnit = Number(printedNumber(line.unit_price));
+    return Number.isFinite(printedTotal) && printedTotal > 0
+      ? printedTotal
+      : Number.isFinite(printedUnit)
+        ? printedUnit * quantity
+        : 0;
+  });
+  const totalWeight = lineWeights.reduce((sum, value) => sum + value, 0);
   const lines = lineItems.length
-    ? lineItems.map((line) => {
+    ? lineItems.map((line, index) => {
         const quantity = printedNumber(line.quantity, "1.000");
         const total = Number(printedNumber(line.line_total));
-        const unitPrice = printedNumber(
-          line.unit_price,
-          Number.isFinite(total) && Number(quantity)
-            ? String(total / Number(quantity))
-            : "",
-        );
+        const allocatedNet =
+          Number.isFinite(subtotal) && totalWeight > 0
+            ? (subtotal * lineWeights[index]) / totalWeight
+            : Number.NaN;
+        const unitPrice = Number.isFinite(allocatedNet) && Number(quantity)
+          ? (allocatedNet / Number(quantity)).toFixed(3)
+          : printedNumber(
+              line.unit_price,
+              Number.isFinite(total) && Number(quantity)
+                ? String(total / Number(quantity))
+                : "",
+            );
         return {
           accountId: purchaseAccount?.id ?? "",
           description: String(line.description ?? "Article extrait par IA"),
@@ -217,13 +279,16 @@ function invoiceSeedFromExtraction(
           ...emptyLine(),
           accountId: purchaseAccount?.id ?? "",
           description: "Facture extraite par IA",
-          unitPrice: printedNumber(data.subtotal_excl_tax),
+          unitPrice: Number.isFinite(subtotal)
+            ? subtotal.toFixed(3)
+            : printedNumber(data.subtotal_excl_tax),
         },
       ];
 
   return {
     sourceDocumentId: documentId,
     type: "ACHAT",
+    nature: "BIENS",
     number: String(data.document_number ?? ""),
     invoiceDate: String(data.issue_date ?? today()),
     thirdPartyId: party?.id ?? "",
@@ -233,9 +298,9 @@ function invoiceSeedFromExtraction(
     stampDuty: printedNumber(data.stamp_tax),
     journalId: journals.find((journal) => journal.type === "ACHATS")?.id,
     thirdPartyAccountId:
-      party?.payableAccountId ?? account("4011", "401")?.id,
-    vatAccountId: account("43666", "4366")?.id,
-    stampAccountId: account("437")?.id,
+      party?.payableAccountId ?? supplierAccount?.id,
+    vatAccountId: vatAccount?.id,
+    stampAccountId: stampAccount?.id,
     exciseAccountId: account("43668", "437")?.id,
     extractionData: data,
     notes: "Créée depuis une extraction IA — document source conservé.",
@@ -326,6 +391,7 @@ function InvoiceDialog({
         ? {
             ...emptyForm(),
             type: draftSeed.type,
+            nature: draftSeed.nature ?? "MIXTE",
             number: draftSeed.number,
             invoiceDate: draftSeed.invoiceDate,
             dueDate: new Date(
