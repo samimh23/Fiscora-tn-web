@@ -7,7 +7,6 @@ import {
   Button,
   Card,
   Chip,
-  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -48,20 +47,6 @@ import type {
   OrganizationSummary,
 } from "../../types/api";
 import { documentCategories, documentCategoryLabel } from "./options";
-import {
-  applyExtractionMapping,
-  buildExtractionMapping,
-  extractionCollectionFieldPaths,
-  extractionCollectionPaths,
-  extractionMappingTargets,
-  extractionRowTargets,
-  extractionScalarPaths,
-  readExtractionPath,
-  readExtractionMappingTemplate,
-  saveExtractionMappingTemplate,
-  type ExtractionMapping,
-  type ExtractionMappingKind,
-} from "./extractionMapping";
 
 const current = new Date();
 const currentYear = current.getFullYear();
@@ -241,6 +226,7 @@ const writePath = (
 };
 
 type ExtractionEvidence = {
+  status?: "MATCHED";
   page: number;
   text: string;
   bbox: [number, number, number, number];
@@ -262,6 +248,7 @@ const extractionEvidence = (
     if (!candidate || typeof candidate !== "object" || Array.isArray(candidate))
       continue;
     const record = candidate as Record<string, unknown>;
+    if (record.status != null && record.status !== "MATCHED") continue;
     const bbox = record.bbox;
     if (
       !Array.isArray(bbox) ||
@@ -337,14 +324,6 @@ export function DossierDocumentsPanel({
     useState<DocumentExtractionReviewItem | null>(null);
   const [reviewSource, setReviewSource] = useState<Record<string, unknown>>({});
   const [reviewDraft, setReviewDraft] = useState<Record<string, unknown>>({});
-  const [mappingKind, setMappingKind] =
-    useState<ExtractionMappingKind>("invoice");
-  const [reviewMapping, setReviewMapping] = useState<ExtractionMapping>(() =>
-    buildExtractionMapping({}, "invoice"),
-  );
-  const [mappingExpanded, setMappingExpanded] = useState(false);
-  const [mappingApplied, setMappingApplied] = useState(true);
-  const [mappingMessage, setMappingMessage] = useState("");
   const [highlightedEvidencePath, setHighlightedEvidencePath] = useState("");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewBankAccountId, setReviewBankAccountId] = useState("");
@@ -536,9 +515,6 @@ export function DossierDocumentsPanel({
       setReviewTarget(null);
       setReviewSource({});
       setReviewDraft({});
-      setMappingExpanded(false);
-      setMappingApplied(true);
-      setMappingMessage("");
       setHighlightedEvidencePath("");
       setReviewComment("");
       setError("");
@@ -580,9 +556,6 @@ export function DossierDocumentsPanel({
       setReviewTarget(null);
       setReviewSource({});
       setReviewDraft({});
-      setMappingExpanded(false);
-      setMappingApplied(true);
-      setMappingMessage("");
       setHighlightedEvidencePath("");
       setReviewComment("");
       setReviewBankAccountId("");
@@ -746,26 +719,11 @@ export function DossierDocumentsPanel({
     const source = structuredClone(
       item.sourceData ?? item.normalizedData ?? {},
     );
-    const kind: ExtractionMappingKind =
-      source.document_type === "bank_statement"
-        ? "bank_statement"
-        : "invoice";
-    const savedMapping = readExtractionMappingTemplate(organizationId, kind);
-    const mapping = buildExtractionMapping(source, kind, savedMapping);
-    const draft = applyExtractionMapping(source, mapping);
+    const draft = structuredClone(item.normalizedData ?? source);
     setReviewTarget(item);
     setReviewSource(source);
     setReviewDraft(draft);
-    setMappingKind(kind);
-    setReviewMapping(mapping);
-    setMappingExpanded(false);
-    setMappingApplied(true);
     setHighlightedEvidencePath("");
-    setMappingMessage(
-      savedMapping
-        ? "Le modèle de mapping enregistré pour cette organisation a été appliqué."
-        : "Les correspondances ont été proposées automatiquement.",
-    );
     setReviewComment("");
     if (draft.document_type === "bank_statement") {
       const statement =
@@ -809,107 +767,27 @@ export function DossierDocumentsPanel({
           Boolean(item) && typeof item === "object" && !Array.isArray(item),
       )
     : [];
-  const mappingScalarPaths = extractionScalarPaths(reviewSource);
-  const mappingCollectionPaths = extractionCollectionPaths(reviewSource);
-  const mappingRowPaths = reviewMapping.collection.sourcePath
-    ? extractionCollectionFieldPaths(
-        reviewSource,
-        reviewMapping.collection.sourcePath,
-      )
-    : [];
   const evidenceRecord =
     reviewSource._evidence &&
     typeof reviewSource._evidence === "object" &&
     !Array.isArray(reviewSource._evidence)
       ? (reviewSource._evidence as Record<string, unknown>)
       : {};
-  const evidenceCount = Object.keys(evidenceRecord).length;
+  const evidenceCount = Object.values(evidenceRecord).filter(
+    (candidate) =>
+      Boolean(candidate) &&
+      typeof candidate === "object" &&
+      !Array.isArray(candidate) &&
+      ((candidate as Record<string, unknown>).status == null ||
+        (candidate as Record<string, unknown>).status === "MATCHED") &&
+      Array.isArray((candidate as Record<string, unknown>).bbox),
+  ).length;
   const highlightedEvidence = highlightedEvidencePath
     ? extractionEvidence(reviewSource, highlightedEvidencePath)
     : null;
   const focusEvidence = (...paths: string[]) => {
     const available = paths.find((path) => extractionEvidence(reviewSource, path));
     setHighlightedEvidencePath(available ?? paths[0] ?? "");
-  };
-  const missingRequiredMappings = [
-    ...extractionMappingTargets(mappingKind)
-      .filter((target) => target.required && !reviewMapping.fields[target.path])
-      .map((target) => target.label),
-    ...(!reviewMapping.collection.sourcePath
-      ? [mappingKind === "bank_statement" ? "Opérations" : "Lignes"]
-      : []),
-    ...extractionRowTargets(mappingKind)
-      .filter(
-        (target) =>
-          target.required && !reviewMapping.collection.fields[target.path],
-      )
-      .map((target) => target.label),
-  ];
-  const updateMappingField = (targetPath: string, sourcePath: string) => {
-    setReviewMapping((current) => ({
-      ...current,
-      fields: { ...current.fields, [targetPath]: sourcePath },
-    }));
-    setMappingApplied(false);
-    setMappingMessage("");
-  };
-  const updateMappingRowField = (targetPath: string, sourcePath: string) => {
-    setReviewMapping((current) => ({
-      ...current,
-      collection: {
-        ...current.collection,
-        fields: { ...current.collection.fields, [targetPath]: sourcePath },
-      },
-    }));
-    setMappingApplied(false);
-    setMappingMessage("");
-  };
-  const changeMappingCollection = (sourcePath: string) => {
-    const next = buildExtractionMapping(reviewSource, mappingKind, {
-      ...reviewMapping,
-      collection: {
-        ...reviewMapping.collection,
-        sourcePath,
-        fields: {},
-      },
-    });
-    setReviewMapping(next);
-    setMappingApplied(false);
-    setMappingMessage("");
-  };
-  const changeMappingKind = (kind: ExtractionMappingKind) => {
-    const saved = readExtractionMappingTemplate(organizationId, kind);
-    const next = buildExtractionMapping(reviewSource, kind, saved);
-    setMappingKind(kind);
-    setReviewMapping(next);
-    setReviewDraft(applyExtractionMapping(reviewSource, next));
-    setReviewBankAccountId("");
-    setMappingApplied(true);
-    setMappingMessage(
-      saved
-        ? "Le modèle enregistré a été appliqué."
-        : "Les correspondances ont été proposées automatiquement.",
-    );
-  };
-  const applyReviewMapping = () => {
-    setReviewDraft(applyExtractionMapping(reviewSource, reviewMapping));
-    setMappingApplied(true);
-    setMappingMessage("Le mapping a été appliqué aux données à confirmer.");
-  };
-  const suggestReviewMapping = () => {
-    const next = buildExtractionMapping(reviewSource, mappingKind);
-    setReviewMapping(next);
-    setReviewDraft(applyExtractionMapping(reviewSource, next));
-    setMappingApplied(true);
-    setMappingMessage("Les suggestions automatiques ont été réappliquées.");
-  };
-  const persistReviewMapping = () => {
-    saveExtractionMappingTemplate(organizationId, reviewMapping);
-    setReviewDraft(applyExtractionMapping(reviewSource, reviewMapping));
-    setMappingApplied(true);
-    setMappingMessage(
-      "Mapping enregistré pour cette organisation et ce type de document.",
-    );
   };
   const isBankReview = reviewDraft.document_type === "bank_statement";
   const reviewBankStatement =
@@ -2317,235 +2195,16 @@ export function DossierDocumentsPanel({
               </Typography>
               {evidenceCount > 0 ? (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  Cliquez dans un champ ou une ligne pour surligner sa source
-                  sur la pièce ({evidenceCount} zone(s) détectée(s)).
+                  Cliquez dans un champ ou une ligne pour afficher sa source OCR
+                  confirmée ({evidenceCount} zone(s) détectée(s)).
                 </Alert>
               ) : (
                 <Alert severity="warning" sx={{ mb: 2 }}>
-                  Cette extraction ne contient pas encore de coordonnées
-                  visuelles. Cliquez sur « Relire avec l’IA » pour générer les
-                  zones à surligner.
+                  Aucune source OCR suffisamment sûre n’a été localisée. Les
+                  champs restent modifiables et aucune zone incertaine ne sera
+                  surlignée.
                 </Alert>
               )}
-              <Card variant="outlined" sx={{ mb: 2 }}>
-                <Box
-                  sx={{
-                    p: 1.5,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 1,
-                    flexWrap: "wrap",
-                  }}
-                >
-                  <Box>
-                    <Typography sx={{ fontWeight: 700 }}>
-                      Mapping des champs
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Reliez le JSON original de l’IA aux champs stables de
-                      Fiscora avant validation.
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                    <Chip
-                      size="small"
-                      color={mappingApplied ? "success" : "warning"}
-                      label={mappingApplied ? "Mapping appliqué" : "À appliquer"}
-                    />
-                    <Button
-                      size="small"
-                      onClick={() => setMappingExpanded((value) => !value)}
-                    >
-                      {mappingExpanded ? "Masquer" : "Configurer"}
-                    </Button>
-                  </Box>
-                </Box>
-                <Collapse in={mappingExpanded}>
-                  <Box
-                    sx={{
-                      p: 2,
-                      pt: 1,
-                      borderTop: "1px solid",
-                      borderColor: "divider",
-                    }}
-                  >
-                    <Alert severity="info" sx={{ mb: 2 }}>
-                      Le résultat brut reste conservé pour l’audit. Le mapping
-                      ne modifie que la copie qui sera contrôlée puis confirmée.
-                    </Alert>
-                    <TextField
-                      select
-                      size="small"
-                      label="Modèle de destination"
-                      value={mappingKind}
-                      onChange={(event) =>
-                        changeMappingKind(
-                          event.target.value as ExtractionMappingKind,
-                        )
-                      }
-                      sx={{ width: "100%", mb: 2 }}
-                    >
-                      <MenuItem value="invoice">Facture / avoir / reçu</MenuItem>
-                      <MenuItem value="bank_statement">
-                        Relevé bancaire
-                      </MenuItem>
-                    </TextField>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      En-tête du document
-                    </Typography>
-                    <Box sx={{ display: "grid", gap: 1.25 }}>
-                      {extractionMappingTargets(mappingKind).map((target) => {
-                        const sourcePath = reviewMapping.fields[target.path] ?? "";
-                        const sourceValue = sourcePath
-                          ? readExtractionPath(reviewSource, sourcePath)
-                          : undefined;
-                        return (
-                          <Box
-                            key={target.path}
-                            sx={{
-                              display: "grid",
-                              gridTemplateColumns: {
-                                xs: "1fr",
-                                sm: "minmax(150px, .8fr) minmax(0, 1.4fr)",
-                              },
-                              gap: 1,
-                              alignItems: "center",
-                            }}
-                          >
-                            <Box>
-                              <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                {target.label}
-                                {target.required ? " *" : ""}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {target.path}
-                              </Typography>
-                            </Box>
-                            <SearchableSelect
-                              size="small"
-                              label="Champ extrait"
-                              value={sourcePath}
-                              onChange={(value) =>
-                                updateMappingField(target.path, value)
-                              }
-                              error={Boolean(target.required && !sourcePath)}
-                              helperText={
-                                sourcePath
-                                  ? `Valeur : ${sourceValue == null || sourceValue === "" ? "vide" : String(sourceValue).slice(0, 90)}`
-                                  : "Non mappé"
-                              }
-                              options={mappingScalarPaths.map((path) => ({
-                                value: path,
-                                label: path,
-                              }))}
-                            />
-                          </Box>
-                        );
-                      })}
-                    </Box>
-                    <Box
-                      sx={{
-                        mt: 2.5,
-                        pt: 2,
-                        borderTop: "1px solid",
-                        borderColor: "divider",
-                      }}
-                    >
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                        {mappingKind === "bank_statement"
-                          ? "Tableau des opérations"
-                          : "Tableau des lignes"}
-                      </Typography>
-                      <SearchableSelect
-                        size="small"
-                        label="Liste extraite"
-                        value={reviewMapping.collection.sourcePath}
-                        onChange={changeMappingCollection}
-                        error={!reviewMapping.collection.sourcePath}
-                        helperText={
-                          reviewMapping.collection.sourcePath
-                            ? `Vers ${reviewMapping.collection.targetPath}`
-                            : "Aucune liste source sélectionnée"
-                        }
-                        options={mappingCollectionPaths.map((path) => ({
-                          value: path,
-                          label: path,
-                        }))}
-                        sx={{ mb: 1.5 }}
-                      />
-                      <Box
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-                          gap: 1.25,
-                        }}
-                      >
-                        {extractionRowTargets(mappingKind).map((target) => (
-                          <SearchableSelect
-                            key={target.path}
-                            size="small"
-                            label={`${target.label}${target.required ? " *" : ""}`}
-                            value={
-                              reviewMapping.collection.fields[target.path] ?? ""
-                            }
-                            onChange={(value) =>
-                              updateMappingRowField(target.path, value)
-                            }
-                            error={Boolean(
-                              target.required &&
-                                !reviewMapping.collection.fields[target.path],
-                            )}
-                            helperText={`Vers ${reviewMapping.collection.targetPath}[].${target.path}`}
-                            options={mappingRowPaths.map((path) => ({
-                              value: path,
-                              label: path,
-                            }))}
-                          />
-                        ))}
-                      </Box>
-                    </Box>
-                    {missingRequiredMappings.length > 0 && (
-                      <Alert severity="warning" sx={{ mt: 2 }}>
-                        Mapping obligatoire manquant : {missingRequiredMappings.join(", ")}.
-                      </Alert>
-                    )}
-                    {mappingMessage && (
-                      <Alert severity="success" sx={{ mt: 2 }}>
-                        {mappingMessage}
-                      </Alert>
-                    )}
-                    <Box
-                      sx={{
-                        mt: 2,
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: 1,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <Button size="small" onClick={suggestReviewMapping}>
-                        Refaire les suggestions
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        disabled={missingRequiredMappings.length > 0}
-                        onClick={persistReviewMapping}
-                      >
-                        Enregistrer ce modèle
-                      </Button>
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={applyReviewMapping}
-                      >
-                        Appliquer le mapping
-                      </Button>
-                    </Box>
-                  </Box>
-                </Collapse>
-              </Card>
               {reviewTarget?.validationIssues.map((issue) => (
                 <Alert
                   key={`${issue.code}-${issue.field}`}
@@ -2593,12 +2252,7 @@ export function DossierDocumentsPanel({
                     size="small"
                     label={field.label}
                     value={readPath(reviewDraft, field.path)}
-                    onFocus={() =>
-                      focusEvidence(
-                        field.path,
-                        reviewMapping.fields[field.path] ?? "",
-                      )
-                    }
+                    onFocus={() => focusEvidence(field.path)}
                     onChange={(event) =>
                       setReviewDraft(
                         writePath(reviewDraft, field.path, event.target.value),
@@ -3082,7 +2736,6 @@ export function DossierDocumentsPanel({
             variant="contained"
             disabled={
               reviewExtraction.isPending ||
-              !mappingApplied ||
               (isBankReview && !reviewBankAccountId)
             }
             onClick={() =>

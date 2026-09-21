@@ -48,11 +48,6 @@ import {
   settlementStatusLabels,
   shortDate,
 } from "./options";
-import {
-  applyExtractionMapping,
-  buildExtractionMapping,
-  readExtractionMappingTemplate,
-} from "../operations/extractionMapping";
 
 type DraftLine = Pick<
   BusinessInvoiceLine,
@@ -1512,14 +1507,7 @@ export function InvoicesPanel({
     mutationFn: async () => {
       if (!scanDocument || !scanJob.data?.normalizedData)
         throw new Error("Les données extraites ne sont pas disponibles.");
-      const source =
-        scanJob.data.sourceData ?? scanJob.data.normalizedData;
-      const mapping = buildExtractionMapping(
-        source,
-        "invoice",
-        readExtractionMappingTemplate(organizationId, "invoice"),
-      );
-      const mappedData = applyExtractionMapping(source, mapping);
+      const mappedData = scanJob.data.normalizedData;
       if (
         !["invoice", "credit_note", "receipt"].includes(
           String(mappedData.document_type),
