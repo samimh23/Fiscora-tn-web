@@ -3,16 +3,24 @@ import { HomeOutlined, RefreshRounded } from "@mui/icons-material";
 import { isRouteErrorResponse, useRouteError } from "react-router-dom";
 import { Brand } from "./Brand";
 
-function errorDescription(error: unknown) {
+function errorContent(error: unknown) {
   if (isRouteErrorResponse(error) && error.status === 404) {
-    return "La page demandée n’existe pas ou a été déplacée.";
+    return {
+      title: "Page introuvable",
+      description: "La page demandée n’existe pas ou a été déplacée.",
+    };
   }
 
-  return "Une nouvelle version de Fiscora a peut-être été publiée pendant votre session. Rechargez la page pour continuer.";
+  return {
+    title: "Impossible d’afficher cette page",
+    description:
+      "Une erreur inattendue est survenue. Rechargez la page et réessayez. Si le problème persiste, retournez à l’accueil.",
+  };
 }
 
 export function RouteErrorPage() {
   const error = useRouteError();
+  const content = errorContent(error);
 
   return (
     <Box
@@ -39,9 +47,9 @@ export function RouteErrorPage() {
         <Stack spacing={3}>
           <Brand />
           <Box>
-            <Typography variant="h2">Actualisation nécessaire</Typography>
+            <Typography variant="h2">{content.title}</Typography>
             <Typography color="text.secondary" sx={{ mt: 1 }}>
-              {errorDescription(error)}
+              {content.description}
             </Typography>
           </Box>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25}>

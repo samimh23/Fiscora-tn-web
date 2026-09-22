@@ -7,10 +7,26 @@ export const money = (value?: string | number | null) =>
         minimumFractionDigits: 3,
       }).format(Number(value));
 
-export const shortDate = (value?: string | null) =>
-  value
-    ? new Intl.DateTimeFormat("fr-TN").format(new Date(`${value}T00:00:00`))
-    : "—";
+export const shortDate = (value?: string | null) => {
+  if (!value) return "—";
+
+  // PostgreSQL DATE values normally arrive as YYYY-MM-DD, but raw report
+  // queries may be serialized as full ISO timestamps depending on the driver.
+  // Parse the calendar part explicitly so we neither append a second time
+  // suffix nor shift the displayed day because of a timezone conversion.
+  const calendarDate = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  const date = calendarDate
+    ? new Date(
+        Number(calendarDate[1]),
+        Number(calendarDate[2]) - 1,
+        Number(calendarDate[3]),
+      )
+    : new Date(value);
+
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("fr-TN").format(date);
+};
 
 export const monthNames = [
   "Janvier",
