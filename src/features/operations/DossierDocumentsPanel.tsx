@@ -6,6 +6,7 @@ import {
   Box,
   Button,
   Card,
+  Checkbox,
   Chip,
   Dialog,
   DialogActions,
@@ -327,6 +328,9 @@ export function DossierDocumentsPanel({
   const [highlightedEvidencePath, setHighlightedEvidencePath] = useState("");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewBankAccountId, setReviewBankAccountId] = useState("");
+  const [forceApproveOpen, setForceApproveOpen] = useState(false);
+  const [forceApprovalAcknowledged, setForceApprovalAcknowledged] =
+    useState(false);
   const [error, setError] = useState("");
   const [copiedAddress, setCopiedAddress] = useState("");
   const organization = useQuery({
@@ -536,9 +540,11 @@ export function DossierDocumentsPanel({
     mutationFn: ({
       documentId,
       decision,
+      forceApprove,
     }: {
       documentId: string;
       decision: "APPROUVER" | "REJETER";
+      forceApprove?: boolean;
     }) =>
       api.patch(
         `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${documentId}/extraction/review`,
@@ -549,7 +555,12 @@ export function DossierDocumentsPanel({
           reviewDraft.document_type === "bank_statement"
             ? { bankAccountId: reviewBankAccountId }
             : {}),
-          comment: reviewComment.trim() || undefined,
+          forceApprove: forceApprove || undefined,
+          comment:
+            reviewComment.trim() ||
+            (forceApprove
+              ? "Approbation forcée confirmée après vérification de la pièce originale."
+              : undefined),
         },
       ),
     onSuccess: async () => {
@@ -559,6 +570,8 @@ export function DossierDocumentsPanel({
       setHighlightedEvidencePath("");
       setReviewComment("");
       setReviewBankAccountId("");
+      setForceApproveOpen(false);
+      setForceApprovalAcknowledged(false);
       setError("");
       await Promise.all([
         refresh(),
@@ -567,13 +580,39 @@ export function DossierDocumentsPanel({
         }),
       ]);
     },
-    onError: (reason) =>
-      setError(
+    onError: (reason, variables) => {
+      const message =
         reason instanceof ApiError
           ? reason.message
-          : "Impossible d’enregistrer la décision.",
-      ),
+          : "Impossible d’enregistrer la décision.";
+      setError(message);
+      if (
+        variables.decision === "APPROUVER" &&
+        !variables.forceApprove &&
+        message.includes("incohérences bloquantes")
+      ) {
+        setForceApprovalAcknowledged(false);
+        setForceApproveOpen(true);
+      }
+    },
   });
+  const approveExtraction = () => {
+    if (!reviewTarget) return;
+    if (
+      reviewTarget.validationIssues.some(
+        (issue) => issue.severity === "ERROR",
+      )
+    ) {
+      setError("");
+      setForceApprovalAcknowledged(false);
+      setForceApproveOpen(true);
+      return;
+    }
+    reviewExtraction.mutate({
+      documentId: reviewTarget.documentId,
+      decision: "APPROUVER",
+    });
+  };
   const action = useMutation({
     mutationFn: async ({
       type,
@@ -2738,15 +2777,84 @@ export function DossierDocumentsPanel({
               reviewExtraction.isPending ||
               (isBankReview && !reviewBankAccountId)
             }
+            onClick={approveExtraction}
+          >
+            Confirmer ces données
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={forceApproveOpen}
+        onClose={
+          reviewExtraction.isPending
+            ? undefined
+            : () => setForceApproveOpen(false)
+        }
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Confirmer malgré les erreurs ?</DialogTitle>
+        <DialogContent dividers>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Les contrôles comptables signalent encore des incohérences. En
+            continuant, les données seront validées telles qu’elles sont
+            affichées et l’approbation forcée sera enregistrée dans le journal
+            d’audit.
+          </Alert>
+          {reviewTarget?.validationIssues
+            .filter((issue) => issue.severity === "ERROR")
+            .map((issue) => (
+              <Typography
+                key={`${issue.code}-${issue.field}`}
+                variant="body2"
+                sx={{ mb: 1 }}
+              >
+                <strong>{issue.field}</strong> — {issue.message}
+              </Typography>
+            ))}
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+          <FormControlLabel
+            sx={{ mt: 2, alignItems: "flex-start" }}
+            control={
+              <Checkbox
+                checked={forceApprovalAcknowledged}
+                onChange={(event) =>
+                  setForceApprovalAcknowledged(event.target.checked)
+                }
+              />
+            }
+            label="J’ai comparé ces données avec la pièce originale et je souhaite les confirmer malgré les erreurs signalées."
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setForceApproveOpen(false)}
+            disabled={reviewExtraction.isPending}
+          >
+            Annuler
+          </Button>
+          <Button
+            color="warning"
+            variant="contained"
+            disabled={
+              !forceApprovalAcknowledged || reviewExtraction.isPending
+            }
             onClick={() =>
               reviewTarget &&
               reviewExtraction.mutate({
                 documentId: reviewTarget.documentId,
                 decision: "APPROUVER",
+                forceApprove: true,
               })
             }
           >
-            Confirmer ces données
+            {reviewExtraction.isPending
+              ? "Confirmation…"
+              : "Confirmer quand même"}
           </Button>
         </DialogActions>
       </Dialog>
