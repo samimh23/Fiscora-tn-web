@@ -13,6 +13,13 @@ export interface CurrentUser {
   fullName: string;
   isActive?: boolean;
   isPlatformAdmin: boolean;
+  mfaEnabled?: boolean;
+}
+
+export interface MfaChallenge {
+  mfaRequired: true;
+  challengeToken: string;
+  expiresAtUtc: string;
 }
 
 export interface AuthResponse {

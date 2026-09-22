@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,10 @@ import {
   CardContent,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Stack,
   TextField,
@@ -22,12 +26,17 @@ import {
   CheckCircleOutlineRounded,
   LockOutlined,
   MailOutlineRounded,
+  SecurityRounded,
 } from "@mui/icons-material";
 import { api, ApiError, saveSession } from "../api/client";
 import { Brand } from "../components/Brand";
 import { LanguageSwitcher } from "../components/LanguageSwitcher";
 import { useLanguage } from "../i18n/LanguageContext";
-import type { AuthResponse, InvitationPreview } from "../types/api";
+import type {
+  AuthResponse,
+  InvitationPreview,
+  MfaChallenge,
+} from "../types/api";
 
 const schema = z.object({
   fullName: z.string().trim().optional(),
@@ -54,6 +63,12 @@ export function AcceptInvitationPage() {
   const { token = "" } = useParams();
   const navigate = useNavigate();
   const [apiError, setApiError] = useState("");
+  const [mfaChallengeToken, setMfaChallengeToken] = useState<string | null>(
+    null,
+  );
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaError, setMfaError] = useState("");
+  const [isMfaSubmitting, setIsMfaSubmitting] = useState(false);
   const {
     register,
     handleSubmit,
@@ -98,7 +113,7 @@ export function AcceptInvitationPage() {
     }
 
     try {
-      const session = await api.post<AuthResponse>(
+      const session = await api.post<AuthResponse | MfaChallenge>(
         "/api/auth/accept-invitation",
         {
           token,
@@ -108,6 +123,12 @@ export function AcceptInvitationPage() {
           password: values.password,
         },
       );
+      if ("mfaRequired" in session) {
+        setMfaChallengeToken(session.challengeToken);
+        setMfaCode("");
+        setMfaError("");
+        return;
+      }
       saveSession(session);
       navigate("/", { replace: true });
     } catch (error) {
@@ -118,6 +139,32 @@ export function AcceptInvitationPage() {
       );
     }
   });
+
+  const verifyMfa = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!mfaChallengeToken || !mfaCode.trim()) return;
+    setMfaError("");
+    setIsMfaSubmitting(true);
+    try {
+      const session = await api.post<AuthResponse>(
+        "/api/auth/mfa/verify-login",
+        {
+          challengeToken: mfaChallengeToken,
+          code: mfaCode.trim(),
+        },
+      );
+      saveSession(session);
+      navigate("/", { replace: true });
+    } catch (error) {
+      setMfaError(
+        error instanceof ApiError
+          ? error.message
+          : t("Impossible de vérifier le code."),
+      );
+    } finally {
+      setIsMfaSubmitting(false);
+    }
+  };
 
   const previewError = useMemo(() => {
     if (!invitation.error) return "";
@@ -329,6 +376,57 @@ export function AcceptInvitationPage() {
           )}
         </CardContent>
       </Card>
+      <Dialog
+        open={Boolean(mfaChallengeToken)}
+        onClose={() => {
+          if (!isMfaSubmitting) setMfaChallengeToken(null);
+        }}
+        fullWidth
+        maxWidth="xs"
+      >
+        <Box component="form" onSubmit={verifyMfa} noValidate>
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <SecurityRounded color="primary" />
+            {t("Double authentification")}
+          </DialogTitle>
+          <DialogContent dividers>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
+              {t(
+                "Saisissez le code de votre application d’authentification ou un code de récupération pour terminer.",
+              )}
+            </Typography>
+            {mfaError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {mfaError}
+              </Alert>
+            )}
+            <TextField
+              fullWidth
+              autoFocus
+              label={t("Code d’authentification")}
+              value={mfaCode}
+              onChange={(event) => setMfaCode(event.target.value)}
+              autoComplete="one-time-code"
+              slotProps={{ htmlInput: { maxLength: 40 } }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button
+              onClick={() => setMfaChallengeToken(null)}
+              disabled={isMfaSubmitting}
+            >
+              {t("Annuler")}
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={!mfaCode.trim() || isMfaSubmitting}
+            >
+              {isMfaSubmitting ? t("Vérification…") : t("Vérifier")}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
     </Box>
   );
 }

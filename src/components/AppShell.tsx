@@ -777,6 +777,14 @@ export function AppShell() {
               </Typography>
             </Box>
             <Divider />
+            <MenuItem
+              component={NavLink}
+              to="/securite"
+              onClick={() => setAccountAnchor(null)}
+            >
+              <SettingsOutlined fontSize="small" sx={{ mr: 1 }} />
+              Sécurité du compte
+            </MenuItem>
             {session?.user.isPlatformAdmin && (
               <MenuItem
                 component={NavLink}

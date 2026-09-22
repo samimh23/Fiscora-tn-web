@@ -20,6 +20,7 @@ import {
 } from "@mui/icons-material";
 import { api, readSession, saveSession } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { MfaSecurityCard } from "../components/MfaSecurityCard";
 
 interface Preferences {
   emailMessages: boolean;
@@ -189,6 +190,7 @@ export function ClientPortalSettingsPage() {
               </Stack>
             </CardContent>
           </Card>
+          <MfaSecurityCard />
         </Stack>
         <Card>
           <CardContent sx={{ p: 3 }}>
@@ -260,11 +262,6 @@ export function ClientPortalSettingsPage() {
             >
               Enregistrer les préférences
             </Button>
-            <Alert severity="warning" sx={{ mt: 3 }}>
-              La double authentification n’est pas encore activée. Elle sera
-              ajoutée avec un fournisseur d’identité sécurisé avant la mise en
-              production.
-            </Alert>
           </CardContent>
         </Card>
       </Box>

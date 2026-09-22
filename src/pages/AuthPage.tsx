@@ -19,6 +19,7 @@ import {
 import {
   ArrowForwardRounded,
   CheckCircleOutlineRounded,
+  SecurityRounded,
   VerifiedRounded,
 } from "@mui/icons-material";
 import { useAuth } from "../auth/AuthContext";
@@ -51,6 +52,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const { t } = useLanguage();
   const {
     login,
+    verifyMfa,
     loginWithGoogle,
     register: createAccount,
     registerWithGoogle,
@@ -73,6 +75,12 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const [googleFullName, setGoogleFullName] = useState("");
   const [googleOrganizationName, setGoogleOrganizationName] = useState("");
   const [googleTermsAccepted, setGoogleTermsAccepted] = useState(false);
+  const [mfaChallengeToken, setMfaChallengeToken] = useState<string | null>(
+    null,
+  );
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaError, setMfaError] = useState("");
+  const [isMfaSubmitting, setIsMfaSubmitting] = useState(false);
   const {
     register,
     handleSubmit,
@@ -93,7 +101,18 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     setApiError("");
     try {
       if (isRegister) await createAccount(values);
-      else await login({ email: values.email, password: values.password });
+      else {
+        const challenge = await login({
+          email: values.email,
+          password: values.password,
+        });
+        if (challenge) {
+          setMfaChallengeToken(challenge.challengeToken);
+          setMfaCode("");
+          setMfaError("");
+          return;
+        }
+      }
       navigate(redirectTo, { replace: true });
     } catch (error) {
       setApiError(
@@ -111,6 +130,12 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
       try {
         const result = await loginWithGoogle(credential);
         if (result) {
+          if ("mfaRequired" in result) {
+            setMfaChallengeToken(result.challengeToken);
+            setMfaCode("");
+            setMfaError("");
+            return;
+          }
           setGoogleRegistration({ credential, email: result.profile.email });
           setGoogleFullName(
             result.profile.fullName?.trim() ||
@@ -158,12 +183,19 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     setGoogleRegistrationError("");
     setIsGoogleRegistering(true);
     try {
-      await registerWithGoogle({
+      const challenge = await registerWithGoogle({
         credential: googleRegistration.credential,
         fullName: googleFullName.trim(),
         organizationName: googleOrganizationName.trim(),
         acceptedTerms: true,
       });
+      if (challenge) {
+        setGoogleRegistration(null);
+        setMfaChallengeToken(challenge.challengeToken);
+        setMfaCode("");
+        setMfaError("");
+        return;
+      }
       navigate(redirectTo, { replace: true });
     } catch (error) {
       setGoogleRegistrationError(
@@ -173,6 +205,26 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
       );
     } finally {
       setIsGoogleRegistering(false);
+    }
+  };
+
+  const onMfaVerify = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!mfaChallengeToken || !mfaCode.trim()) return;
+    setMfaError("");
+    setIsMfaSubmitting(true);
+    try {
+      await verifyMfa(mfaChallengeToken, mfaCode.trim());
+      setMfaChallengeToken(null);
+      navigate(redirectTo, { replace: true });
+    } catch (error) {
+      setMfaError(
+        error instanceof ApiError
+          ? error.message
+          : t("Impossible de contacter le serveur."),
+      );
+    } finally {
+      setIsMfaSubmitting(false);
     }
   };
 
@@ -469,6 +521,58 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
               }
             >
               {isGoogleRegistering ? t("Création…") : t("Créer mon cabinet")}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(mfaChallengeToken)}
+        onClose={() => {
+          if (!isMfaSubmitting) setMfaChallengeToken(null);
+        }}
+        fullWidth
+        maxWidth="xs"
+      >
+        <Box component="form" onSubmit={onMfaVerify} noValidate>
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <SecurityRounded color="primary" />
+            Double authentification
+          </DialogTitle>
+          <DialogContent dividers>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
+              Saisissez le code à six chiffres de votre application
+              d’authentification, ou utilisez un code de récupération.
+            </Typography>
+            {mfaError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {mfaError}
+              </Alert>
+            )}
+            <TextField
+              fullWidth
+              autoFocus
+              label="Code d’authentification"
+              value={mfaCode}
+              onChange={(event) => setMfaCode(event.target.value)}
+              autoComplete="one-time-code"
+              slotProps={{ htmlInput: { maxLength: 40 } }}
+              helperText="Un code d’authentification ne peut être utilisé qu’une seule fois."
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, py: 2 }}>
+            <Button
+              onClick={() => setMfaChallengeToken(null)}
+              disabled={isMfaSubmitting}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={!mfaCode.trim() || isMfaSubmitting}
+            >
+              {isMfaSubmitting ? "Vérification…" : "Vérifier"}
             </Button>
           </DialogActions>
         </Box>

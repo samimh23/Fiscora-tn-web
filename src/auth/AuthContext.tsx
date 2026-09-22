@@ -16,6 +16,7 @@ import {
 import type {
   AuthResponse,
   GoogleRegistrationRequired,
+  MfaChallenge,
   OrganizationSummary,
 } from "../types/api";
 
@@ -45,11 +46,14 @@ interface AuthContextValue {
   organization: OrganizationSummary | null;
   selectOrganization: (id: string) => void;
   can: (permission: string) => boolean;
-  login: (input: LoginInput) => Promise<void>;
+  login: (input: LoginInput) => Promise<MfaChallenge | null>;
+  verifyMfa: (challengeToken: string, code: string) => Promise<void>;
   loginWithGoogle: (
     credential: string,
-  ) => Promise<GoogleRegistrationRequired | null>;
-  registerWithGoogle: (input: GoogleRegisterInput) => Promise<void>;
+  ) => Promise<GoogleRegistrationRequired | MfaChallenge | null>;
+  registerWithGoogle: (
+    input: GoogleRegisterInput,
+  ) => Promise<MfaChallenge | null>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -87,6 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: string;
         email: string;
         fullName: string;
+        mfaEnabled: boolean;
         organizations: OrganizationSummary[];
       }>("/api/auth/me")
       .then((me) => {
@@ -99,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: me.id,
             email: me.email,
             fullName: me.fullName,
+            mfaEnabled: me.mfaEnabled,
           },
           organizations: me.organizations,
         });
@@ -134,7 +140,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(
     async (input: LoginInput) => {
-      const response = await api.post<AuthResponse>("/api/auth/login", input);
+      const response = await api.post<AuthResponse | MfaChallenge>(
+        "/api/auth/login",
+        input,
+      );
+      if ("mfaRequired" in response) return response;
+      setSession(response);
+      return null;
+    },
+    [setSession],
+  );
+
+  const verifyMfa = useCallback(
+    async (challengeToken: string, code: string) => {
+      const response = await api.post<AuthResponse>("/api/auth/mfa/verify-login", {
+        challengeToken,
+        code,
+      });
       setSession(response);
     },
     [setSession],
@@ -143,9 +165,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = useCallback(
     async (credential: string) => {
       const response = await api.post<
-        AuthResponse | GoogleRegistrationRequired
+        AuthResponse | GoogleRegistrationRequired | MfaChallenge
       >("/api/auth/google", { credential });
       if ("registrationRequired" in response) return response;
+      if ("mfaRequired" in response) return response;
       setSession(response);
       return null;
     },
@@ -154,11 +177,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const registerWithGoogle = useCallback(
     async (input: GoogleRegisterInput) => {
-      const response = await api.post<AuthResponse>(
+      const response = await api.post<AuthResponse | MfaChallenge>(
         "/api/auth/google/register",
         input,
       );
+      if ("mfaRequired" in response) return response;
       setSession(response);
+      return null;
     },
     [setSession],
   );
@@ -198,6 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       can: (permission: string) =>
         Boolean(organization?.permissions.includes(permission)),
       login,
+      verifyMfa,
       loginWithGoogle,
       registerWithGoogle,
       register,
@@ -213,6 +239,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       registerWithGoogle,
       selectOrganization,
       session,
+      verifyMfa,
     ],
   );
 

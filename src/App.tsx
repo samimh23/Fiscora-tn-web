@@ -18,6 +18,11 @@ import { UnsavedChangesProvider } from "./unsaved-changes/UnsavedChangesProvider
 const AuthPage = lazy(() =>
   import("./pages/AuthPage").then((module) => ({ default: module.AuthPage })),
 );
+const AccountSecurityPage = lazy(() =>
+  import("./pages/AccountSecurityPage").then((module) => ({
+    default: module.AccountSecurityPage,
+  })),
+);
 const AccountantCockpitPage = lazy(() =>
   import("./pages/AccountantCockpitPage").then((module) => ({
     default: module.AccountantCockpitPage,
@@ -313,6 +318,10 @@ const router = createBrowserRouter([
         element: <WorkspaceShell />,
         children: [
           { index: true, element: <HomePage /> },
+          {
+            path: "/securite",
+            element: lazyPage(<AccountSecurityPage />),
+          },
           {
             element: <CabinetOnlyRoute />,
             children: [
