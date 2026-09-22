@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -32,6 +32,7 @@ import {
   EmailOutlined,
   InsertDriveFileOutlined,
   PersonOutlineRounded,
+  ReceiptLongOutlined,
   UploadFileRounded,
   VisibilityOutlined,
 } from "@mui/icons-material";
@@ -172,6 +173,20 @@ const extractionStatus = (status: string) => {
   return values[status] ?? { label: status, color: "default" as const };
 };
 
+const hasInvoiceExtraction = (document: AccountingDocument) => {
+  if (
+    !document.extractedData ||
+    typeof document.extractedData !== "object" ||
+    Array.isArray(document.extractedData)
+  )
+    return false;
+  return ["invoice", "credit_note", "receipt"].includes(
+    String(
+      (document.extractedData as Record<string, unknown>).document_type ?? "",
+    ),
+  );
+};
+
 const extractionFields = [
   { path: "document_type", label: "Type de document" },
   { path: "supplier.name", label: "Fournisseur" },
@@ -277,13 +292,16 @@ export function DossierDocumentsPanel({
   archived,
   canUpload,
   canValidate,
+  canCreateInvoice,
 }: {
   organizationId: string;
   dossierId: string;
   archived: boolean;
   canUpload: boolean;
   canValidate: boolean;
+  canCreateInvoice: boolean;
 }) {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const [year, setYear] = useState(currentYear);
@@ -1604,6 +1622,26 @@ export function DossierDocumentsPanel({
                     Vérifier les données
                   </Button>
                 )}
+                {canCreateInvoice &&
+                  !archived &&
+                  document.extractionStatus === "VALIDEE" &&
+                  hasInvoiceExtraction(document) && (
+                    <Button
+                      size="small"
+                      color="primary"
+                      variant="contained"
+                      startIcon={<ReceiptLongOutlined />}
+                      onClick={() => {
+                        const target = new URLSearchParams({
+                          dossierId,
+                          sourceDocumentId: document.id,
+                        });
+                        navigate(`/factures?${target.toString()}`);
+                      }}
+                    >
+                      Créer la facture
+                    </Button>
+                  )}
                 {canUpload &&
                   !archived &&
                   document.processingStatus !== "TRAITE" && (

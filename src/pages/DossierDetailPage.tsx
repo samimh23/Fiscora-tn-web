@@ -920,6 +920,12 @@ export function DossierDetailPage() {
           archived={archived}
           canUpload={can("documents.upload")}
           canValidate={can("documents.validate")}
+          canCreateInvoice={
+            can("business_invoices.view") &&
+            can("business_invoices.manage") &&
+            can("accounting.view") &&
+            can("chart_of_accounts.view")
+          }
         />
       )}
 

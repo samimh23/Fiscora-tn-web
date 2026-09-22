@@ -1350,6 +1350,8 @@ export function InvoicesPanel({
   canPost,
   draftSeed,
   onDraftSeedConsumed,
+  sourceDocumentId,
+  onSourceDocumentConsumed,
 }: {
   organizationId: string;
   dossierId: string;
@@ -1367,6 +1369,8 @@ export function InvoicesPanel({
   canPost: boolean;
   draftSeed?: InvoiceDraftSeed | null;
   onDraftSeedConsumed?: () => void;
+  sourceDocumentId?: string | null;
+  onSourceDocumentConsumed?: () => void;
 }) {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -1382,6 +1386,7 @@ export function InvoicesPanel({
   const [error, setError] = useState("");
   const [matchingInvoice, setMatchingInvoice] =
     useState<BusinessInvoice | null>(null);
+  const [preparedSourceDocumentId, setPreparedSourceDocumentId] = useState("");
   const matchResult = useQuery({
     queryKey: ["invoice-match", organizationId, dossierId, matchingInvoice?.id],
     queryFn: () =>
@@ -1420,6 +1425,79 @@ export function InvoicesPanel({
     setSelected(null);
     setDialogOpen(true);
   }, [draftSeed]);
+  const sourceExtraction = useQuery({
+    queryKey: [
+      "invoice-source-extraction",
+      organizationId,
+      dossierId,
+      sourceDocumentId,
+    ],
+    queryFn: () =>
+      api.get<DocumentExtractionJob>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${sourceDocumentId}/extraction`,
+      ),
+    enabled: Boolean(sourceDocumentId),
+    retry: false,
+  });
+  useEffect(() => {
+    if (!sourceDocumentId) {
+      setPreparedSourceDocumentId("");
+      return;
+    }
+    if (
+      preparedSourceDocumentId === sourceDocumentId ||
+      loading ||
+      !sourceExtraction.data?.normalizedData
+    )
+      return;
+    setPreparedSourceDocumentId(sourceDocumentId);
+    const existing = invoices.find(
+      (invoice) => invoice.sourceDocumentId === sourceDocumentId,
+    );
+    if (existing) {
+      setError(`La facture ${existing.number} est déjà liée à ce document.`);
+      onSourceDocumentConsumed?.();
+      return;
+    }
+    const data = sourceExtraction.data.normalizedData;
+    if (
+      !["invoice", "credit_note", "receipt"].includes(
+        String(data.document_type),
+      )
+    ) {
+      setError("Le document validé n’est pas une facture.");
+      onSourceDocumentConsumed?.();
+      return;
+    }
+    setError("");
+    setSelected(null);
+    setAiDraftSeed(
+      invoiceSeedFromExtraction(
+        data,
+        sourceDocumentId,
+        parties,
+        accounts,
+        journals,
+      ),
+    );
+    setDialogOpen(true);
+    onSourceDocumentConsumed?.();
+  }, [
+    accounts,
+    invoices,
+    journals,
+    loading,
+    onSourceDocumentConsumed,
+    parties,
+    preparedSourceDocumentId,
+    sourceDocumentId,
+    sourceExtraction.data,
+  ]);
+  useEffect(() => {
+    if (!sourceDocumentId || !sourceExtraction.isError) return;
+    setError("Impossible de charger les données validées de cette facture.");
+    onSourceDocumentConsumed?.();
+  }, [onSourceDocumentConsumed, sourceDocumentId, sourceExtraction.isError]);
   const activeDraftSeed = aiDraftSeed ?? draftSeed ?? null;
   const closeDialog = () => {
     setDialogOpen(false);

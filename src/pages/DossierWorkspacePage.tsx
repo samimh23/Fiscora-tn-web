@@ -257,6 +257,12 @@ export function DossierWorkspacePage({ module }: { module: WorkspaceModule }) {
   });
   const heading = headings[module];
   const archived = dossier.data?.status === "ARCHIVE";
+  const sourceDocumentId = searchParams.get("sourceDocumentId");
+  const consumeSourceDocument = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("sourceDocumentId");
+    setSearchParams(next, { replace: true });
+  };
 
   return (
     <>
@@ -311,6 +317,12 @@ export function DossierWorkspacePage({ module }: { module: WorkspaceModule }) {
           archived={archived}
           canUpload={can("documents.upload")}
           canValidate={can("documents.validate")}
+          canCreateInvoice={
+            can("business_invoices.view") &&
+            can("business_invoices.manage") &&
+            can("accounting.view") &&
+            can("chart_of_accounts.view")
+          }
         />
       )}
       {dossier.data && module === "commercial" && (
@@ -332,6 +344,8 @@ export function DossierWorkspacePage({ module }: { module: WorkspaceModule }) {
           canScanDocuments={
             can("documents.upload") && can("documents.validate")
           }
+          sourceDocumentId={sourceDocumentId}
+          onSourceDocumentConsumed={consumeSourceDocument}
         />
       )}
       {dossier.data && module === "banking" && (

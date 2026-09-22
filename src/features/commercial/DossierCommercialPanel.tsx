@@ -37,6 +37,8 @@ export function DossierCommercialPanel({
   canPaymentsView,
   canPaymentsManage,
   canScanDocuments,
+  sourceDocumentId,
+  onSourceDocumentConsumed,
 }: {
   organizationId: string;
   dossierId: string;
@@ -53,6 +55,8 @@ export function DossierCommercialPanel({
   canPaymentsView: boolean;
   canPaymentsManage: boolean;
   canScanDocuments: boolean;
+  sourceDocumentId?: string | null;
+  onSourceDocumentConsumed?: () => void;
 }) {
   const { t } = useLanguage();
   const initial = canInvoicesView
@@ -171,6 +175,8 @@ export function DossierCommercialPanel({
           canPost={canAccountingPost}
           draftSeed={null}
           onDraftSeedConsumed={() => undefined}
+          sourceDocumentId={sourceDocumentId}
+          onSourceDocumentConsumed={onSourceDocumentConsumed}
         />
       )}
       {tab === "parties" && canThirdPartiesView && (
