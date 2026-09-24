@@ -1212,10 +1212,8 @@ export function DossierBankReconciliationPanel({
           `${base}/bank-reconciliation/statements/${statement.data.id}/reconcile`,
         );
       if (!transaction?.journalEntryId) return;
-      await api.post(`${base}/entries/${transaction.journalEntryId}/post`);
       return api.post(
-        `${base}/bank-reconciliation/transactions/${transaction.id}/match-entry`,
-        { journalEntryId: transaction.journalEntryId },
+        `${base}/bank-reconciliation/transactions/${transaction.id}/post-generated-entry`,
       );
     },
     onSuccess: async () => {
