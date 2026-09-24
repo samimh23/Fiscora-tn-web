@@ -1598,7 +1598,9 @@ export function DossierDocumentsPanel({
                 {canValidate &&
                   !archived &&
                   document.malwareScanStatus === "SAIN" &&
-                  ["image/jpeg", "image/png"].includes(document.mimeType) &&
+                  ["image/jpeg", "image/png", "application/pdf"].includes(
+                    document.mimeType,
+                  ) &&
                   !["EN_ATTENTE", "EN_COURS", "A_REVOIR"].includes(
                     document.extractionStatus,
                   ) && (
@@ -2926,13 +2928,17 @@ export function DossierDocumentsPanel({
             {files.length
               ? `${files.length} fichier(s) sélectionné(s)`
               : scanIntent
-                ? "Choisir une image JPEG ou PNG"
+                ? "Choisir une image ou un PDF"
                 : "Choisir un ou plusieurs fichiers"}
             <input
               hidden
               type="file"
               multiple={!scanIntent}
-              accept={scanIntent ? ".jpg,.jpeg,.png,image/jpeg,image/png" : accepted}
+              accept={
+                scanIntent
+                  ? ".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                  : accepted
+              }
               onChange={(event) =>
                 setFiles(Array.from(event.target.files ?? []))
               }
@@ -2981,7 +2987,7 @@ export function DossierDocumentsPanel({
           />
           <Typography variant="caption" color="text.secondary">
             {scanIntent
-              ? "L’image sera ajoutée au dossier puis envoyée immédiatement à l’extraction IA. Une validation humaine restera obligatoire."
+              ? "La pièce sera ajoutée au dossier puis envoyée immédiatement à l’extraction IA. Les PDF sont traités page par page et une validation humaine reste obligatoire."
               : "PDF, images, Excel, XML ou CSV · 20 Mo maximum."}
           </Typography>
         </DialogContent>
