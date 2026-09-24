@@ -263,10 +263,10 @@ export function AssistantWidget() {
               </Select>
             </FormControl>
             {can("documents.validate") && (
-              <Tooltip title="Actualiser les sources validées">
+              <Tooltip title="Reconstruire l’index des sources">
                 <span>
                   <IconButton
-                    aria-label="Actualiser les sources validées"
+                    aria-label="Reconstruire l’index des sources"
                     onClick={() => reindex.mutate()}
                     disabled={!dossierId || reindex.isPending}
                   >

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Alert,
   Avatar,
@@ -64,6 +64,14 @@ interface ChatMessage {
   actions?: AssistantAction[];
 }
 
+interface AssistantIndexStatus {
+  pending: number;
+  processing: number;
+  failed: number;
+  indexed: number;
+  lastProcessedAtUtc: string | null;
+}
+
 const suggestions = [
   "Comment déposer une facture et la faire lire par l’IA ?",
   "Quel est le total TTC des factures validées ?",
@@ -94,6 +102,19 @@ export function AssistantPage() {
     setIndexStatus("");
   }, [dossierId]);
 
+  const automaticIndex = useQuery({
+    queryKey: ["assistant-index-status", organizationId, dossierId],
+    queryFn: () =>
+      api.get<AssistantIndexStatus>(`${endpoint}/index-status`),
+    enabled: Boolean(organizationId && dossierId),
+    refetchInterval: (query) => {
+      const status = query.state.data;
+      return status && status.pending + status.processing > 0
+        ? 5_000
+        : 30_000;
+    },
+  });
+
   const reindex = useMutation({
     mutationFn: () =>
       api.post<{ documentsIndexed: number; chunksIndexed: number }>(
@@ -104,6 +125,7 @@ export function AssistantPage() {
       setIndexStatus(
         `${result.documentsIndexed} document(s) validé(s), ${result.chunksIndexed} source(s) prête(s).`,
       );
+      void automaticIndex.refetch();
     },
     onError: (reason) => {
       setIndexStatus("");
@@ -454,10 +476,28 @@ export function AssistantPage() {
                   <Typography variant="h4">Sources du dossier</Typography>
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
-                  Actualisez après avoir approuvé de nouvelles extractions. Les
-                  brouillons et pièces rejetées restent exclus.
+                  Les extractions validées sont indexées automatiquement. Les
+                  brouillons et pièces rejetées restent exclus. Utilisez la
+                  reconstruction seulement pour réparer ou régénérer l’index.
                 </Typography>
                 {indexStatus && <Alert severity="success">{indexStatus}</Alert>}
+                {automaticIndex.data &&
+                  automaticIndex.data.pending +
+                    automaticIndex.data.processing >
+                    0 && (
+                    <Alert severity="info">
+                      Mise à jour automatique en cours pour{" "}
+                      {automaticIndex.data.pending +
+                        automaticIndex.data.processing}{" "}
+                      document(s).
+                    </Alert>
+                  )}
+                {automaticIndex.data && automaticIndex.data.failed > 0 && (
+                  <Alert severity="warning">
+                    {automaticIndex.data.failed} document(s) n’ont pas pu être
+                    indexés automatiquement. Vous pouvez reconstruire l’index.
+                  </Alert>
+                )}
                 <Button
                   variant="outlined"
                   startIcon={
@@ -470,7 +510,7 @@ export function AssistantPage() {
                   onClick={() => reindex.mutate()}
                   disabled={!dossierId || reindex.isPending}
                 >
-                  Actualiser les sources
+                  Reconstruire l’index
                 </Button>
               </Stack>
             </CardContent>
