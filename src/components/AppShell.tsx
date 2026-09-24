@@ -74,6 +74,7 @@ import type {
 import { Brand } from "./Brand";
 import { AssistantWidget } from "./AssistantWidget";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useClientPortalRealtimeNotifications } from "../realtime/clientPortal";
 
 const drawerWidth = 248;
 
@@ -211,6 +212,7 @@ export function AppShell() {
   const { session, organization, selectOrganization, can, logout } = useAuth();
   const { direction, t } = useLanguage();
   const qc = useQueryClient();
+  useClientPortalRealtimeNotifications();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [accountAnchor, setAccountAnchor] = useState<HTMLElement | null>(null);
   const [createAnchor, setCreateAnchor] = useState<HTMLElement | null>(null);

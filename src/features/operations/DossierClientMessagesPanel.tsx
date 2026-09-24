@@ -14,6 +14,7 @@ import {
 import { ForumOutlined, SendRounded } from "@mui/icons-material";
 import { api } from "../../api/client";
 import { useAuth } from "../../auth/AuthContext";
+import { useClientPortalMessageRoom } from "../../realtime/clientPortal";
 
 interface PortalMessage {
   id: string;
@@ -35,9 +36,11 @@ export function DossierClientMessagesPanel({
   const qc = useQueryClient();
   const [body, setBody] = useState("");
   const base = `/api/organizations/${organizationId}/dossiers/${dossierId}/client-portal/messages`;
+  useClientPortalMessageRoom(organizationId, dossierId);
   const messages = useQuery({
     queryKey: ["dossier-client-messages", organizationId, dossierId],
     queryFn: () => api.get<PortalMessage[]>(base),
+    refetchInterval: 60_000,
   });
   const send = useMutation({
     mutationFn: () => api.post(base, { body }),

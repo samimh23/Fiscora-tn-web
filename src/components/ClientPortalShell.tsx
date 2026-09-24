@@ -36,6 +36,7 @@ import { useLanguage } from "../i18n/LanguageContext";
 import { Brand } from "./Brand";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { AssistantWidget } from "./AssistantWidget";
+import { useClientPortalRealtimeNotifications } from "../realtime/clientPortal";
 
 const width = 272;
 const items = [
@@ -56,6 +57,7 @@ const items = [
 export function ClientPortalShell() {
   const { session, organization, selectOrganization, logout } = useAuth();
   const { direction, t } = useLanguage();
+  useClientPortalRealtimeNotifications();
   const [mobile, setMobile] = useState(false);
   const [account, setAccount] = useState<HTMLElement | null>(null);
   const theme = useTheme();

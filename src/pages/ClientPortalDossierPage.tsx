@@ -58,6 +58,7 @@ import {
 } from "@mui/icons-material";
 import { api, downloadApiFile } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { useClientPortalMessageRoom } from "../realtime/clientPortal";
 import { ClientCommercialWorkspace } from "../features/commercial/ClientCommercialWorkspace";
 import type {
   AccountingDocument,
@@ -347,7 +348,9 @@ export function ClientPortalDossierPage() {
     queryKey: ["portal-messages", organizationId, dossierId],
     queryFn: () => api.get<PortalMessage[]>(`${base}/client-portal/messages`),
     enabled: Boolean(organizationId && dossierId),
+    refetchInterval: 60_000,
   });
+  useClientPortalMessageRoom(organizationId, dossierId);
   const contacts = useQuery({
     queryKey: ["portal-contacts", organizationId, dossierId],
     queryFn: () => api.get<PortalContact[]>(`${base}/client-portal/contacts`),
