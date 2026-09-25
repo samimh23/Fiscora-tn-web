@@ -108,6 +108,18 @@ export async function apiRequest<T>(
 }
 
 export async function downloadApiFile(path: string, filename: string) {
+  const blob = await fetchApiFile(path);
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+export async function fetchApiFile(path: string): Promise<Blob> {
   const fetchFile = async (retryAfterRefresh = true): Promise<Response> => {
     const session = readSession();
     const headers = new Headers();
@@ -123,15 +135,7 @@ export async function downloadApiFile(path: string, filename: string) {
   };
 
   const response = await fetchFile();
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+  return response.blob();
 }
 
 export const api = {

@@ -38,6 +38,7 @@ import {
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
 import { SearchableSelect } from "../../components/SearchableSelect";
+import { PdfDocumentViewer } from "../../components/PdfDocumentViewer";
 import type {
   AccountingDocument,
   BankAccount,
@@ -1987,18 +1988,12 @@ export function DossierDocumentsPanel({
               }}
             />
           )}
-          {preview.data?.kind === "pdf" && preview.data.url && (
-            <Box
-              component="iframe"
-              src={preview.data.url}
-              title={`Aperçu de ${preview.data.originalName}`}
-              sx={{
-                width: "100%",
-                flex: 1,
-                minHeight: 500,
-                border: 0,
-                bgcolor: "common.white",
-              }}
+          {preview.data?.kind === "pdf" && previewTarget && (
+            <PdfDocumentViewer
+              sourcePath={`/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${previewTarget.id}/content`}
+              originalName={preview.data.originalName}
+              minHeight={500}
+              maxHeight={760}
             />
           )}
           {preview.data?.kind === "text" && (
@@ -2255,12 +2250,13 @@ export function DossierDocumentsPanel({
                     )}
                   </Box>
                 )}
-              {reviewPreview.data?.kind === "pdf" && reviewPreview.data.url && (
-                <Box
-                  component="iframe"
-                  src={reviewPreview.data.url}
-                  title={reviewPreview.data.originalName}
-                  sx={{ width: "100%", minHeight: 620, border: 0 }}
+              {reviewPreview.data?.kind === "pdf" && reviewTarget && (
+                <PdfDocumentViewer
+                  sourcePath={`/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${reviewTarget.document.id}/content`}
+                  originalName={reviewPreview.data.originalName}
+                  highlight={highlightedEvidence}
+                  minHeight={620}
+                  maxHeight={720}
                 />
               )}
             </Box>
