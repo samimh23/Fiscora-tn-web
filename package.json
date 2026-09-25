@@ -15,18 +15,18 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
-    "@hookform/resolvers": "^5.4.0",
-    "@mui/icons-material": "^9.2.0",
+    "@hookform/resolvers": "^5.9.1",
+    "@mui/icons-material": "^9.4.0",
     "@mui/material": "^9.2.0",
-    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-query": "^5.103.2",
     "pdfjs-dist": "^5.4.624",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "react-hook-form": "^7.82.0",
-    "react-router-dom": "7.18.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-hook-form": "^7.88.0",
+    "react-router-dom": "7.18.4",
     "recharts": "^3.10.1",
     "socket.io-client": "^4.8.3",
-    "zod": "^4.4.3"
+    "zod": "^4.6.5"
   },
   "overrides": {
     "brace-expansion": "$brace-expansion"
@@ -34,16 +34,16 @@
   "devDependencies": {
     "@eslint/js": "^9.25.0",
     "@playwright/test": "^1.63.0",
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^4.4.1",
     "brace-expansion": "file:vendor/brace-expansion-compat",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
+    "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^16.0.0",
     "typescript": "~5.8.3",
-    "typescript-eslint": "^8.30.1",
+    "typescript-eslint": "^8.70.1",
     "vite": "^6.3.5"
   }
 }
