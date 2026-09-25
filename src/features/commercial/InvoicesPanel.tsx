@@ -1902,7 +1902,18 @@ export function InvoicesPanel({
                       <EditOutlined />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Supprimer le brouillon">
+                </>
+              )}
+              {canManage &&
+                !archived &&
+                ["BROUILLON", "VALIDEE"].includes(invoice.status) && (
+                  <Tooltip
+                    title={
+                      invoice.status === "VALIDEE"
+                        ? "Supprimer la facture validée et son écriture brouillon"
+                        : "Supprimer le brouillon"
+                    }
+                  >
                     <IconButton
                       color="error"
                       onClick={() => setInvoiceToDelete(invoice)}
@@ -1910,8 +1921,7 @@ export function InvoicesPanel({
                       <DeleteOutlineRounded />
                     </IconButton>
                   </Tooltip>
-                </>
-              )}
+                )}
               {canValidate && !archived && invoice.status === "BROUILLON" && (
                 <Button
                   size="small"
@@ -2081,12 +2091,22 @@ export function InvoicesPanel({
         fullWidth
         maxWidth="xs"
       >
-        <DialogTitle>Supprimer le brouillon ?</DialogTitle>
+        <DialogTitle>
+          {invoiceToDelete?.status === "VALIDEE"
+            ? "Supprimer la facture validée ?"
+            : "Supprimer le brouillon ?"}
+        </DialogTitle>
         <DialogContent>
           <Typography>
             La facture {invoiceToDelete?.number} sera supprimée. Le document
             source restera dans la collecte afin de pouvoir recréer la facture.
           </Typography>
+          {invoiceToDelete?.status === "VALIDEE" && (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              Son écriture comptable encore en brouillon sera également
+              supprimée. Aucune écriture comptabilisée ne sera effacée.
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button
