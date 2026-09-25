@@ -71,6 +71,7 @@ export interface InvoiceDraftSeed {
   stampAccountId?: string;
   exciseAccountId?: string;
   extractionData?: Record<string, unknown>;
+  vatInferenceNotice?: string;
   notes: string;
   lines: DraftLine[];
 }
@@ -162,6 +163,17 @@ const normalizedRate = (value: unknown): string => {
 const extractedNumber = (value: unknown): number => {
   const printed = printedNumber(value);
   return printed ? Number(printed) : Number.NaN;
+};
+
+const hasExtractedValue = (value: unknown) =>
+  value !== null && value !== undefined && String(value).trim() !== "";
+
+const lineVatBase = (line: DraftLine) => {
+  const quantity = Number(line.quantity) || 0;
+  const unitPrice = Number(line.unitPrice) || 0;
+  const discountRate = Number(line.discountRate) || 0;
+  const exciseRate = Number(line.exciseRate) || 0;
+  return quantity * unitPrice * (1 - discountRate) * (1 + exciseRate);
 };
 
 function invoiceSeedFromExtraction(
@@ -297,7 +309,7 @@ function invoiceSeedFromExtraction(
         : 0;
   });
   const totalWeight = lineWeights.reduce((sum, value) => sum + value, 0);
-  const lines = lineItems.length
+  const preparedLines: DraftLine[] = lineItems.length
     ? lineItems.map((line, index) => {
         const quantity = printedNumber(line.quantity, "1.000");
         const total = Number(printedNumber(line.line_total));
@@ -340,8 +352,36 @@ function invoiceSeedFromExtraction(
           discountRate: Number.isFinite(globalDiscountRate)
             ? globalDiscountRate.toFixed(5)
             : "0.00000",
+          vatRate: "0.00000",
+          exciseRate: fodecRate,
         },
       ];
+
+  const missingVatIndexes = preparedLines.flatMap((_, index) => {
+    const sourceLine = lineItems[index];
+    return !sourceLine || !hasExtractedValue(sourceLine.tax_rate) ? [index] : [];
+  });
+  const knownVat = preparedLines.reduce((sum, line, index) => {
+    if (missingVatIndexes.includes(index)) return sum;
+    return sum + lineVatBase(line) * (Number(line.vatRate) || 0);
+  }, 0);
+  const missingVatBase = missingVatIndexes.reduce(
+    (sum, index) => sum + lineVatBase(preparedLines[index]),
+    0,
+  );
+  const inferredVatRate =
+    Number.isFinite(tax) && tax > knownVat && missingVatBase > 0
+      ? (tax - knownVat) / missingVatBase
+      : Number.NaN;
+  const canInferVat =
+    Number.isFinite(inferredVatRate) &&
+    inferredVatRate > 0 &&
+    inferredVatRate <= 1;
+  const lines = preparedLines.map((line, index) =>
+    canInferVat && missingVatIndexes.includes(index)
+      ? { ...line, vatRate: inferredVatRate.toFixed(5) }
+      : line,
+  );
 
   return {
     sourceDocumentId: documentId,
@@ -361,6 +401,9 @@ function invoiceSeedFromExtraction(
     stampAccountId: stampAccount?.id,
     exciseAccountId: account("43668", "437")?.id,
     extractionData: data,
+    vatInferenceNotice: canInferVat
+      ? `Le taux de TVA absent de ${missingVatIndexes.length === 1 ? "la ligne" : `${missingVatIndexes.length} lignes`} a été déduit du montant total de TVA (${(inferredVatRate * 100).toFixed(3)} %). Vérifiez ce taux avant d’enregistrer.`
+      : undefined,
     notes: "Créée depuis une extraction IA — document source conservé.",
     lines,
   };
@@ -830,6 +873,11 @@ function InvoiceDialog({
             {error}
           </Alert>
         )}
+        {draftSeed?.vatInferenceNotice && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {draftSeed.vatInferenceNotice}
+          </Alert>
+        )}
         {form.sourceDocumentId && (
           <Alert severity="success" sx={{ mb: 2 }}>
             Données préremplies par l’IA. « Enregistrer le brouillon » créera
@@ -1088,6 +1136,15 @@ function InvoiceDialog({
                   <MenuItem value="manual:0.07000">7 % (manuel)</MenuItem>
                   <MenuItem value="manual:0.13000">13 % (manuel)</MenuItem>
                   <MenuItem value="manual:0.19000">19 % (manuel)</MenuItem>
+                  {line.vatCode === "" &&
+                    !["0.00000", "0.07000", "0.13000", "0.19000"].includes(
+                      line.vatRate,
+                    ) && (
+                      <MenuItem value={`manual:${line.vatRate}`}>
+                        {(Number(line.vatRate) * 100).toFixed(3)} % (déduit de
+                        la TVA totale)
+                      </MenuItem>
+                    )}
                 </TextField>
                 <TextField
                   size="small"
@@ -1386,6 +1443,8 @@ export function InvoicesPanel({
   const [error, setError] = useState("");
   const [matchingInvoice, setMatchingInvoice] =
     useState<BusinessInvoice | null>(null);
+  const [invoiceToDelete, setInvoiceToDelete] =
+    useState<BusinessInvoice | null>(null);
   const [preparedSourceDocumentId, setPreparedSourceDocumentId] = useState("");
   const matchResult = useQuery({
     queryKey: ["invoice-match", organizationId, dossierId, matchingInvoice?.id],
@@ -1531,6 +1590,35 @@ export function InvoicesPanel({
       setError(
         reason instanceof ApiError ? reason.message : "Action impossible.",
       ),
+  });
+  const deleteInvoice = useMutation({
+    mutationFn: (invoice: BusinessInvoice) =>
+      api.delete<void>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/business-invoices/${invoice.id}`,
+      ),
+    onSuccess: async () => {
+      setInvoiceToDelete(null);
+      setError("");
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["business-invoices", organizationId, dossierId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["dossier-documents", organizationId, dossierId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["commercial-documents", organizationId, dossierId],
+        }),
+      ]);
+    },
+    onError: (reason) => {
+      setInvoiceToDelete(null);
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : "Impossible de supprimer ce brouillon.",
+      );
+    },
   });
   const scanJob = useQuery({
     queryKey: [
@@ -1803,16 +1891,26 @@ export function InvoicesPanel({
               sx={{ justifyContent: { lg: "flex-end" }, flexWrap: "wrap" }}
             >
               {canManage && !archived && invoice.status === "BROUILLON" && (
-                <Tooltip title="Modifier">
-                  <IconButton
-                    onClick={() => {
-                      setSelected(invoice);
-                      setDialogOpen(true);
-                    }}
-                  >
-                    <EditOutlined />
-                  </IconButton>
-                </Tooltip>
+                <>
+                  <Tooltip title="Modifier">
+                    <IconButton
+                      onClick={() => {
+                        setSelected(invoice);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <EditOutlined />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Supprimer le brouillon">
+                    <IconButton
+                      color="error"
+                      onClick={() => setInvoiceToDelete(invoice)}
+                    >
+                      <DeleteOutlineRounded />
+                    </IconButton>
+                  </Tooltip>
+                </>
               )}
               {canValidate && !archived && invoice.status === "BROUILLON" && (
                 <Button
@@ -1973,6 +2071,40 @@ export function InvoicesPanel({
                 : "Préparer la facture"}
             </Button>
           )}
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={Boolean(invoiceToDelete)}
+        onClose={
+          deleteInvoice.isPending ? undefined : () => setInvoiceToDelete(null)
+        }
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Supprimer le brouillon ?</DialogTitle>
+        <DialogContent>
+          <Typography>
+            La facture {invoiceToDelete?.number} sera supprimée. Le document
+            source restera dans la collecte afin de pouvoir recréer la facture.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            disabled={deleteInvoice.isPending}
+            onClick={() => setInvoiceToDelete(null)}
+          >
+            Annuler
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={deleteInvoice.isPending}
+            onClick={() => {
+              if (invoiceToDelete) deleteInvoice.mutate(invoiceToDelete);
+            }}
+          >
+            {deleteInvoice.isPending ? "Suppression…" : "Supprimer"}
+          </Button>
         </DialogActions>
       </Dialog>
       <Dialog
