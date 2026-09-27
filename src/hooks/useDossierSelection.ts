@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
@@ -17,48 +17,43 @@ export function useDossierSelection() {
   const [searchParams, setSearchParams] = useSearchParams();
   const fromUrl = searchParams.get("dossierId") ?? "";
 
-  const [dossierId, setInternal] = useState(() => {
-    if (fromUrl) return fromUrl;
+  let fromStorage = "";
+  if (!fromUrl) {
     try {
-      return sessionStorage.getItem(storageKey) ?? "";
+      fromStorage = sessionStorage.getItem(storageKey) ?? "";
     } catch {
-      return "";
+      // Stockage indisponible (navigation privée) : l’URL reste la source.
     }
-  });
-
-  // Le retour arrière du navigateur change l'URL sans repasser par le setter.
-  useEffect(() => {
-    if (fromUrl && fromUrl !== dossierId) setInternal(fromUrl);
-  }, [fromUrl, dossierId]);
+  }
+  const dossierId = fromUrl || fromStorage;
 
   // Le dossier doit être mémorisé quelle que soit son origine — y compris
   // lorsqu'il vient de l'URL ou d'un sélecteur interne à la page — sinon le
   // module suivant, ouvert sans paramètre, repart sur un autre client.
   useEffect(() => {
-    if (!dossierId) return;
+    if (!fromUrl) return;
     try {
-      sessionStorage.setItem(storageKey, dossierId);
+      sessionStorage.setItem(storageKey, fromUrl);
     } catch {
-      // Stockage indisponible (navigation privée) : l'URL suffit.
+      // Stockage indisponible (navigation privée) : l’URL suffit.
     }
-  }, [dossierId, storageKey]);
+  }, [fromUrl, storageKey]);
 
   // Reprise du dernier dossier consulté quand on arrive sans paramètre.
   useEffect(() => {
-    if (!dossierId || fromUrl === dossierId) return;
+    if (!fromStorage || fromUrl) return;
     setSearchParams(
       (current) => {
         const next = new URLSearchParams(current);
-        next.set("dossierId", dossierId);
+        next.set("dossierId", fromStorage);
         return next;
       },
       { replace: true },
     );
-  }, [dossierId, fromUrl, setSearchParams]);
+  }, [fromStorage, fromUrl, setSearchParams]);
 
   const setDossierId = useCallback(
     (value: string) => {
-      setInternal(value);
       try {
         if (value) sessionStorage.setItem(storageKey, value);
         else sessionStorage.removeItem(storageKey);

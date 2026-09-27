@@ -197,6 +197,9 @@ export function DossierFormDialog({
         queryKey: ["dossiers", organizationId],
       });
       await queryClient.invalidateQueries({
+        queryKey: ["dossier-options", organizationId],
+      });
+      await queryClient.invalidateQueries({
         queryKey: ["dossier", organizationId, saved.id],
       });
       onSaved?.(saved);

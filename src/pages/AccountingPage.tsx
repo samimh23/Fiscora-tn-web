@@ -629,8 +629,12 @@ export function AccountingPage() {
               Impossible de charger le dossier sélectionné.
             </Alert>
           )}
-          {dossier.data && (
+          {dossier.isLoading && (
+            <QueryState loading error={false} />
+          )}
+          {dossier.data?.id === dossierId && (
             <DossierAccountingPanel
+              key={dossierId}
               organizationId={organizationId}
               dossierId={dossierId}
               archived={dossier.data.status === "ARCHIVE"}

@@ -33,8 +33,16 @@ export function DossierSelector({
     enabled: Boolean(organization?.id),
   });
   useEffect(() => {
-    if (!value && query.data?.items[0]) onChange(query.data.items[0].id);
-  }, [onChange, query.data?.items, value]);
+    if (query.isFetching || !query.data) return;
+    const items = query.data.items;
+    if (!items.length) {
+      if (value) onChange("");
+      return;
+    }
+    if (!value || !items.some((item) => item.id === value)) {
+      onChange(items[0].id);
+    }
+  }, [onChange, query.data, query.isFetching, value]);
   return (
     <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 300 } }}>
       <InputLabel>Dossier client</InputLabel>
