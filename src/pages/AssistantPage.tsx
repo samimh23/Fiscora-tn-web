@@ -39,7 +39,7 @@ interface AssistantCitation {
   sourceId: string;
   sourceName: string;
   pageNumber: number | null;
-  kind?: "DOCUMENT" | "PRODUCT_HELP";
+  kind?: "DOCUMENT" | "BUSINESS_INVOICE" | "PRODUCT_HELP";
   path?: string;
 }
 
@@ -69,6 +69,7 @@ interface AssistantIndexStatus {
   processing: number;
   failed: number;
   indexed: number;
+  structuredInvoices?: number;
   lastProcessedAtUtc: string | null;
 }
 
@@ -288,7 +289,8 @@ export function AssistantPage() {
                     >
                       Posez une question sur la page ou une procédure Fiscora.
                       Avec un dossier sélectionné, vous pouvez aussi interroger
-                      ses pièces validées. L’assistant n’exécute aucune action.
+                      ses pièces validées et ses factures métier. L’assistant
+                      n’exécute aucune action.
                     </Typography>
                   </Box>
                   <Stack
@@ -355,7 +357,6 @@ export function AssistantPage() {
                                 label={`[${citation.label}] ${citation.sourceName}`}
                                 variant="outlined"
                                 onClick={
-                                  citation.kind === "PRODUCT_HELP" &&
                                   citation.path
                                     ? () => navigate(citation.path!)
                                     : undefined
@@ -477,9 +478,17 @@ export function AssistantPage() {
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
                   Les extractions validées sont indexées automatiquement. Les
-                  brouillons et pièces rejetées restent exclus. Utilisez la
-                  reconstruction seulement pour réparer ou régénérer l’index.
+                  factures validées ou comptabilisées sont interrogées
+                  directement depuis la comptabilité. Les brouillons et pièces
+                  rejetées restent exclus.
                 </Typography>
+                {automaticIndex.data && (
+                  <Alert severity="success">
+                    {automaticIndex.data.indexed} document(s) indexé(s),{" "}
+                    {automaticIndex.data.structuredInvoices ?? 0} facture(s)
+                    structurée(s) disponible(s).
+                  </Alert>
+                )}
                 {indexStatus && <Alert severity="success">{indexStatus}</Alert>}
                 {automaticIndex.data &&
                   automaticIndex.data.pending +

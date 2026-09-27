@@ -36,7 +36,7 @@ interface WidgetCitation {
   chunkId: string;
   label: string;
   sourceName: string;
-  kind?: "DOCUMENT" | "PRODUCT_HELP";
+  kind?: "DOCUMENT" | "BUSINESS_INVOICE" | "PRODUCT_HELP";
   path?: string;
 }
 
@@ -355,7 +355,7 @@ export function AssistantWidget() {
                             label={citation.sourceName}
                             variant="outlined"
                             onClick={
-                              citation.kind === "PRODUCT_HELP" && citation.path
+                              citation.path
                                 ? () => navigate(citation.path!)
                                 : undefined
                             }
