@@ -32,35 +32,23 @@ import { useAuth } from "../auth/AuthContext";
 import { PageHeader } from "../components/PageHeader";
 import { DossierSelector } from "../components/WorkspaceTools";
 import { useDossierSelection } from "../hooks/useDossierSelection";
-
-interface AssistantCitation {
-  label: string;
-  chunkId: string;
-  sourceId: string;
-  sourceName: string;
-  pageNumber: number | null;
-  kind?: "DOCUMENT" | "BUSINESS_INVOICE" | "PRODUCT_HELP";
-  path?: string;
-}
-
-interface AssistantAction {
-  label: string;
-  path: string;
-}
+import {
+  conversationStorageKey,
+  fetchAssistantHistory,
+  readConversationStartedAt,
+  startNewConversation,
+  turnsToMessages,
+  type AssistantAction,
+  type AssistantCitation,
+  type AssistantHistoryCursor,
+  type AssistantMessage,
+} from "../features/assistant/history";
 
 interface AssistantAnswer {
   id: string;
   answer: string;
   citations: AssistantCitation[];
   model: string;
-  actions?: AssistantAction[];
-}
-
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-  citations?: AssistantCitation[];
   actions?: AssistantAction[];
 }
 
@@ -84,7 +72,7 @@ function errorMessage(error: unknown, fallback: string) {
 }
 
 export function AssistantPage() {
-  const { organization } = useAuth();
+  const { organization, session } = useAuth();
   const organizationId = organization?.id ?? "";
   const location = useLocation();
   const navigate = useNavigate();
@@ -92,16 +80,52 @@ export function AssistantPage() {
   const [question, setQuestion] = useState("");
   const [error, setError] = useState("");
   const [indexStatus, setIndexStatus] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<AssistantMessage[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyCursor, setHistoryCursor] =
+    useState<AssistantHistoryCursor | null>(null);
+  const [conversationStartedAt, setConversationStartedAt] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState("");
   const conversationEndRef = useRef<HTMLDivElement | null>(null);
   const endpoint = `/api/organizations/${organizationId}/dossiers/${dossierId}/assistant`;
+  const conversationKey = conversationStorageKey(
+    organizationId,
+    dossierId,
+    session?.user.id ?? "anonymous",
+  );
 
   useEffect(() => {
     setMessages([]);
     setError("");
     setIndexStatus("");
-  }, [dossierId]);
+    setHistoryCursor(null);
+    const startedAt = dossierId
+      ? readConversationStartedAt(conversationKey)
+      : "";
+    setConversationStartedAt(startedAt);
+    if (!organizationId || !dossierId) return;
+    let active = true;
+    setHistoryLoading(true);
+    fetchAssistantHistory(organizationId, dossierId, startedAt)
+      .then((page) => {
+        if (!active) return;
+        setMessages(turnsToMessages(page.items));
+        setHistoryCursor(page.nextCursor);
+      })
+      .catch((reason) => {
+        if (active) {
+          setError(
+            errorMessage(reason, "Impossible de charger la conversation."),
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setHistoryLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [conversationKey, dossierId, organizationId]);
 
   const automaticIndex = useQuery({
     queryKey: ["assistant-index-status", organizationId, dossierId],
@@ -144,6 +168,7 @@ export function AssistantPage() {
           question: text,
           currentPath: `${location.pathname}${location.search}`,
           dossierId: dossierId || undefined,
+          conversationStartedAt: conversationStartedAt || undefined,
         },
       ),
     onSuccess: (result) => {
@@ -174,7 +199,7 @@ export function AssistantPage() {
 
   const send = (text = question) => {
     const clean = text.trim();
-    if (!clean || !organizationId || ask.isPending) return;
+    if (!clean || !organizationId || ask.isPending || historyLoading) return;
     setError("");
     setMessages((current) => [
       ...current,
@@ -184,7 +209,26 @@ export function AssistantPage() {
     ask.mutate(clean);
   };
 
-  const copyAnswer = async (message: ChatMessage) => {
+  const loadOlder = async () => {
+    if (!historyCursor || historyLoading) return;
+    setHistoryLoading(true);
+    try {
+      const page = await fetchAssistantHistory(
+        organizationId,
+        dossierId,
+        conversationStartedAt,
+        historyCursor,
+      );
+      setMessages((current) => [...turnsToMessages(page.items), ...current]);
+      setHistoryCursor(page.nextCursor);
+    } catch (reason) {
+      setError(errorMessage(reason, "Impossible de charger les messages."));
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const copyAnswer = async (message: AssistantMessage) => {
     await navigator.clipboard.writeText(message.text);
     setCopiedMessageId(message.id);
     window.setTimeout(() => setCopiedMessageId(""), 1500);
@@ -218,7 +262,10 @@ export function AssistantPage() {
             color="inherit"
             startIcon={<RestartAltRounded />}
             onClick={() => {
+              const startedAt = startNewConversation(conversationKey);
+              setConversationStartedAt(startedAt);
               setMessages([]);
+              setHistoryCursor(null);
               setError("");
             }}
           >
@@ -303,7 +350,9 @@ export function AssistantPage() {
                         label={suggestion}
                         variant="outlined"
                         onClick={() => send(suggestion)}
-                        disabled={!organizationId || ask.isPending}
+                        disabled={
+                          !organizationId || ask.isPending || historyLoading
+                        }
                         sx={{ height: "auto", py: 0.5, maxWidth: "100%" }}
                       />
                     ))}
@@ -311,6 +360,19 @@ export function AssistantPage() {
                 </Stack>
               ) : (
                 <Stack spacing={2}>
+                  {historyCursor && (
+                    <Button
+                      size="small"
+                      color="inherit"
+                      onClick={() => void loadOlder()}
+                      disabled={historyLoading}
+                      sx={{ alignSelf: "center" }}
+                    >
+                      {historyLoading
+                        ? "Chargement…"
+                        : "Charger les messages précédents"}
+                    </Button>
+                  )}
                   {messages.map((message) => (
                     <Box
                       key={message.id}
@@ -442,7 +504,7 @@ export function AssistantPage() {
                     send();
                   }
                 }}
-                disabled={!organizationId || ask.isPending}
+                disabled={!organizationId || ask.isPending || historyLoading}
                 helperText="Entrée pour envoyer · Maj + Entrée pour une nouvelle ligne"
               />
               <Button
@@ -455,7 +517,12 @@ export function AssistantPage() {
                   )
                 }
                 onClick={() => send()}
-                disabled={!question.trim() || !organizationId || ask.isPending}
+                disabled={
+                  !question.trim() ||
+                  !organizationId ||
+                  ask.isPending ||
+                  historyLoading
+                }
                 sx={{ minWidth: 120, mb: { sm: 3 } }}
               >
                 Envoyer

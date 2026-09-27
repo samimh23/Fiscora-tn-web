@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Alert,
   Box,
+  Button,
   Chip,
   CircularProgress,
   Fab,
@@ -22,6 +23,7 @@ import {
   CloseRounded,
   DescriptionOutlined,
   LaunchRounded,
+  RestartAltRounded,
   SendRounded,
   SmartToyOutlined,
   SyncRounded,
@@ -31,33 +33,23 @@ import { api, ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { useOptionalWorkSession } from "../time-tracking/WorkSessionContext";
 import type { DossierSummary, PagedResponse } from "../types/api";
-
-interface WidgetCitation {
-  chunkId: string;
-  label: string;
-  sourceName: string;
-  kind?: "DOCUMENT" | "BUSINESS_INVOICE" | "PRODUCT_HELP";
-  path?: string;
-}
-
-interface WidgetAction {
-  label: string;
-  path: string;
-}
+import {
+  conversationStorageKey,
+  fetchAssistantHistory,
+  readConversationStartedAt,
+  startNewConversation,
+  turnsToMessages,
+  type AssistantAction,
+  type AssistantCitation,
+  type AssistantHistoryCursor,
+  type AssistantMessage,
+} from "../features/assistant/history";
 
 interface WidgetAnswer {
   id: string;
   answer: string;
-  citations: WidgetCitation[];
-  actions?: WidgetAction[];
-}
-
-interface WidgetMessage {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-  citations?: WidgetCitation[];
-  actions?: WidgetAction[];
+  citations: AssistantCitation[];
+  actions?: AssistantAction[];
 }
 
 function requestError(error: unknown) {
@@ -67,7 +59,7 @@ function requestError(error: unknown) {
 }
 
 export function AssistantWidget() {
-  const { organization, can } = useAuth();
+  const { organization, can, session } = useAuth();
   const workSession = useOptionalWorkSession()?.session ?? null;
   const location = useLocation();
   const navigate = useNavigate();
@@ -75,13 +67,22 @@ export function AssistantWidget() {
   const [dossierId, setDossierId] = useState("");
   const [question, setQuestion] = useState("");
   const [error, setError] = useState("");
-  const [messages, setMessages] = useState<WidgetMessage[]>([]);
+  const [messages, setMessages] = useState<AssistantMessage[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyCursor, setHistoryCursor] =
+    useState<AssistantHistoryCursor | null>(null);
+  const [conversationStartedAt, setConversationStartedAt] = useState("");
   const endRef = useRef<HTMLDivElement | null>(null);
   const organizationId = organization?.id ?? "";
   const isClientPortal =
     organization?.role.toLocaleLowerCase("fr").includes("portail client") ??
     false;
   const storageKey = `fiscora.lastDossier.${organizationId || "none"}`;
+  const conversationKey = conversationStorageKey(
+    organizationId,
+    dossierId,
+    session?.user.id ?? "anonymous",
+  );
   const pathDossierId = useMemo(
     () => location.pathname.match(/^\/dossiers\/([^/]+)/)?.[1] ?? "",
     [location.pathname],
@@ -113,6 +114,31 @@ export function AssistantWidget() {
   }, [organizationId]);
 
   useEffect(() => {
+    if (!open || !organizationId || !dossierId) return;
+    let active = true;
+    const startedAt = readConversationStartedAt(conversationKey);
+    setConversationStartedAt(startedAt);
+    setMessages([]);
+    setHistoryCursor(null);
+    setHistoryLoading(true);
+    fetchAssistantHistory(organizationId, dossierId, startedAt)
+      .then((page) => {
+        if (!active) return;
+        setMessages(turnsToMessages(page.items));
+        setHistoryCursor(page.nextCursor);
+      })
+      .catch((reason) => {
+        if (active) setError(requestError(reason));
+      })
+      .finally(() => {
+        if (active) setHistoryLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [conversationKey, dossierId, open, organizationId]);
+
+  useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -125,6 +151,7 @@ export function AssistantWidget() {
           question: text,
           currentPath: `${location.pathname}${location.search}`,
           dossierId: dossierId || undefined,
+          conversationStartedAt: conversationStartedAt || undefined,
         },
       ),
     onSuccess: (result) => {
@@ -156,9 +183,36 @@ export function AssistantWidget() {
     window.sessionStorage.setItem(storageKey, value);
   };
 
+  const newConversation = () => {
+    const startedAt = startNewConversation(conversationKey);
+    setConversationStartedAt(startedAt);
+    setMessages([]);
+    setHistoryCursor(null);
+    setError("");
+  };
+
+  const loadOlder = async () => {
+    if (!historyCursor || historyLoading) return;
+    setHistoryLoading(true);
+    try {
+      const page = await fetchAssistantHistory(
+        organizationId,
+        dossierId,
+        conversationStartedAt,
+        historyCursor,
+      );
+      setMessages((current) => [...turnsToMessages(page.items), ...current]);
+      setHistoryCursor(page.nextCursor);
+    } catch (reason) {
+      setError(requestError(reason));
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   const send = () => {
     const clean = question.trim();
-    if (!clean || !organizationId || ask.isPending) return;
+    if (!clean || !organizationId || ask.isPending || historyLoading) return;
     setMessages((current) => [
       ...current,
       { id: `user-${Date.now()}`, role: "user", text: clean },
@@ -230,6 +284,17 @@ export function AssistantWidget() {
                     sx={{ color: "white" }}
                   >
                     <LaunchRounded fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {messages.length > 0 && (
+                <Tooltip title="Nouvelle conversation">
+                  <IconButton
+                    aria-label="Nouvelle conversation"
+                    onClick={newConversation}
+                    sx={{ color: "white" }}
+                  >
+                    <RestartAltRounded fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
@@ -324,6 +389,17 @@ export function AssistantWidget() {
               </Stack>
             ) : (
               <Stack spacing={1.25}>
+                {historyCursor && (
+                  <Button
+                    size="small"
+                    color="inherit"
+                    onClick={() => void loadOlder()}
+                    disabled={historyLoading}
+                    sx={{ alignSelf: "center" }}
+                  >
+                    {historyLoading ? "Chargement…" : "Charger les précédents"}
+                  </Button>
+                )}
                 {messages.map((message) => (
                   <Box
                     key={message.id}
@@ -422,13 +498,18 @@ export function AssistantWidget() {
                   send();
                 }
               }}
-              disabled={!organizationId || ask.isPending}
+              disabled={!organizationId || ask.isPending || historyLoading}
             />
             <IconButton
               color="primary"
               aria-label="Envoyer la question"
               onClick={send}
-              disabled={!question.trim() || !organizationId || ask.isPending}
+              disabled={
+                !question.trim() ||
+                !organizationId ||
+                ask.isPending ||
+                historyLoading
+              }
             >
               <SendRounded />
             </IconButton>
