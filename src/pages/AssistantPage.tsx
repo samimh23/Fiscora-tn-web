@@ -93,6 +93,10 @@ export function AssistantPage() {
     dossierId,
     session?.user.id ?? "anonymous",
   );
+  const activeConversation = useRef(conversationKey);
+  useEffect(() => {
+    activeConversation.current = conversationKey;
+  }, [conversationKey]);
 
   useEffect(() => {
     setMessages([]);
@@ -129,14 +133,11 @@ export function AssistantPage() {
 
   const automaticIndex = useQuery({
     queryKey: ["assistant-index-status", organizationId, dossierId],
-    queryFn: () =>
-      api.get<AssistantIndexStatus>(`${endpoint}/index-status`),
+    queryFn: () => api.get<AssistantIndexStatus>(`${endpoint}/index-status`),
     enabled: Boolean(organizationId && dossierId),
     refetchInterval: (query) => {
       const status = query.state.data;
-      return status && status.pending + status.processing > 0
-        ? 5_000
-        : 30_000;
+      return status && status.pending + status.processing > 0 ? 5_000 : 30_000;
     },
   });
 
@@ -161,7 +162,7 @@ export function AssistantPage() {
   });
 
   const ask = useMutation({
-    mutationFn: (text: string) =>
+    mutationFn: ({ text }: { text: string; conversationKey: string }) =>
       api.post<AssistantAnswer>(
         `/api/organizations/${organizationId}/assistant/ask`,
         {
@@ -171,7 +172,8 @@ export function AssistantPage() {
           conversationStartedAt: conversationStartedAt || undefined,
         },
       ),
-    onSuccess: (result) => {
+    onSuccess: (result, request) => {
+      if (request.conversationKey !== activeConversation.current) return;
       setError("");
       setMessages((current) => [
         ...current,
@@ -184,13 +186,15 @@ export function AssistantPage() {
         },
       ]);
     },
-    onError: (reason) =>
+    onError: (reason, request) => {
+      if (request.conversationKey !== activeConversation.current) return;
       setError(
         errorMessage(
           reason,
           "L’assistant n’a pas pu répondre. Réessayez dans un instant.",
         ),
-      ),
+      );
+    },
   });
 
   useEffect(() => {
@@ -206,7 +210,7 @@ export function AssistantPage() {
       { id: `user-${Date.now()}`, role: "user", text: clean },
     ]);
     setQuestion("");
-    ask.mutate(clean);
+    ask.mutate({ text: clean, conversationKey });
   };
 
   const loadOlder = async () => {
@@ -558,8 +562,7 @@ export function AssistantPage() {
                 )}
                 {indexStatus && <Alert severity="success">{indexStatus}</Alert>}
                 {automaticIndex.data &&
-                  automaticIndex.data.pending +
-                    automaticIndex.data.processing >
+                  automaticIndex.data.pending + automaticIndex.data.processing >
                     0 && (
                     <Alert severity="info">
                       Mise à jour automatique en cours pour{" "}

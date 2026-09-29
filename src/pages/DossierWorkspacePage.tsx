@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -16,6 +15,7 @@ import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { DossierSelector } from "../components/WorkspaceTools";
 import { PageHeader } from "../components/PageHeader";
+import { useDossierSelection } from "../hooks/useDossierSelection";
 import { DossierTasksPanel } from "../features/operations/DossierTasksPanel";
 import { DossierObligationsPanel } from "../features/operations/DossierObligationsPanel";
 import { DossierDocumentsPanel } from "../features/operations/DossierDocumentsPanel";
@@ -221,19 +221,7 @@ export function DossierWorkspacePage({ module }: { module: WorkspaceModule }) {
   const { organization, can } = useAuth();
   const organizationId = organization?.id ?? "";
   const [searchParams, setSearchParams] = useSearchParams();
-  const [dossierId, setDossierId] = useState(
-    searchParams.get("dossierId") ?? "",
-  );
-  useEffect(() => {
-    setDossierId(searchParams.get("dossierId") ?? "");
-  }, [searchParams]);
-  const handleDossierChange = (value: string) => {
-    setDossierId(value);
-    const next = new URLSearchParams(searchParams);
-    if (value) next.set("dossierId", value);
-    else next.delete("dossierId");
-    setSearchParams(next, { replace: true });
-  };
+  const [dossierId, handleDossierChange] = useDossierSelection();
   const dossier = useQuery({
     queryKey: ["dossier", organizationId, dossierId],
     queryFn: () =>

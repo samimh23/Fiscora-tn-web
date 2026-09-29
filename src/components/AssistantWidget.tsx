@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import {
   Alert,
   Box,
@@ -32,7 +32,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { useOptionalWorkSession } from "../time-tracking/WorkSessionContext";
-import type { DossierSummary, PagedResponse } from "../types/api";
+import { useCurrentDossier } from "../hooks/useDossierSelection";
 import {
   conversationStorageKey,
   fetchAssistantHistory,
@@ -64,7 +64,11 @@ export function AssistantWidget() {
   const location = useLocation();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [dossierId, setDossierId] = useState("");
+  const {
+    dossierId,
+    selectDossier: setDossierId,
+    dossiers,
+  } = useCurrentDossier();
   const [question, setQuestion] = useState("");
   const [error, setError] = useState("");
   const [messages, setMessages] = useState<AssistantMessage[]>([]);
@@ -73,65 +77,20 @@ export function AssistantWidget() {
     useState<AssistantHistoryCursor | null>(null);
   const [conversationStartedAt, setConversationStartedAt] = useState("");
   const endRef = useRef<HTMLDivElement | null>(null);
-  const lastPageDossierIdRef = useRef("");
   const organizationId = organization?.id ?? "";
   const isClientPortal =
     organization?.role.toLocaleLowerCase("fr").includes("portail client") ??
     false;
-  const storageKey = `fiscora.lastDossier.${organizationId || "none"}`;
   const conversationKey = conversationStorageKey(
     organizationId,
     dossierId,
     session?.user.id ?? "anonymous",
   );
-  const pageDossierId = useMemo(() => {
-    const queryDossierId = new URLSearchParams(location.search).get(
-      "dossierId",
-    );
-    return (
-      queryDossierId ??
-      location.pathname.match(/^\/(?:portail\/)?dossiers\/([^/]+)/)?.[1] ??
-      ""
-    );
-  }, [location.pathname, location.search]);
-
-  const dossiers = useQuery({
-    queryKey: ["dossier-options", organizationId, "assistant-widget"],
-    queryFn: () =>
-      api.get<PagedResponse<DossierSummary>>(
-        `/api/organizations/${organizationId}/dossiers?page=1&pageSize=100`,
-      ),
-    enabled: Boolean(open && organizationId),
-  });
-
+  const activeConversation = useRef(conversationKey);
   useEffect(() => {
-    if (!open || !dossiers.data?.items.length) return;
-    const available = dossiers.data.items;
-    if (!pageDossierId) lastPageDossierIdRef.current = "";
-    const pageDossierIsAvailable = available.some(
-      (item) => item.id === pageDossierId,
-    );
-    if (
-      pageDossierId &&
-      pageDossierIsAvailable &&
-      lastPageDossierIdRef.current !== pageDossierId
-    ) {
-      lastPageDossierIdRef.current = pageDossierId;
-      setDossierId(pageDossierId);
-      window.sessionStorage.setItem(storageKey, pageDossierId);
-      return;
-    }
-    if (dossierId && available.some((item) => item.id === dossierId)) return;
-    const stored = window.sessionStorage.getItem(storageKey) ?? "";
-    const preferred = [pageDossierId, stored].find((candidate) =>
-      available.some((item) => item.id === candidate),
-    );
-    setDossierId(preferred ?? available[0].id);
-  }, [dossierId, dossiers.data?.items, open, pageDossierId, storageKey]);
-
+    activeConversation.current = conversationKey;
+  }, [conversationKey]);
   useEffect(() => {
-    lastPageDossierIdRef.current = "";
-    setDossierId("");
     setMessages([]);
     setError("");
   }, [organizationId]);
@@ -142,6 +101,7 @@ export function AssistantWidget() {
     const startedAt = readConversationStartedAt(conversationKey);
     setConversationStartedAt(startedAt);
     setMessages([]);
+    setError("");
     setHistoryCursor(null);
     setHistoryLoading(true);
     fetchAssistantHistory(organizationId, dossierId, startedAt)
@@ -167,7 +127,7 @@ export function AssistantWidget() {
 
   const accountingEndpoint = `/api/organizations/${organizationId}/dossiers/${dossierId}/assistant`;
   const ask = useMutation({
-    mutationFn: (text: string) =>
+    mutationFn: ({ text }: { text: string; conversationKey: string }) =>
       api.post<WidgetAnswer>(
         `/api/organizations/${organizationId}/assistant/ask`,
         {
@@ -177,7 +137,8 @@ export function AssistantWidget() {
           conversationStartedAt: conversationStartedAt || undefined,
         },
       ),
-    onSuccess: (result) => {
+    onSuccess: (result, request) => {
+      if (request.conversationKey !== activeConversation.current) return;
       setError("");
       setMessages((current) => [
         ...current,
@@ -190,7 +151,10 @@ export function AssistantWidget() {
         },
       ]);
     },
-    onError: (reason) => setError(requestError(reason)),
+    onError: (reason, request) => {
+      if (request.conversationKey === activeConversation.current)
+        setError(requestError(reason));
+    },
   });
 
   const reindex = useMutation({
@@ -203,7 +167,6 @@ export function AssistantWidget() {
     setDossierId(value);
     setMessages([]);
     setError("");
-    window.sessionStorage.setItem(storageKey, value);
   };
 
   const newConversation = () => {
@@ -242,7 +205,7 @@ export function AssistantWidget() {
     ]);
     setQuestion("");
     setError("");
-    ask.mutate(clean);
+    ask.mutate({ text: clean, conversationKey });
   };
 
   const launcherBottom = workSession ? 112 : 20;
@@ -337,8 +300,11 @@ export function AssistantWidget() {
             sx={{ p: 1.5, alignItems: "center" }}
           >
             <FormControl size="small" fullWidth>
-              <InputLabel>Dossier client</InputLabel>
+              <InputLabel id="assistant-dossier-label">
+                Dossier client
+              </InputLabel>
               <Select
+                labelId="assistant-dossier-label"
                 value={dossierId}
                 label="Dossier client"
                 onChange={(event) => chooseDossier(event.target.value)}

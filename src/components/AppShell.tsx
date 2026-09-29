@@ -5,7 +5,6 @@ import {
   NavLink,
   Outlet,
   useLocation,
-  useNavigate,
 } from "react-router-dom";
 import {
   AppBar,
@@ -66,15 +65,12 @@ import {
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
-import type {
-  DossierSummary,
-  NotificationItem,
-  PagedResponse,
-} from "../types/api";
+import type { NotificationItem } from "../types/api";
 import { Brand } from "./Brand";
 import { AssistantWidget } from "./AssistantWidget";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useClientPortalRealtimeNotifications } from "../realtime/clientPortal";
+import { useCurrentDossier } from "../hooks/useDossierSelection";
 
 const drawerWidth = 248;
 
@@ -248,9 +244,11 @@ export function AppShell() {
   const theme = useTheme();
   const desktop = useMediaQuery(theme.breakpoints.up("lg"));
   const location = useLocation();
-  const navigate = useNavigate();
-  const dossierStorageKey = `fiscora.lastDossier.${organization?.id ?? "none"}`;
-  const [activeDossierId, setActiveDossierId] = useState("");
+  const {
+    dossierId: activeDossierId,
+    selectDossier: selectActiveDossier,
+    dossiers: dossierOptions,
+  } = useCurrentDossier();
 
   useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {
@@ -290,91 +288,6 @@ export function AppShell() {
       ]),
     ),
   );
-
-  const dossierOptions = useQuery({
-    queryKey: ["dossier-options", organization?.id, "global-search"],
-    queryFn: () =>
-      api.get<PagedResponse<DossierSummary>>(
-        `/api/organizations/${organization?.id}/dossiers?page=1&pageSize=100`,
-      ),
-    enabled: Boolean(organization?.id && can("dossiers.view")),
-  });
-
-  useEffect(() => {
-    const queryDossierId = new URLSearchParams(location.search).get(
-      "dossierId",
-    );
-    const routeDossierId = location.pathname.match(
-      /^\/(?:portail\/)?dossiers\/([^/]+)/,
-    )?.[1];
-    const locationDossierId = queryDossierId ?? routeDossierId ?? "";
-    if (!locationDossierId) return;
-    setActiveDossierId(locationDossierId);
-    try {
-      window.sessionStorage.setItem(dossierStorageKey, locationDossierId);
-    } catch {
-      // The URL remains authoritative when browser storage is unavailable.
-    }
-  }, [dossierStorageKey, location.pathname, location.search]);
-
-  useEffect(() => {
-    let stored = "";
-    try {
-      stored = window.sessionStorage.getItem(dossierStorageKey) ?? "";
-    } catch {
-      // Keep an empty selection when browser storage is unavailable.
-    }
-    setActiveDossierId(stored);
-  }, [dossierStorageKey]);
-
-  useEffect(() => {
-    const items = dossierOptions.data?.items;
-    if (!items?.length) {
-      if (dossierOptions.data) setActiveDossierId("");
-      return;
-    }
-    if (items.some((item) => item.id === activeDossierId)) return;
-    let stored = "";
-    try {
-      stored = window.sessionStorage.getItem(dossierStorageKey) ?? "";
-    } catch {
-      // Fall back to the first accessible dossier.
-    }
-    const next = items.some((item) => item.id === stored)
-      ? stored
-      : items[0].id;
-    setActiveDossierId(next);
-    try {
-      window.sessionStorage.setItem(dossierStorageKey, next);
-    } catch {
-      // The in-memory selection remains usable for this page.
-    }
-  }, [activeDossierId, dossierOptions.data, dossierStorageKey]);
-
-  const selectActiveDossier = (dossierId: string) => {
-    if (!dossierId) return;
-    setActiveDossierId(dossierId);
-    try {
-      window.sessionStorage.setItem(dossierStorageKey, dossierId);
-    } catch {
-      // The URL below still carries the selection on dossier-aware pages.
-    }
-    if (/^\/dossiers\/[^/]+/.test(location.pathname)) {
-      navigate(`/dossiers/${encodeURIComponent(dossierId)}`);
-      return;
-    }
-    const dossierAwarePage =
-      location.pathname !== "/" &&
-      location.pathname !== "/dossiers" &&
-      !location.pathname.startsWith("/administration-plateforme") &&
-      !location.pathname.startsWith("/securite");
-    if (!dossierAwarePage) return;
-    const params = new URLSearchParams(location.search);
-    params.set("dossierId", dossierId);
-    navigate(`${location.pathname}?${params.toString()}${location.hash}`, {
-      replace: true,
-    });
-  };
 
   const navigationPath = (path: string) => {
     if (!activeDossierId || path === "/" || path === "/dossiers") return path;
@@ -589,8 +502,9 @@ export function AppShell() {
               display: { xs: "none", sm: "block" },
             }}
           >
-            <InputLabel>{t("Cabinet")}</InputLabel>
+            <InputLabel id="global-cabinet-label">{t("Cabinet")}</InputLabel>
             <Select
+              labelId="global-cabinet-label"
               value={organization?.id ?? ""}
               label={t("Cabinet")}
               onChange={(event) => selectOrganization(event.target.value)}

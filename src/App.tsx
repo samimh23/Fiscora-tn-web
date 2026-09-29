@@ -14,6 +14,7 @@ import { PlatformAdminShell } from "./components/PlatformAdminShell";
 import { RouteErrorPage } from "./components/RouteErrorPage";
 import { WorkSessionProvider } from "./time-tracking/WorkSessionContext";
 import { UnsavedChangesProvider } from "./unsaved-changes/UnsavedChangesProvider";
+import { DossierSelectionProvider } from "./components/DossierSelectionProvider";
 
 const AuthPage = lazy(() =>
   import("./pages/AuthPage").then((module) => ({ default: module.AuthPage })),
@@ -191,7 +192,9 @@ function ProtectedRoute() {
   // doit ramener le comptable où il travaillait, pas sur l'accueil.
   return isAuthenticated ? (
     <UnsavedChangesProvider>
-      <Outlet />
+      <DossierSelectionProvider>
+        <Outlet />
+      </DossierSelectionProvider>
     </UnsavedChangesProvider>
   ) : (
     <Navigate to="/connexion" replace state={{ from: location }} />
