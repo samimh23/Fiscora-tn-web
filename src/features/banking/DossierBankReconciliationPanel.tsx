@@ -59,6 +59,9 @@ const validTunisianIbanOrRib = (value: string) => {
   );
 };
 
+const isBankLedgerAccount = (account: LedgerAccount) =>
+  account.code.trim().replace(/\s+/g, "").startsWith("532");
+
 const statementLabels: Record<string, string> = {
   IMPORTE: "Importé",
   PARTIELLEMENT_RAPPROCHE: "Partiellement rapproché",
@@ -116,6 +119,18 @@ function BankAccountDialog({
   const [journalId, setJournalId] = useState(account?.journalId ?? "");
   const [currency, setCurrency] = useState(account?.currency ?? "TND");
   const [error, setError] = useState("");
+  const eligibleLedgerAccounts = accounts.filter(
+    (ledgerAccount) =>
+      ledgerAccount.isActive &&
+      ledgerAccount.allowsPosting &&
+      isBankLedgerAccount(ledgerAccount),
+  );
+  const selectedAccountIsIneligible = Boolean(
+    ledgerAccountId &&
+      !eligibleLedgerAccounts.some(
+        (ledgerAccount) => ledgerAccount.id === ledgerAccountId,
+      ),
+  );
   const mutation = useMutation({
     mutationFn: () => {
       if (!validTunisianIbanOrRib(iban)) {
@@ -175,6 +190,19 @@ function BankAccountDialog({
             {error}
           </Alert>
         )}
+        {eligibleLedgerAccounts.length === 0 && (
+          <Alert severity="warning" sx={{ gridColumn: "1 / -1" }}>
+            Aucun compte de banque saisissable n’est configuré. Créez d’abord
+            un compte 532 (par exemple 5321) dans le plan comptable du dossier.
+          </Alert>
+        )}
+        {selectedAccountIsIneligible && (
+          <Alert severity="warning" sx={{ gridColumn: "1 / -1" }}>
+            Le compte comptable actuellement associé n’appartient pas à la
+            classe 532. Sélectionnez un compte bancaire valide pour le
+            corriger.
+          </Alert>
+        )}
         <TextField
           label="Nom interne"
           value={name}
@@ -220,12 +248,13 @@ function BankAccountDialog({
           label="Compte comptable banque"
           value={ledgerAccountId}
           onChange={setLedgerAccountId}
-          options={accounts
-            .filter((account) => account.isActive && account.allowsPosting)
-            .map((account) => ({
-              value: account.id,
-              label: `${account.code} — ${account.name}`,
-            }))}
+          required
+          error={selectedAccountIsIneligible}
+          helperText="Uniquement le compte 532 — Banques et ses subdivisions."
+          options={eligibleLedgerAccounts.map((ledgerAccount) => ({
+            value: ledgerAccount.id,
+            label: `${ledgerAccount.code} — ${ledgerAccount.name}`,
+          }))}
         />
         <SearchableSelect
           label="Journal de banque"
