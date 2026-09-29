@@ -21,12 +21,12 @@ export function PlatformAdminShell() {
   const { session } = useAuth();
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#f3f4f8" }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "#f2f5f3" }}>
       <AppBar
         position="sticky"
         elevation={0}
         sx={{
-          bgcolor: "#171c35",
+          bgcolor: "#102d25",
           borderBottom: "1px solid rgba(255,255,255,.1)",
         }}
       >
@@ -39,7 +39,7 @@ export function PlatformAdminShell() {
               display: "grid",
               placeItems: "center",
               bgcolor: "#f2c56b",
-              color: "#171c35",
+              color: "#102d25",
             }}
           >
             <AdminPanelSettingsOutlined />
@@ -53,9 +53,9 @@ export function PlatformAdminShell() {
                 label="Administration plateforme"
                 size="small"
                 sx={{
-                  color: "#d9ddff",
-                  bgcolor: "rgba(128,139,255,.16)",
-                  border: "1px solid rgba(160,169,255,.25)",
+                  color: "#d9eee6",
+                  bgcolor: "rgba(129,199,174,.12)",
+                  border: "1px solid rgba(167,220,201,.2)",
                 }}
               />
             </Stack>
@@ -78,7 +78,7 @@ export function PlatformAdminShell() {
             Retour au cabinet
           </Button>
           <Avatar
-            sx={{ width: 36, height: 36, bgcolor: "#6672d8", fontSize: 13 }}
+            sx={{ width: 36, height: 36, bgcolor: "#2f7d5d", fontSize: 13 }}
           >
             {session?.user.fullName
               .split(" ")

@@ -3,15 +3,21 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AdminPanelSettingsOutlined,
   ApartmentOutlined,
+  ApiRounded,
+  BackupOutlined,
   BlockOutlined,
   CheckCircleOutlineRounded,
+  CloudQueueOutlined,
   DescriptionOutlined,
   DevicesOutlined,
+  EmailOutlined,
   GroupsOutlined,
   ManageAccountsOutlined,
+  ReceiptLongOutlined,
   RefreshRounded,
   RestartAltRounded,
   SearchRounded,
+  ShieldOutlined,
   StorageOutlined,
   SyncRounded,
   WarningAmberRounded,
@@ -71,6 +77,37 @@ const formatBytes = (value: number) => {
   if (value < 1024 ** 2) return `${(value / 1024).toFixed(1)} Ko`;
   if (value < 1024 ** 3) return `${(value / 1024 ** 2).toFixed(1)} Mo`;
   return `${(value / 1024 ** 3).toFixed(2)} Go`;
+};
+
+const serviceMeta = {
+  API: { icon: ApiRounded, color: "#345f9d", background: "#edf3fb" },
+  DATABASE: {
+    icon: StorageOutlined,
+    color: "#7a5d35",
+    background: "#f8f1e8",
+  },
+  OBJECT_STORAGE: {
+    icon: CloudQueueOutlined,
+    color: "#39717d",
+    background: "#eaf4f5",
+  },
+  EMAIL: { icon: EmailOutlined, color: "#7256a3", background: "#f3effa" },
+  BACKUPS: {
+    icon: BackupOutlined,
+    color: "#a4612f",
+    background: "#fbf1e8",
+  },
+  TTN: {
+    icon: ReceiptLongOutlined,
+    color: "#2f7d5d",
+    background: "#eaf4ef",
+  },
+} as const;
+
+const serviceColor = (status: string) => {
+  if (status === "NON_CONFIGURE") return "warning" as const;
+  if (status === "SIMULATION") return "info" as const;
+  return "success" as const;
 };
 
 type AdminAction =
@@ -218,6 +255,11 @@ export function PlatformAdminPage() {
   const copy = actionCopy(action);
   const mutationError =
     actionMutation.error instanceof Error ? actionMutation.error.message : null;
+  const serviceIssues =
+    overview.data?.services.filter((service) =>
+      ["NON_CONFIGURE", "INDISPONIBLE", "ERREUR"].includes(service.status),
+    ).length ?? 0;
+  const alertCount = overview.data?.alerts.length ?? 0;
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: ["platform-admin"] });
@@ -229,42 +271,129 @@ export function PlatformAdminPage() {
 
   return (
     <>
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={2}
+      <Card
         sx={{
-          mb: 3,
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", md: "center" },
+          mb: 2,
+          overflow: "hidden",
+          color: "#fff",
+          border: 0,
+          background:
+            "radial-gradient(circle at 82% 18%, rgba(242,197,107,.19), transparent 28%), linear-gradient(118deg, #102d25 0%, #164737 62%, #1a5944 100%)",
         }}
       >
-        <Box>
-          <Typography
-            variant="overline"
-            sx={{ color: "#6672d8", fontWeight: 700, letterSpacing: ".13em" }}
-          >
-            Administration Fiscora
-          </Typography>
-          <Typography
-            variant="h2"
-            sx={{ fontSize: { xs: 34, md: 46 }, mt: 0.4 }}
-          >
-            Vue de la plateforme
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.7 }}>
-            Sécurité, disponibilité et exploitation du service, sans ouvrir les
-            données comptables des clients.
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<RefreshRounded />}
-          onClick={() => void refresh()}
-          sx={{ bgcolor: "#26305f", "&:hover": { bgcolor: "#171c35" } }}
+        <CardContent
+          sx={{
+            p: { xs: 2.5, md: 3.5 },
+            "&:last-child": { pb: { xs: 2.5, md: 3.5 } },
+          }}
         >
-          Actualiser
-        </Button>
-      </Stack>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            spacing={3}
+            sx={{
+              justifyContent: "space-between",
+              alignItems: { md: "center" },
+            }}
+          >
+            <Box sx={{ maxWidth: 720 }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ alignItems: "center", mb: 1.2 }}
+              >
+                <ShieldOutlined sx={{ color: "#f2c56b", fontSize: 20 }} />
+                <Typography
+                  variant="overline"
+                  sx={{
+                    color: "rgba(255,255,255,.72)",
+                    letterSpacing: ".12em",
+                  }}
+                >
+                  Administration de la plateforme
+                </Typography>
+              </Stack>
+              <Typography
+                component="h1"
+                sx={{
+                  fontSize: { xs: 30, md: 40 },
+                  fontWeight: 700,
+                  lineHeight: 1.12,
+                  letterSpacing: "-.025em",
+                }}
+              >
+                Centre de contrôle Fiscora
+              </Typography>
+              <Typography
+                sx={{ mt: 1.1, color: "rgba(255,255,255,.72)", maxWidth: 640 }}
+              >
+                Suivez la disponibilité, la sécurité et l’activité globale sans
+                accéder aux données comptables des cabinets.
+              </Typography>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ mt: 2.2, flexWrap: "wrap", gap: 1 }}
+              >
+                <Chip
+                  icon={<CheckCircleOutlineRounded />}
+                  label={
+                    serviceIssues
+                      ? `${serviceIssues} service(s) à vérifier`
+                      : "Services essentiels disponibles"
+                  }
+                  size="small"
+                  sx={{
+                    color: serviceIssues ? "#ffe1b2" : "#d8f4e8",
+                    bgcolor: "rgba(255,255,255,.1)",
+                    border: "1px solid rgba(255,255,255,.14)",
+                    "& .MuiChip-icon": { color: "inherit" },
+                  }}
+                />
+                <Chip
+                  label={`${alertCount} alerte${alertCount === 1 ? "" : "s"}`}
+                  size="small"
+                  sx={{
+                    color: "rgba(255,255,255,.8)",
+                    bgcolor: "rgba(255,255,255,.07)",
+                    border: "1px solid rgba(255,255,255,.12)",
+                  }}
+                />
+              </Stack>
+            </Box>
+            <Stack
+              sx={{
+                alignItems: { xs: "flex-start", md: "flex-end" },
+                minWidth: 210,
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{ color: "rgba(255,255,255,.58)", mb: 1 }}
+              >
+                Dernière mise à jour ·{" "}
+                {formatDate(overview.data?.generatedAtUtc ?? null)}
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<RefreshRounded />}
+                onClick={() => void refresh()}
+                disabled={overview.isFetching}
+                sx={{
+                  color: "#14382d",
+                  bgcolor: "#fff",
+                  px: 2.2,
+                  "&:hover": { bgcolor: "#f4f7f5" },
+                  "&.Mui-disabled": { bgcolor: "rgba(255,255,255,.7)" },
+                }}
+              >
+                {overview.isFetching
+                  ? "Actualisation…"
+                  : "Actualiser les données"}
+              </Button>
+            </Stack>
+          </Stack>
+        </CardContent>
+      </Card>
 
       {hasError && (
         <Alert severity="error" sx={{ mb: 2.5 }}>
@@ -310,7 +439,10 @@ export function PlatformAdminPage() {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", lg: "1.2fr .8fr" },
+          gridTemplateColumns: {
+            xs: "1fr",
+            lg: "minmax(0, 1.45fr) minmax(320px, .55fr)",
+          },
           gap: 2.5,
           mt: 2.5,
         }}
@@ -319,44 +451,103 @@ export function PlatformAdminPage() {
           <CardContent sx={{ p: 3 }}>
             <Stack
               direction="row"
-              spacing={1.2}
-              sx={{ mb: 2, alignItems: "center" }}
+              sx={{
+                mb: 2.5,
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+              }}
             >
-              <CheckCircleOutlineRounded sx={{ color: "#6672d8" }} />
-              <Typography variant="h3">État des services</Typography>
+              <Box>
+                <Typography variant="h3">Services et intégrations</Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.4 }}
+                >
+                  Configuration et disponibilité des briques essentielles.
+                </Typography>
+              </Box>
+              <Chip
+                label={`${overview.data?.services.length ?? 0} services`}
+                size="small"
+                variant="outlined"
+              />
             </Stack>
             {overview.isLoading && <CircularProgress size={28} />}
-            <Stack divider={<Divider flexItem />} spacing={0}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "1fr",
+                  sm: "repeat(2, minmax(0, 1fr))",
+                },
+                gap: 1.25,
+              }}
+            >
               {overview.data?.services.map((service) => (
-                <Stack
+                <Box
                   key={service.code}
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1.5}
-                  sx={{ py: 1.6, justifyContent: "space-between" }}
+                  sx={{
+                    minHeight: 118,
+                    p: 1.75,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 2.5,
+                    bgcolor: "#fbfcfb",
+                  }}
                 >
-                  <Box>
-                    <Typography sx={{ fontWeight: 600 }}>
-                      {service.label}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {service.detail}
-                    </Typography>
-                  </Box>
-                  <Chip
-                    label={service.status.replace(/_/g, " ")}
-                    size="small"
-                    color={
-                      service.status === "NON_CONFIGURE"
-                        ? "warning"
-                        : service.status === "SIMULATION"
-                          ? "info"
-                          : "success"
-                    }
-                    variant="outlined"
-                  />
-                </Stack>
+                  {(() => {
+                    const meta = serviceMeta[
+                      service.code as keyof typeof serviceMeta
+                    ] ?? {
+                      icon: CheckCircleOutlineRounded,
+                      color: "#45665b",
+                      background: "#edf3f0",
+                    };
+                    const Icon = meta.icon;
+                    return (
+                      <Stack
+                        direction="row"
+                        sx={{
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 34,
+                            height: 34,
+                            borderRadius: 2,
+                            display: "grid",
+                            placeItems: "center",
+                            bgcolor: meta.background,
+                            color: meta.color,
+                          }}
+                        >
+                          <Icon sx={{ fontSize: 19 }} />
+                        </Box>
+                        <Chip
+                          label={service.status.replace(/_/g, " ")}
+                          size="small"
+                          color={serviceColor(service.status)}
+                          variant="outlined"
+                        />
+                      </Stack>
+                    );
+                  })()}
+                  <Typography sx={{ fontWeight: 700, mt: 1.35 }}>
+                    {service.label}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: "block", mt: 0.25 }}
+                  >
+                    {service.detail}
+                  </Typography>
+                </Box>
               ))}
-            </Stack>
+            </Box>
           </CardContent>
         </Card>
 
@@ -364,20 +555,74 @@ export function PlatformAdminPage() {
           <CardContent sx={{ p: 3 }}>
             <Stack
               direction="row"
-              spacing={1.2}
-              sx={{ mb: 2, alignItems: "center" }}
+              sx={{
+                mb: 2.5,
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+              }}
             >
-              <WarningAmberRounded color="warning" />
-              <Typography variant="h3">Alertes opérationnelles</Typography>
-              <Chip label={overview.data?.alerts.length ?? 0} size="small" />
+              <Box>
+                <Typography variant="h3">À surveiller</Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.4 }}
+                >
+                  Anomalies nécessitant une action.
+                </Typography>
+              </Box>
+              <Chip
+                icon={<WarningAmberRounded />}
+                label={alertCount}
+                size="small"
+                color={alertCount ? "warning" : "success"}
+                variant="outlined"
+              />
             </Stack>
             {!overview.isLoading && !overview.data?.alerts.length && (
-              <Alert severity="success">Aucune alerte opérationnelle.</Alert>
+              <Box
+                sx={{
+                  minHeight: 190,
+                  display: "grid",
+                  placeItems: "center",
+                  textAlign: "center",
+                  p: 2,
+                  borderRadius: 2.5,
+                  bgcolor: "#f5faf7",
+                  border: "1px solid #dcece4",
+                }}
+              >
+                <Box>
+                  <CheckCircleOutlineRounded
+                    sx={{ fontSize: 36, color: "success.main", mb: 1 }}
+                  />
+                  <Typography sx={{ fontWeight: 700 }}>
+                    Tout est sous contrôle
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 0.4 }}
+                  >
+                    Aucune alerte opérationnelle active.
+                  </Typography>
+                </Box>
+              </Box>
             )}
             <Stack spacing={1.2}>
               {overview.data?.alerts.map((item) => (
-                <Alert key={item.code} severity={item.severity}>
-                  <strong>{item.count}</strong> — {item.label}
+                <Alert
+                  key={item.code}
+                  severity={item.severity}
+                  variant="outlined"
+                >
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {item.label}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {item.count} élément{item.count === 1 ? "" : "s"} concerné
+                    {item.count === 1 ? "" : "s"}
+                  </Typography>
                 </Alert>
               ))}
             </Stack>
@@ -385,11 +630,29 @@ export function PlatformAdminPage() {
         </Card>
       </Box>
 
-      <Card sx={{ mt: 2.5 }}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        sx={{
+          mt: 3.5,
+          mb: 1.5,
+          justifyContent: "space-between",
+          alignItems: { sm: "flex-end" },
+        }}
+      >
+        <Box>
+          <Typography variant="h2">Pilotage détaillé</Typography>
+          <Typography color="text.secondary" sx={{ mt: 0.4 }}>
+            Gérez les accès, les abonnements et les opérations de la plateforme.
+          </Typography>
+        </Box>
+      </Stack>
+
+      <Card sx={{ overflow: "hidden" }}>
         <Stack
           direction={{ xs: "column", md: "row" }}
           sx={{
             px: 2,
+            bgcolor: "#fbfcfb",
             borderBottom: "1px solid",
             borderColor: "divider",
             justifyContent: "space-between",
