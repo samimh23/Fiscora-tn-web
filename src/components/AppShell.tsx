@@ -249,6 +249,8 @@ export function AppShell() {
   const desktop = useMediaQuery(theme.breakpoints.up("lg"));
   const location = useLocation();
   const navigate = useNavigate();
+  const dossierStorageKey = `fiscora.lastDossier.${organization?.id ?? "none"}`;
+  const [activeDossierId, setActiveDossierId] = useState("");
 
   useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {
@@ -298,6 +300,88 @@ export function AppShell() {
     enabled: Boolean(organization?.id && can("dossiers.view")),
   });
 
+  useEffect(() => {
+    const queryDossierId = new URLSearchParams(location.search).get(
+      "dossierId",
+    );
+    const routeDossierId = location.pathname.match(
+      /^\/(?:portail\/)?dossiers\/([^/]+)/,
+    )?.[1];
+    const locationDossierId = queryDossierId ?? routeDossierId ?? "";
+    if (!locationDossierId) return;
+    setActiveDossierId(locationDossierId);
+    try {
+      window.sessionStorage.setItem(dossierStorageKey, locationDossierId);
+    } catch {
+      // The URL remains authoritative when browser storage is unavailable.
+    }
+  }, [dossierStorageKey, location.pathname, location.search]);
+
+  useEffect(() => {
+    let stored = "";
+    try {
+      stored = window.sessionStorage.getItem(dossierStorageKey) ?? "";
+    } catch {
+      // Keep an empty selection when browser storage is unavailable.
+    }
+    setActiveDossierId(stored);
+  }, [dossierStorageKey]);
+
+  useEffect(() => {
+    const items = dossierOptions.data?.items;
+    if (!items?.length) {
+      if (dossierOptions.data) setActiveDossierId("");
+      return;
+    }
+    if (items.some((item) => item.id === activeDossierId)) return;
+    let stored = "";
+    try {
+      stored = window.sessionStorage.getItem(dossierStorageKey) ?? "";
+    } catch {
+      // Fall back to the first accessible dossier.
+    }
+    const next = items.some((item) => item.id === stored)
+      ? stored
+      : items[0].id;
+    setActiveDossierId(next);
+    try {
+      window.sessionStorage.setItem(dossierStorageKey, next);
+    } catch {
+      // The in-memory selection remains usable for this page.
+    }
+  }, [activeDossierId, dossierOptions.data, dossierStorageKey]);
+
+  const selectActiveDossier = (dossierId: string) => {
+    if (!dossierId) return;
+    setActiveDossierId(dossierId);
+    try {
+      window.sessionStorage.setItem(dossierStorageKey, dossierId);
+    } catch {
+      // The URL below still carries the selection on dossier-aware pages.
+    }
+    if (/^\/dossiers\/[^/]+/.test(location.pathname)) {
+      navigate(`/dossiers/${encodeURIComponent(dossierId)}`);
+      return;
+    }
+    const dossierAwarePage =
+      location.pathname !== "/" &&
+      location.pathname !== "/dossiers" &&
+      !location.pathname.startsWith("/administration-plateforme") &&
+      !location.pathname.startsWith("/securite");
+    if (!dossierAwarePage) return;
+    const params = new URLSearchParams(location.search);
+    params.set("dossierId", dossierId);
+    navigate(`${location.pathname}?${params.toString()}${location.hash}`, {
+      replace: true,
+    });
+  };
+
+  const navigationPath = (path: string) => {
+    if (!activeDossierId || path === "/" || path === "/dossiers") return path;
+    const params = new URLSearchParams({ dossierId: activeDossierId });
+    return `${path}?${params.toString()}`;
+  };
+
   const navItem = (item: NavItem, nested = false) => {
     const Icon = item.icon;
     const selected =
@@ -309,7 +393,7 @@ export function AppShell() {
       <ListItemButton
         key={item.path}
         component={NavLink}
-        to={item.path}
+        to={navigationPath(item.path)}
         onClick={() => setMobileOpen(false)}
         selected={selected}
         sx={{
@@ -499,7 +583,11 @@ export function AppShell() {
           )}
           <FormControl
             size="small"
-            sx={{ minWidth: { xs: 145, sm: 215 }, maxWidth: 250 }}
+            sx={{
+              minWidth: { sm: 215 },
+              maxWidth: 250,
+              display: { xs: "none", sm: "block" },
+            }}
           >
             <InputLabel>{t("Cabinet")}</InputLabel>
             <Select
@@ -518,19 +606,26 @@ export function AppShell() {
             <Autocomplete
               options={dossierOptions.data?.items ?? []}
               getOptionLabel={(option) => option.legalName}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              value={
+                dossierOptions.data?.items.find(
+                  (item) => item.id === activeDossierId,
+                ) ?? null
+              }
+              clearOnEscape={false}
               onChange={(_, value) => {
-                if (value) navigate(`/dossiers/${value.id}`);
+                if (value) selectActiveDossier(value.id);
               }}
               sx={{
-                width: 360,
-                display: { xs: "none", md: "block" },
+                width: { xs: 190, sm: 280, md: 360 },
                 ml: 0.5,
               }}
               renderInput={(params) => (
                 <TextField
                   {...params}
                   size="small"
-                  placeholder="Rechercher un dossier client…"
+                  label="Dossier client"
+                  placeholder="Choisir un dossier…"
                   slotProps={{
                     inputLabel: params.slotProps.inputLabel,
                     htmlInput: {
@@ -602,7 +697,7 @@ export function AppShell() {
             {can("documents.upload") && (
               <MenuItem
                 component={RouterLink}
-                to="/documents"
+                to={navigationPath("/documents")}
                 onClick={() => setCreateAnchor(null)}
               >
                 Déposer un document
@@ -611,7 +706,7 @@ export function AppShell() {
             {can("business_invoices.manage") && (
               <MenuItem
                 component={RouterLink}
-                to="/factures"
+                to={navigationPath("/factures")}
                 onClick={() => setCreateAnchor(null)}
               >
                 Nouvelle facture
@@ -620,7 +715,7 @@ export function AppShell() {
             {can("accounting.manage") && (
               <MenuItem
                 component={RouterLink}
-                to="/comptabilite"
+                to={navigationPath("/comptabilite")}
                 onClick={() => setCreateAnchor(null)}
               >
                 Saisir une écriture

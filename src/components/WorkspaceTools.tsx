@@ -1,64 +1,22 @@
-import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
   Alert,
   Box,
   Card,
   CardContent,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   Skeleton,
   Typography,
 } from "@mui/material";
-import { api } from "../api/client";
-import { useAuth } from "../auth/AuthContext";
-import type { DossierSummary, PagedResponse } from "../types/api";
 
-export function DossierSelector({
-  value,
-  onChange,
-}: {
+/**
+ * Kept temporarily so module pages do not need an all-at-once migration.
+ * Dossier selection now lives globally in AppShell.
+ */
+export function DossierSelector(_props: {
   value: string;
   onChange: (id: string) => void;
 }) {
-  const { organization } = useAuth();
-  const query = useQuery({
-    queryKey: ["dossier-options", organization?.id],
-    queryFn: () =>
-      api.get<PagedResponse<DossierSummary>>(
-        `/api/organizations/${organization?.id}/dossiers?page=1&pageSize=100`,
-      ),
-    enabled: Boolean(organization?.id),
-  });
-  useEffect(() => {
-    if (query.isFetching || !query.data) return;
-    const items = query.data.items;
-    if (!items.length) {
-      if (value) onChange("");
-      return;
-    }
-    if (!value || !items.some((item) => item.id === value)) {
-      onChange(items[0].id);
-    }
-  }, [onChange, query.data, query.isFetching, value]);
-  return (
-    <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 300 } }}>
-      <InputLabel>Dossier client</InputLabel>
-      <Select
-        value={value}
-        label="Dossier client"
-        onChange={(event) => onChange(event.target.value)}
-      >
-        {query.data?.items.map((item) => (
-          <MenuItem key={item.id} value={item.id}>
-            {item.legalName}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  );
+  void _props;
+  return null;
 }
 
 export function Money({
