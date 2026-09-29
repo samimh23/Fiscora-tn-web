@@ -35,7 +35,6 @@ import type {
   AccountingJournal,
   AccountingDocument,
   BusinessInvoice,
-  BusinessInvoiceLine,
   FiscalVatRate,
   FiscalWithholdingRate,
   LedgerAccount,
@@ -49,35 +48,16 @@ import {
   shortDate,
 } from "./options";
 
-type DraftLine = Pick<
-  BusinessInvoiceLine,
-  "accountId" | "description" | "quantity" | "unitPrice" | "discountRate"
-> & { vatCode: string; vatRate: string; exciseRate: string };
-export interface InvoiceDraftSeed {
-  sourceCommercialDocumentId?: string;
-  sourceDocumentId?: string;
-  type: "ACHAT" | "VENTE";
-  nature?: "BIENS" | "SERVICES" | "MIXTE";
-  number: string;
-  invoiceDate: string;
-  thirdPartyId: string;
-  thirdPartyName?: string;
-  thirdPartyTaxIdentifier?: string;
-  currencyCode?: string;
-  stampDuty?: string;
-  journalId?: string;
-  thirdPartyAccountId?: string;
-  vatAccountId?: string;
-  stampAccountId?: string;
-  exciseAccountId?: string;
-  extractionData?: Record<string, unknown>;
-  vatInferenceNotice?: string;
-  notes: string;
-  lines: DraftLine[];
-}
+import {
+  calculateInvoiceDraftLines,
+  invoiceSeedFromExtraction,
+  type DraftLine,
+  type InvoiceDraftSeed,
+} from "./invoice-extraction-seed";
+export type { InvoiceDraftSeed } from "./invoice-extraction-seed";
 type Form = {
   type: "ACHAT" | "VENTE";
-  nature: "BIENS" | "SERVICES" | "MIXTE";
+  nature: "" | "BIENS" | "SERVICES" | "MIXTE";
   kind: "FACTURE" | "AVOIR";
   number: string;
   invoiceDate: string;
@@ -147,268 +127,6 @@ const recordValue = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
-
-const printedNumber = (value: unknown, fallback = ""): string => {
-  if (value === null || value === undefined || value === "") return fallback;
-  return String(value).replace(/\s/g, "").replace(",", ".");
-};
-
-const normalizedRate = (value: unknown): string => {
-  const raw = printedNumber(value).replace("%", "");
-  const number = Number(raw);
-  if (!Number.isFinite(number)) return "0.00000";
-  return (number > 1 ? number / 100 : number).toFixed(5);
-};
-
-const extractedNumber = (value: unknown): number => {
-  const printed = printedNumber(value);
-  return printed ? Number(printed) : Number.NaN;
-};
-
-const hasExtractedValue = (value: unknown) =>
-  value !== null && value !== undefined && String(value).trim() !== "";
-
-const lineVatBase = (line: DraftLine) => {
-  const quantity = Number(line.quantity) || 0;
-  const unitPrice = Number(line.unitPrice) || 0;
-  const discountRate = Number(line.discountRate) || 0;
-  const exciseRate = Number(line.exciseRate) || 0;
-  return quantity * unitPrice * (1 - discountRate) * (1 + exciseRate);
-};
-
-function invoiceSeedFromExtraction(
-  data: Record<string, unknown>,
-  documentId: string,
-  parties: ThirdParty[],
-  accounts: LedgerAccount[],
-  journals: AccountingJournal[],
-): InvoiceDraftSeed {
-  const supplier = recordValue(data.supplier);
-  const supplierName = String(supplier.name ?? "").trim();
-  const supplierTaxId = String(supplier.tax_id ?? "").trim();
-  const comparable = (value: string) =>
-    value.toLocaleLowerCase("fr").replace(/[^a-z0-9]/g, "");
-  const party = parties.find(
-    (candidate) =>
-      (supplierTaxId && candidate.taxIdentifier === supplierTaxId) ||
-      (supplierName && comparable(candidate.name) === comparable(supplierName)),
-  );
-  const posting = accounts.filter(
-    (account) => account.isActive && account.allowsPosting,
-  );
-  const account = (...codes: string[]) => {
-    for (const code of codes) {
-      const exact = posting.find((item) => item.code === code);
-      if (exact) return exact;
-    }
-    for (const code of codes) {
-      const child = posting.find((item) => item.code.startsWith(code));
-      if (child) return child;
-    }
-    return undefined;
-  };
-  const purchaseAccount =
-    account("607", "606", "604") ??
-    posting.find((item) => item.type === "Expense");
-  const supplierAccount =
-    account("4011", "401") ??
-    posting.find(
-      (item) => item.type === "Liability" && item.normalBalance === "Credit",
-    );
-  const vatAccount =
-    account("43666", "4366") ??
-    posting.find(
-      (item) => item.code.startsWith("436") && item.normalBalance === "Debit",
-    );
-  const stampAccount =
-    account("665") ??
-    posting.find(
-      (item) => item.type === "Expense" && item.code.startsWith("66"),
-    );
-  const lineItems = Array.isArray(data.line_items)
-    ? data.line_items.map(recordValue)
-    : [];
-  const declaredGrossSubtotal = extractedNumber(
-    data.gross_subtotal_excl_tax,
-  );
-  const declaredDiscountAmount = extractedNumber(data.global_discount_amount);
-  const declaredDiscountRate = data.global_discount_rate == null
-    ? Number.NaN
-    : Number(normalizedRate(data.global_discount_rate));
-  const declaredSubtotal = extractedNumber(data.subtotal_excl_tax);
-  const tax = extractedNumber(data.tax_amount);
-  const fodec = extractedNumber(data.fodec_amount);
-  const stamp = extractedNumber(data.stamp_tax);
-  const total = extractedNumber(data.total_incl_tax);
-  const calculatedBeforeStamp =
-    (Number.isFinite(declaredSubtotal) ? declaredSubtotal : 0) +
-    (Number.isFinite(tax) ? tax : 0) +
-    (Number.isFinite(fodec) ? fodec : 0);
-  const matchesBeforeStamp =
-    Number.isFinite(total) && Math.abs(calculatedBeforeStamp - total) <= 0.02;
-  const matchesWithStamp =
-    Number.isFinite(total) &&
-    Math.abs(
-      calculatedBeforeStamp + (Number.isFinite(stamp) ? stamp : 0) - total,
-    ) <= 0.02;
-  const derivedSubtotal =
-    Number.isFinite(total) && Number.isFinite(tax)
-      ? total - tax - (Number.isFinite(fodec) ? fodec : 0)
-      : declaredSubtotal;
-  // New extractions distinguish gross HT, the global discount and the taxable
-  // base. Older extractions sometimes put gross HT in subtotal_excl_tax; when
-  // its arithmetic cannot match either TTC convention, recover the net base.
-  const subtotalFromDiscount =
-    Number.isFinite(declaredGrossSubtotal) &&
-    Number.isFinite(declaredDiscountAmount)
-      ? declaredGrossSubtotal - declaredDiscountAmount
-      : Number.isFinite(declaredGrossSubtotal) &&
-          Number.isFinite(declaredDiscountRate)
-        ? declaredGrossSubtotal * (1 - declaredDiscountRate)
-        : Number.NaN;
-  const subtotal = Number.isFinite(declaredGrossSubtotal)
-    ? Number.isFinite(declaredSubtotal)
-      ? declaredSubtotal
-      : Number.isFinite(subtotalFromDiscount)
-        ? subtotalFromDiscount
-        : derivedSubtotal
-    : matchesBeforeStamp || matchesWithStamp
-      ? declaredSubtotal
-      : derivedSubtotal;
-  const grossSubtotal = Number.isFinite(declaredGrossSubtotal)
-    ? declaredGrossSubtotal
-    : Number.isFinite(declaredDiscountAmount) && Number.isFinite(subtotal)
-      ? subtotal + declaredDiscountAmount
-      : Number.isFinite(declaredSubtotal) && Number.isFinite(subtotal) &&
-          declaredSubtotal > subtotal
-        ? declaredSubtotal
-        : subtotal;
-  const discountAmount = Number.isFinite(declaredDiscountAmount)
-    ? declaredDiscountAmount
-    : Number.isFinite(grossSubtotal) && Number.isFinite(subtotal)
-      ? Math.max(0, grossSubtotal - subtotal)
-      : 0;
-  const globalDiscountRate =
-    Number.isFinite(declaredDiscountRate) && declaredDiscountRate > 0
-      ? declaredDiscountRate
-      : Number.isFinite(grossSubtotal) && grossSubtotal > 0
-        ? discountAmount / grossSubtotal
-        : 0;
-  const fodecRate =
-    Number.isFinite(subtotal) && subtotal > 0 && Number.isFinite(fodec)
-      ? (fodec / subtotal).toFixed(5)
-      : "";
-  const lineWeights = lineItems.map((line) => {
-    const quantity = Number(printedNumber(line.quantity, "1")) || 1;
-    const printedTotal = Number(printedNumber(line.line_total));
-    const printedUnit = Number(printedNumber(line.unit_price));
-    return Number.isFinite(printedTotal) && printedTotal > 0
-      ? printedTotal
-      : Number.isFinite(printedUnit)
-        ? printedUnit * quantity
-        : 0;
-  });
-  const totalWeight = lineWeights.reduce((sum, value) => sum + value, 0);
-  const preparedLines: DraftLine[] = lineItems.length
-    ? lineItems.map((line, index) => {
-        const quantity = printedNumber(line.quantity, "1.000");
-        const total = Number(printedNumber(line.line_total));
-        const lineDiscountRate = Number(
-          normalizedRate(line.discount_rate ?? globalDiscountRate),
-        );
-        const allocatedNet =
-          globalDiscountRate <= 0 && Number.isFinite(subtotal) && totalWeight > 0
-            ? (subtotal * lineWeights[index]) / totalWeight
-            : Number.NaN;
-        const unitPrice = Number.isFinite(allocatedNet) && Number(quantity)
-          ? (allocatedNet / Number(quantity)).toFixed(3)
-          : printedNumber(
-              line.unit_price,
-              Number.isFinite(total) && Number(quantity)
-                ? String(total / Number(quantity))
-                : "",
-            );
-        return {
-          accountId: purchaseAccount?.id ?? "",
-          description: String(line.description ?? "Article extrait par IA"),
-          quantity,
-          unitPrice,
-          discountRate: Number.isFinite(lineDiscountRate)
-            ? lineDiscountRate.toFixed(5)
-            : "0.00000",
-          vatCode: "",
-          vatRate: normalizedRate(line.tax_rate),
-          exciseRate: fodecRate,
-        };
-      })
-    : [
-        {
-          ...emptyLine(),
-          accountId: purchaseAccount?.id ?? "",
-          description: "Facture extraite par IA",
-          unitPrice: Number.isFinite(grossSubtotal)
-            ? grossSubtotal.toFixed(3)
-            : printedNumber(data.subtotal_excl_tax),
-          discountRate: Number.isFinite(globalDiscountRate)
-            ? globalDiscountRate.toFixed(5)
-            : "0.00000",
-          vatRate: "0.00000",
-          exciseRate: fodecRate,
-        },
-      ];
-
-  const missingVatIndexes = preparedLines.flatMap((_, index) => {
-    const sourceLine = lineItems[index];
-    return !sourceLine || !hasExtractedValue(sourceLine.tax_rate) ? [index] : [];
-  });
-  const knownVat = preparedLines.reduce((sum, line, index) => {
-    if (missingVatIndexes.includes(index)) return sum;
-    return sum + lineVatBase(line) * (Number(line.vatRate) || 0);
-  }, 0);
-  const missingVatBase = missingVatIndexes.reduce(
-    (sum, index) => sum + lineVatBase(preparedLines[index]),
-    0,
-  );
-  const inferredVatRate =
-    Number.isFinite(tax) && tax > knownVat && missingVatBase > 0
-      ? (tax - knownVat) / missingVatBase
-      : Number.NaN;
-  const canInferVat =
-    Number.isFinite(inferredVatRate) &&
-    inferredVatRate > 0 &&
-    inferredVatRate <= 1;
-  const lines = preparedLines.map((line, index) =>
-    canInferVat && missingVatIndexes.includes(index)
-      ? { ...line, vatRate: inferredVatRate.toFixed(5) }
-      : line,
-  );
-
-  return {
-    sourceDocumentId: documentId,
-    type: "ACHAT",
-    nature: "BIENS",
-    number: String(data.document_number ?? ""),
-    invoiceDate: String(data.issue_date ?? today()),
-    thirdPartyId: party?.id ?? "",
-    thirdPartyName: party?.name ?? supplierName,
-    thirdPartyTaxIdentifier: party?.taxIdentifier ?? supplierTaxId,
-    currencyCode: String(data.currency ?? "TND").slice(0, 3).toUpperCase(),
-    stampDuty: printedNumber(data.stamp_tax),
-    journalId: journals.find((journal) => journal.type === "ACHATS")?.id,
-    thirdPartyAccountId:
-      party?.payableAccountId ?? supplierAccount?.id,
-    vatAccountId: vatAccount?.id,
-    stampAccountId: stampAccount?.id,
-    exciseAccountId: account("43668", "437")?.id,
-    extractionData: data,
-    vatInferenceNotice: canInferVat
-      ? `Le taux de TVA absent de ${missingVatIndexes.length === 1 ? "la ligne" : `${missingVatIndexes.length} lignes`} a été déduit du montant total de TVA (${(inferredVatRate * 100).toFixed(3)} %). Vérifiez ce taux avant d’enregistrer.`
-      : undefined,
-    notes: "Créée depuis une extraction IA — document source conservé.",
-    lines,
-  };
-}
-
 function statusColor(
   status: BusinessInvoice["status"],
 ): "default" | "warning" | "primary" | "success" {
@@ -492,7 +210,7 @@ function InvoiceDialog({
         ? {
             ...emptyForm(),
             type: draftSeed.type,
-            nature: draftSeed.nature ?? "MIXTE",
+            nature: draftSeed.nature ?? "",
             number: draftSeed.number,
             invoiceDate: draftSeed.invoiceDate,
             dueDate: new Date(
@@ -503,8 +221,7 @@ function InvoiceDialog({
               .slice(0, 10),
             thirdPartyId: draftSeed.thirdPartyId,
             thirdPartyName: draftSeed.thirdPartyName ?? "",
-            thirdPartyTaxIdentifier:
-              draftSeed.thirdPartyTaxIdentifier ?? "",
+            thirdPartyTaxIdentifier: draftSeed.thirdPartyTaxIdentifier ?? "",
             thirdPartyAccountId:
               draftSeed.thirdPartyAccountId ??
               parties.find((party) => party.id === draftSeed.thirdPartyId)?.[
@@ -519,7 +236,8 @@ function InvoiceDialog({
                 (journal) =>
                   journal.type ===
                   (draftSeed.type === "VENTE" ? "VENTES" : "ACHATS"),
-              )?.id ?? "",
+              )?.id ??
+              "",
             sourceCommercialDocumentId:
               draftSeed.sourceCommercialDocumentId ?? "",
             sourceDocumentId: draftSeed.sourceDocumentId ?? "",
@@ -588,23 +306,7 @@ function InvoiceDialog({
     enabled: form.type === "ACHAT",
   });
   const calculation = useMemo(
-    () =>
-      form.lines.reduce(
-        (total, line) => {
-          const quantity = Number(line.quantity) || 0;
-          const price = Number(line.unitPrice) || 0;
-          const discount = Number(line.discountRate) || 0;
-          const net = quantity * price * (1 - discount);
-          const excise = net * (Number(line.exciseRate) || 0);
-          const vat = (net + excise) * (Number(line.vatRate) || 0);
-          return {
-            net: total.net + net,
-            excise: total.excise + excise,
-            vat: total.vat + vat,
-          };
-        },
-        { net: 0, excise: 0, vat: 0 },
-      ),
+    () => calculateInvoiceDraftLines(form.lines),
     [form.lines],
   );
   const changeType = (type: Form["type"]) => {
@@ -653,8 +355,7 @@ function InvoiceDialog({
           {
             type: form.type === "VENTE" ? "CLIENT" : "FOURNISSEUR",
             name: form.thirdPartyName.trim(),
-            taxIdentifier:
-              form.thirdPartyTaxIdentifier.trim() || undefined,
+            taxIdentifier: form.thirdPartyTaxIdentifier.trim() || undefined,
             ...(form.type === "VENTE"
               ? { receivableAccountId: form.thirdPartyAccountId }
               : { payableAccountId: form.thirdPartyAccountId }),
@@ -724,33 +425,12 @@ function InvoiceDialog({
       const saved = invoice
         ? await api.put<BusinessInvoice>(`${base}/${invoice.id}`, body)
         : await api.post<BusinessInvoice>(base, body);
-      if (
-        !invoice &&
-        form.sourceDocumentId &&
-        draftSeed?.extractionData
-      ) {
-        const stamp = Number(form.stampDuty) || 0;
-        const grossSubtotal = form.lines.reduce(
-          (sum, line) =>
-            sum +
-            (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0),
-          0,
-        );
-        const discountAmount = Math.max(0, grossSubtotal - calculation.net);
-        const discountRates = form.lines.map(
-          (line) => Number(line.discountRate) || 0,
-        );
-        const globalDiscountRate =
-          discountRates.length > 0 &&
-          discountRates.every(
-            (rate) => Math.abs(rate - discountRates[0]) < 0.000005,
-          )
-            ? discountRates[0]
-            : null;
+      if (!invoice && form.sourceDocumentId && draftSeed?.extractionData) {
+        // Saving a business draft must not rewrite printed document totals or
+        // turn a TTC-to-HT display conversion into a correction of the source.
         const correctedData = {
           ...draftSeed.extractionData,
-          document_type:
-            form.kind === "AVOIR" ? "credit_note" : "invoice",
+          document_type: form.kind === "AVOIR" ? "credit_note" : "invoice",
           supplier: {
             ...recordValue(draftSeed.extractionData.supplier),
             name: linkedParty?.name ?? form.thirdPartyName.trim(),
@@ -762,40 +442,45 @@ function InvoiceDialog({
           document_number: form.number.trim(),
           issue_date: form.invoiceDate,
           currency: form.currencyCode,
-          gross_subtotal_excl_tax: grossSubtotal.toFixed(3),
-          global_discount_amount: discountAmount.toFixed(3),
-          global_discount_rate:
-            globalDiscountRate == null
-              ? null
-              : globalDiscountRate.toFixed(5),
-          subtotal_excl_tax: calculation.net.toFixed(3),
-          tax_amount: calculation.vat.toFixed(3),
-          fodec_amount: calculation.excise.toFixed(3),
-          stamp_tax: stamp.toFixed(3),
-          other_taxes: [],
-          total_incl_tax: (
-            calculation.net +
-            calculation.excise +
-            calculation.vat
-          ).toFixed(3),
-          amount_due: (
-            calculation.net +
-            calculation.excise +
-            calculation.vat +
-            stamp
-          ).toFixed(3),
-          line_items: form.lines.map((line) => ({
-            description: line.description.trim(),
-            quantity: line.quantity,
-            unit_price: line.unitPrice,
-            discount_rate: line.discountRate,
-            tax_rate: line.vatRate,
-            line_total: (
-              (Number(line.quantity) || 0) *
-              (Number(line.unitPrice) || 0) *
-              (1 - (Number(line.discountRate) || 0))
-            ).toFixed(3),
-          })),
+          stamp_tax: form.stampDuty || draftSeed.extractionData.stamp_tax,
+          line_items: form.lines.map((line, index) => {
+            const originalLines = draftSeed.extractionData!.line_items;
+            const original = recordValue(
+              Array.isArray(originalLines) ? originalLines[index] : undefined,
+            );
+            const initial = draftSeed.lines[index];
+            const priceUnchanged = initial?.unitPrice === line.unitPrice;
+            const discountUnchanged =
+              initial?.discountRate === line.discountRate;
+            const amountsUnchanged =
+              priceUnchanged &&
+              discountUnchanged &&
+              initial?.quantity === line.quantity;
+            return {
+              ...original,
+              description: line.description.trim(),
+              quantity: line.quantity,
+              unit_price: priceUnchanged
+                ? (original.unit_price ?? null)
+                : line.unitPrice,
+              unit_price_basis: priceUnchanged
+                ? (original.unit_price_basis ?? "HT")
+                : "HT",
+              discount_rate: discountUnchanged
+                ? (original.discount_rate ?? null)
+                : line.discountRate,
+              tax_rate:
+                initial?.vatRate === line.vatRate
+                  ? (original.tax_rate ?? null)
+                  : line.vatRate,
+              line_total: amountsUnchanged
+                ? (original.line_total ?? null)
+                : calculateInvoiceDraftLines([line]).net.toFixed(3),
+              line_total_basis: amountsUnchanged
+                ? (original.line_total_basis ?? "HT")
+                : "HT",
+            };
+          }),
         };
         await api
           .patch(
@@ -826,11 +511,7 @@ function InvoiceDialog({
           queryKey: ["dossier-documents", organizationId, dossierId],
         }),
         queryClient.invalidateQueries({
-          queryKey: [
-            "document-extraction-reviews",
-            organizationId,
-            dossierId,
-          ],
+          queryKey: ["document-extraction-reviews", organizationId, dossierId],
         }),
       ]);
       onClose();
@@ -846,6 +527,7 @@ function InvoiceDialog({
   });
   const valid = Boolean(
     form.number.trim() &&
+    form.nature &&
     form.invoiceDate &&
     (form.thirdPartyId || form.thirdPartyName.trim()) &&
     form.journalId &&
@@ -878,19 +560,25 @@ function InvoiceDialog({
             {draftSeed.vatInferenceNotice}
           </Alert>
         )}
+        {draftSeed?.extractionNotice && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {draftSeed.extractionNotice}
+          </Alert>
+        )}
         {form.sourceDocumentId && (
           <Alert severity="success" sx={{ mb: 2 }}>
             Données préremplies par l’IA. « Enregistrer le brouillon » créera
             une vraie facture métier liée à la pièce originale ; vérifiez les
-            comptes proposés avant de continuer.
+            comptes proposés et confirmez la nature (biens, services ou mixte)
+            avant de continuer. Une proposition IA reste modifiable.
           </Alert>
         )}
         {form.sourceDocumentId &&
           !form.thirdPartyId &&
           Boolean(form.thirdPartyName.trim()) && (
             <Alert severity="info" sx={{ mb: 2 }}>
-              Le tiers « {form.thirdPartyName.trim()} » n’existe pas encore.
-              Il sera créé et lié automatiquement à cette facture lors de
+              Le tiers « {form.thirdPartyName.trim()} » n’existe pas encore. Il
+              sera créé et lié automatiquement à cette facture lors de
               l’enregistrement du brouillon.
             </Alert>
           )}
@@ -929,18 +617,26 @@ function InvoiceDialog({
           <TextField
             select
             label="Nature"
+            required
             value={form.nature}
             onChange={(event) =>
               set("nature", event.target.value as Form["nature"])
             }
             helperText={
-              form.type === "VENTE" &&
-              form.invoiceDate >= "2026-01-01" &&
-              form.nature !== "BIENS"
-                ? "Services inclus dans le champ e-facture depuis 2026 (art. 53)"
-                : "Détermine les contrôles fiscaux et TTN"
+              !form.nature
+                ? "Choisissez la nature d’après la facture originale"
+                : draftSeed?.nature && form.nature === draftSeed.nature
+                  ? "Proposition IA — vérifiez-la ; vous pouvez la modifier"
+                  : form.type === "VENTE" &&
+                      form.invoiceDate >= "2026-01-01" &&
+                      form.nature !== "BIENS"
+                    ? "Services inclus dans le champ e-facture depuis 2026 (art. 53)"
+                    : "Détermine les contrôles fiscaux et TTN"
             }
           >
+            <MenuItem value="" disabled>
+              Choisir la nature
+            </MenuItem>
             <MenuItem value="BIENS">Biens</MenuItem>
             <MenuItem value="SERVICES">Services</MenuItem>
             <MenuItem value="MIXTE">Biens et services</MenuItem>
@@ -993,7 +689,9 @@ function InvoiceDialog({
           />
           {!form.thirdPartyId && (
             <TextField
-              label={form.type === "VENTE" ? "Nom du client" : "Nom du fournisseur"}
+              label={
+                form.type === "VENTE" ? "Nom du client" : "Nom du fournisseur"
+              }
               value={form.thirdPartyName}
               onChange={(event) => set("thirdPartyName", event.target.value)}
               required
@@ -2063,9 +1761,7 @@ export function InvoicesPanel({
               disabled={!scanFile || uploadForExtraction.isPending}
               onClick={() => uploadForExtraction.mutate()}
             >
-              {uploadForExtraction.isPending
-                ? "Envoi…"
-                : "Lire avec l’IA"}
+              {uploadForExtraction.isPending ? "Envoi…" : "Lire avec l’IA"}
             </Button>
           ) : (
             <Button
