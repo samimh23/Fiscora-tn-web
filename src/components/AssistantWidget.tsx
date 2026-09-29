@@ -73,6 +73,7 @@ export function AssistantWidget() {
     useState<AssistantHistoryCursor | null>(null);
   const [conversationStartedAt, setConversationStartedAt] = useState("");
   const endRef = useRef<HTMLDivElement | null>(null);
+  const lastPageDossierIdRef = useRef("");
   const organizationId = organization?.id ?? "";
   const isClientPortal =
     organization?.role.toLocaleLowerCase("fr").includes("portail client") ??
@@ -83,10 +84,16 @@ export function AssistantWidget() {
     dossierId,
     session?.user.id ?? "anonymous",
   );
-  const pathDossierId = useMemo(
-    () => location.pathname.match(/^\/dossiers\/([^/]+)/)?.[1] ?? "",
-    [location.pathname],
-  );
+  const pageDossierId = useMemo(() => {
+    const queryDossierId = new URLSearchParams(location.search).get(
+      "dossierId",
+    );
+    return (
+      queryDossierId ??
+      location.pathname.match(/^\/(?:portail\/)?dossiers\/([^/]+)/)?.[1] ??
+      ""
+    );
+  }, [location.pathname, location.search]);
 
   const dossiers = useQuery({
     queryKey: ["dossier-options", organizationId, "assistant-widget"],
@@ -98,16 +105,32 @@ export function AssistantWidget() {
   });
 
   useEffect(() => {
-    if (!open || dossierId || !dossiers.data?.items.length) return;
+    if (!open || !dossiers.data?.items.length) return;
     const available = dossiers.data.items;
+    if (!pageDossierId) lastPageDossierIdRef.current = "";
+    const pageDossierIsAvailable = available.some(
+      (item) => item.id === pageDossierId,
+    );
+    if (
+      pageDossierId &&
+      pageDossierIsAvailable &&
+      lastPageDossierIdRef.current !== pageDossierId
+    ) {
+      lastPageDossierIdRef.current = pageDossierId;
+      setDossierId(pageDossierId);
+      window.sessionStorage.setItem(storageKey, pageDossierId);
+      return;
+    }
+    if (dossierId && available.some((item) => item.id === dossierId)) return;
     const stored = window.sessionStorage.getItem(storageKey) ?? "";
-    const preferred = [pathDossierId, stored].find((candidate) =>
+    const preferred = [pageDossierId, stored].find((candidate) =>
       available.some((item) => item.id === candidate),
     );
     setDossierId(preferred ?? available[0].id);
-  }, [dossierId, dossiers.data?.items, open, pathDossierId, storageKey]);
+  }, [dossierId, dossiers.data?.items, open, pageDossierId, storageKey]);
 
   useEffect(() => {
+    lastPageDossierIdRef.current = "";
     setDossierId("");
     setMessages([]);
     setError("");
@@ -319,6 +342,7 @@ export function AssistantWidget() {
                 value={dossierId}
                 label="Dossier client"
                 onChange={(event) => chooseDossier(event.target.value)}
+                MenuProps={{ sx: { zIndex: 1500 } }}
               >
                 {dossiers.data?.items.map((item) => (
                   <MenuItem key={item.id} value={item.id}>
