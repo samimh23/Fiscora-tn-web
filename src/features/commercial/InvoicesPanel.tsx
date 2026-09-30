@@ -71,6 +71,7 @@ type Form = {
   vatAccountId: string;
   stampAccountId: string;
   exciseAccountId: string;
+  fodecAccountId: string;
   withholdingAccountId: string;
   vatSuspensionCertificateId: string;
   currencyCode: string;
@@ -93,6 +94,7 @@ const emptyLine = (): DraftLine => ({
   vatCode: "",
   vatRate: "0.19000",
   exciseRate: "",
+  fodecRate: "",
 });
 const emptyForm = (): Form => ({
   type: "VENTE",
@@ -110,6 +112,7 @@ const emptyForm = (): Form => ({
   vatAccountId: "",
   stampAccountId: "",
   exciseAccountId: "",
+  fodecAccountId: "",
   withholdingAccountId: "",
   vatSuspensionCertificateId: "",
   currencyCode: "TND",
@@ -182,6 +185,7 @@ function InvoiceDialog({
           vatAccountId: invoice.vatAccountId ?? "",
           stampAccountId: invoice.stampAccountId ?? "",
           exciseAccountId: invoice.exciseAccountId ?? "",
+          fodecAccountId: invoice.fodecAccountId ?? "",
           withholdingAccountId: invoice.withholdingAccountId ?? "",
           vatSuspensionCertificateId: invoice.vatSuspensionCertificateId ?? "",
           currencyCode: invoice.currencyCode ?? "TND",
@@ -204,6 +208,7 @@ function InvoiceDialog({
             vatCode: line.vatCode ?? "",
             vatRate: line.vatRate,
             exciseRate: line.exciseRate ?? "",
+            fodecRate: line.fodecRate ?? "",
           })),
         }
       : draftSeed
@@ -246,6 +251,7 @@ function InvoiceDialog({
             vatAccountId: draftSeed.vatAccountId ?? "",
             stampAccountId: draftSeed.stampAccountId ?? "",
             exciseAccountId: draftSeed.exciseAccountId ?? "",
+            fodecAccountId: draftSeed.fodecAccountId ?? "",
             notes: draftSeed.notes,
             lines: draftSeed.lines,
           }
@@ -275,7 +281,7 @@ function InvoiceDialog({
       item.type === form.type &&
       item.kind === "FACTURE" &&
       item.status === "COMPTABILISEE" &&
-      Number(item.outstandingAmount) > 0,
+      Number(item.netPayable) - Number(item.creditedAmount) > 0,
   );
   const selectedParty =
     parties.find((party) => party.id === form.thirdPartyId) ??
@@ -392,6 +398,7 @@ function InvoiceDialog({
         vatAccountId: form.vatAccountId || undefined,
         stampAccountId: form.stampAccountId || undefined,
         exciseAccountId: form.exciseAccountId || undefined,
+        fodecAccountId: form.fodecAccountId || undefined,
         withholdingAccountId: form.withholdingAccountId || undefined,
         vatSuspensionCertificateId:
           form.type === "ACHAT"
@@ -419,6 +426,7 @@ function InvoiceDialog({
           vatCode: line.vatCode || undefined,
           vatRate: line.vatCode ? undefined : line.vatRate || undefined,
           exciseRate: line.exciseRate || undefined,
+          fodecRate: line.fodecRate || undefined,
         })),
       };
       const base = `/api/organizations/${organizationId}/dossiers/${dossierId}/business-invoices`;
@@ -733,7 +741,7 @@ function InvoiceDialog({
               onChange={(value) => set("originalInvoiceId", value)}
               options={originals.map((item) => ({
                 value: item.id,
-                label: `${item.number} — ${item.thirdPartyName} — solde ${money(item.outstandingAmount)}`,
+                label: `${item.number} — ${item.thirdPartyName} — montant créditable ${money(Number(item.netPayable) - Number(item.creditedAmount))}`,
               }))}
               required
               sx={{ gridColumn: { md: "span 2" } }}
@@ -752,7 +760,7 @@ function InvoiceDialog({
                   display: "grid",
                   gridTemplateColumns: {
                     xs: "1fr",
-                    md: "2fr 2fr .8fr 1fr 1fr 1fr .8fr auto",
+                    md: "2fr 2fr .8fr 1fr 1fr 1fr .8fr .8fr auto",
                   },
                   gap: 1.5,
                   alignItems: "center",
@@ -852,6 +860,15 @@ function InvoiceDialog({
                     updateLine(index, "exciseRate", event.target.value)
                   }
                   helperText="Taux, ex. 0.10"
+                />
+                <TextField
+                  size="small"
+                  label="FODEC"
+                  value={line.fodecRate ?? ""}
+                  onChange={(event) =>
+                    updateLine(index, "fodecRate", event.target.value)
+                  }
+                  helperText="Taux, ex. 0.01"
                 />
                 <Tooltip title="Supprimer la ligne">
                   <span>
@@ -963,6 +980,16 @@ function InvoiceDialog({
             }))}
             helperText="Requis si un taux est saisi sur une ligne"
           />
+          <SearchableSelect
+            label="Compte FODEC"
+            value={form.fodecAccountId}
+            onChange={(value) => set("fodecAccountId", value)}
+            options={postingAccounts.map((account) => ({
+              value: account.id,
+              label: `${account.code} — ${account.name}`,
+            }))}
+            helperText="Requis si une ligne comporte du FODEC ; distinct du droit de consommation"
+          />
           <TextField
             select
             label="Nature de retenue"
@@ -1044,6 +1071,14 @@ function InvoiceDialog({
                 </Typography>
               </Box>
             )}
+            {calculation.fodec !== 0 && (
+              <Box>
+                <Typography variant="caption">FODEC</Typography>
+                <Typography sx={{ fontWeight: 700 }}>
+                  {money(calculation.fodec)}
+                </Typography>
+              </Box>
+            )}
             <Box>
               <Typography variant="caption">TVA estimée</Typography>
               <Typography sx={{ fontWeight: 700 }}>
@@ -1053,7 +1088,12 @@ function InvoiceDialog({
             <Box>
               <Typography variant="caption">TTC estimé hors timbre</Typography>
               <Typography sx={{ fontWeight: 700, color: "primary.dark" }}>
-                {money(calculation.net + calculation.excise + calculation.vat)}
+                {money(
+                  calculation.net +
+                    calculation.excise +
+                    calculation.fodec +
+                    calculation.vat,
+                )}
               </Typography>
             </Box>
           </Stack>
@@ -1566,18 +1606,20 @@ export function InvoicesPanel({
             </Stack>
             <Box>
               <Typography variant="caption" color="text.secondary">
-                Solde
+                {Number(invoice.outstandingAmount) < 0
+                  ? "Crédit à rembourser"
+                  : "Solde"}
               </Typography>
               <Typography
                 sx={{
                   fontWeight: 700,
                   color:
-                    Number(invoice.outstandingAmount) > 0
+                    Number(invoice.outstandingAmount) !== 0
                       ? "warning.dark"
                       : "success.dark",
                 }}
               >
-                {money(invoice.outstandingAmount)}
+                {money(Math.abs(Number(invoice.outstandingAmount)))}
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 TVA {money(invoice.vatAmount)}

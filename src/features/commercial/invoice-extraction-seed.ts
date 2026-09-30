@@ -8,7 +8,12 @@ import type {
 export type DraftLine = Pick<
   BusinessInvoiceLine,
   "accountId" | "description" | "quantity" | "unitPrice" | "discountRate"
-> & { vatCode: string; vatRate: string; exciseRate: string };
+> & {
+  vatCode: string;
+  vatRate: string;
+  exciseRate: string;
+  fodecRate?: string;
+};
 export interface InvoiceDraftSeed {
   sourceCommercialDocumentId?: string;
   sourceDocumentId?: string;
@@ -26,6 +31,7 @@ export interface InvoiceDraftSeed {
   vatAccountId?: string;
   stampAccountId?: string;
   exciseAccountId?: string;
+  fodecAccountId?: string;
   extractionData?: Record<string, unknown>;
   vatInferenceNotice?: string;
   extractionNotice?: string;
@@ -43,6 +49,7 @@ const emptyLine = (): DraftLine => ({
   vatCode: "",
   vatRate: "0.00000",
   exciseRate: "",
+  fodecRate: "",
 });
 
 const recordValue = (value: unknown): Record<string, unknown> =>
@@ -75,7 +82,12 @@ const lineVatBase = (line: DraftLine) => {
   const unitPrice = Number(line.unitPrice) || 0;
   const discountRate = Number(line.discountRate) || 0;
   const exciseRate = Number(line.exciseRate) || 0;
-  return quantity * unitPrice * (1 - discountRate) * (1 + exciseRate);
+  return (
+    quantity *
+    unitPrice *
+    (1 - discountRate) *
+    (1 + exciseRate + (Number(line.fodecRate) || 0))
+  );
 };
 
 export function calculateInvoiceDraftLines(lines: DraftLine[]) {
@@ -92,14 +104,16 @@ export function calculateInvoiceDraftLines(lines: DraftLine[]) {
           round(beforeDiscount * (Number(line.discountRate) || 0)),
       );
       const excise = round(net * (Number(line.exciseRate) || 0));
-      const vat = round((net + excise) * (Number(line.vatRate) || 0));
+      const fodec = round(net * (Number(line.fodecRate) || 0));
+      const vat = round((net + excise + fodec) * (Number(line.vatRate) || 0));
       return {
         net: round(total.net + net),
         excise: round(total.excise + excise),
+        fodec: round(total.fodec + fodec),
         vat: round(total.vat + vat),
       };
     },
-    { net: 0, excise: 0, vat: 0 },
+    { net: 0, excise: 0, fodec: 0, vat: 0 },
   );
 }
 
@@ -209,6 +223,10 @@ export function invoiceSeedFromExtraction(
       ? (fodec / subtotal).toFixed(5)
       : "";
   const notices: string[] = [];
+  if (Number.isFinite(fodec) && fodec !== 0)
+    notices.push(
+      "Le FODEC total a été réparti au prorata de la base HT. Vérifiez les lignes concernées et leur taux ; il ne s’agit pas d’un droit de consommation.",
+    );
   const preparedLines: DraftLine[] = lineItems.length
     ? lineItems.map((line) => {
         const quantity = printedNumber(line.quantity, "1.000");
@@ -266,7 +284,13 @@ export function invoiceSeedFromExtraction(
           }
         }
         return {
-          accountId: purchaseAccount?.id ?? "",
+          accountId:
+            (line.item_nature === "SERVICES"
+              ? account("604", "606")
+              : line.item_nature === "BIENS"
+                ? account("607", "606")
+                : purchaseAccount
+            )?.id ?? "",
           description: String(line.description ?? "Article extrait par IA"),
           quantity,
           unitPrice,
@@ -275,7 +299,8 @@ export function invoiceSeedFromExtraction(
             : "0.00000",
           vatCode: "",
           vatRate,
-          exciseRate: fodecRate,
+          exciseRate: "",
+          fodecRate,
         };
       })
     : [
@@ -290,7 +315,8 @@ export function invoiceSeedFromExtraction(
             ? globalDiscountRate.toFixed(5)
             : "0.00000",
           vatRate: "0.00000",
-          exciseRate: fodecRate,
+          exciseRate: "",
+          fodecRate,
         },
       ];
 
@@ -355,6 +381,7 @@ export function invoiceSeedFromExtraction(
     vatAccountId: vatAccount?.id,
     stampAccountId: stampAccount?.id,
     exciseAccountId: account("43668", "437")?.id,
+    fodecAccountId: posting.find((item) => /FODEC/i.test(item.name))?.id,
     extractionData: data,
     extractionNotice: [...new Set(notices)].join(" ") || undefined,
     vatInferenceNotice: canInferVat

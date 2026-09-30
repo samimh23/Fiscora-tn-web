@@ -764,6 +764,8 @@ export interface BusinessInvoiceLine {
   vatCode: string | null;
   vatRate: string;
   exciseRate?: string | null;
+  fodecRate?: string | null;
+  fodecAmount?: string;
   exciseAmount?: string;
   netAmount?: string;
   vatAmount?: string;
@@ -831,6 +833,7 @@ export interface BusinessInvoice {
   vatAccountId: string | null;
   stampAccountId: string | null;
   exciseAccountId: string | null;
+  fodecAccountId: string | null;
   withholdingAccountId: string | null;
   vatSuspensionCertificateId: string | null;
   currencyCode: string;
@@ -838,6 +841,7 @@ export interface BusinessInvoice {
   foreignGrossAmount: string | null;
   netAmount: string;
   exciseAmount: string;
+  fodecAmount: string;
   vatAmount: string;
   stampDuty: string;
   withholdingBase: string;
@@ -848,7 +852,7 @@ export interface BusinessInvoice {
   paidAmount: string;
   creditedAmount: string;
   outstandingAmount: string;
-  settlementStatus: "NON_REGLEE" | "PARTIELLEMENT_REGLEE" | "REGLEE";
+  settlementStatus: "NON_REGLEE" | "PARTIELLEMENT_REGLEE" | "REGLEE" | "A_REMBOURSER";
   status: "BROUILLON" | "VALIDEE" | "COMPTABILISEE" | "ANNULEE";
   sourceDocumentId: string | null;
   sourceCommercialDocumentId: string | null;

@@ -460,11 +460,16 @@ export function ClientPortalDossierPage() {
   );
   const unpaid = useMemo(
     () =>
-      fees.data?.reduce(
-        (sum, item) =>
-          sum + Math.max(0, Number(item.totalAmount) - Number(item.paidAmount)),
-        0,
-      ) ?? 0,
+      fees.data
+        ?.filter(
+          (item) => item.status !== "ANNULEE" && item.status !== "BROUILLON",
+        )
+        .reduce(
+          (sum, item) =>
+            sum +
+            Math.max(0, Number(item.totalAmount) - Number(item.paidAmount)),
+          0,
+        ) ?? 0,
     [fees.data],
   );
   const error = [

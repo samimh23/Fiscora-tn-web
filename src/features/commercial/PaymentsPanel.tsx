@@ -40,6 +40,7 @@ import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
 
 type AllocationMap = Record<string, string>;
 type PaymentFormDraft = {
+  refund?: boolean;
   direction: "ENCAISSEMENT" | "DECAISSEMENT";
   thirdPartyId: string;
   paymentDate: string;
@@ -142,18 +143,24 @@ function PaymentDialog({
   );
   const [error, setError] = useState("");
   const receipt = direction === "ENCAISSEMENT";
+  const [refund, setRefund] = useState(restoredDraft?.refund ?? false);
+  const clientOperation = receipt !== refund;
   const availableParties = parties.filter(
     (party) =>
       party.type === "CLIENT_ET_FOURNISSEUR" ||
-      (receipt ? party.type === "CLIENT" : party.type === "FOURNISSEUR"),
+      (clientOperation
+        ? party.type === "CLIENT"
+        : party.type === "FOURNISSEUR"),
   );
   const openInvoices = invoices.filter(
     (invoice) =>
       invoice.kind === "FACTURE" &&
       invoice.status === "COMPTABILISEE" &&
-      invoice.type === (receipt ? "VENTE" : "ACHAT") &&
+      invoice.type === (clientOperation ? "VENTE" : "ACHAT") &&
       invoice.thirdPartyId === thirdPartyId &&
-      Number(invoice.outstandingAmount) > 0,
+      (refund
+        ? Number(invoice.outstandingAmount) < 0
+        : Number(invoice.outstandingAmount) > 0),
   );
   const paymentJournals = journals.filter((journal) =>
     ["BANQUE", "CAISSE"].includes(journal.type),
@@ -180,7 +187,9 @@ function PaymentDialog({
     setThirdPartyId(id);
     setThirdPartyAccountId(
       party
-        ? ((receipt ? party.receivableAccountId : party.payableAccountId) ?? "")
+        ? ((clientOperation
+            ? party.receivableAccountId
+            : party.payableAccountId) ?? "")
         : "",
     );
     setAllocations({});
@@ -188,7 +197,10 @@ function PaymentDialog({
   const toggleInvoice = (invoice: BusinessInvoice, checked: boolean) =>
     setAllocations((current) => {
       const next = { ...current };
-      if (checked) next[invoice.id] = invoice.outstandingAmount;
+      if (checked)
+        next[invoice.id] = Math.abs(Number(invoice.outstandingAmount)).toFixed(
+          3,
+        );
       else delete next[invoice.id];
       return next;
     });
@@ -243,10 +255,19 @@ function PaymentDialog({
     cashAccountId &&
     thirdPartyAccountId &&
     total > 0 &&
-    Object.keys(allocations).length,
+    Object.keys(allocations).length &&
+    Object.entries(allocations).every(([id, amount]) => {
+      const invoice = openInvoices.find((entry) => entry.id === id);
+      return (
+        invoice &&
+        Number(amount) > 0 &&
+        Number(amount) <= Math.abs(Number(invoice.outstandingAmount))
+      );
+    }),
   );
   const isDirty = Boolean(
     direction !== "ENCAISSEMENT" ||
+    refund ||
     thirdPartyId ||
     paymentDate !== today ||
     method !== "Virement" ||
@@ -262,6 +283,7 @@ function PaymentDialog({
   const draftPayload = useMemo<PaymentFormDraft>(
     () => ({
       direction,
+      refund,
       thirdPartyId,
       paymentDate,
       method,
@@ -278,6 +300,7 @@ function PaymentDialog({
       allocations,
       cashAccountId,
       direction,
+      refund,
       instrumentBank,
       instrumentDueDate,
       instrumentNumber,
@@ -332,19 +355,43 @@ function PaymentDialog({
             ? "Votre saisie précédente a été restaurée. Elle reste un brouillon local tant que vous ne créez pas le règlement."
             : "La saisie est enregistrée automatiquement dans ce navigateur. Vous pourrez la reprendre plus tard si une information manque."}
         </Alert>
+        {refund && (
+          <Alert severity="info" sx={{ gridColumn: "1 / -1" }}>
+            Ce formulaire enregistre un remboursement déjà effectué ou à
+            comptabiliser. Il ne déclenche aucun virement bancaire.
+          </Alert>
+        )}
         <TextField
           select
           label="Opération"
-          value={direction}
-          onChange={(event) =>
-            changeDirection(event.target.value as typeof direction)
+          value={
+            refund
+              ? receipt
+                ? "REMBOURSEMENT_FOURNISSEUR"
+                : "REMBOURSEMENT_CLIENT"
+              : direction
           }
+          onChange={(event) => {
+            const value = event.target.value;
+            setRefund(value.startsWith("REMBOURSEMENT"));
+            changeDirection(
+              value === "REMBOURSEMENT_FOURNISSEUR" || value === "ENCAISSEMENT"
+                ? "ENCAISSEMENT"
+                : "DECAISSEMENT",
+            );
+          }}
         >
           <MenuItem value="ENCAISSEMENT">Encaissement client</MenuItem>
           <MenuItem value="DECAISSEMENT">Décaissement fournisseur</MenuItem>
+          <MenuItem value="REMBOURSEMENT_CLIENT">
+            Remboursement au client
+          </MenuItem>
+          <MenuItem value="REMBOURSEMENT_FOURNISSEUR">
+            Remboursement reçu du fournisseur
+          </MenuItem>
         </TextField>
         <SearchableSelect
-          label={receipt ? "Client" : "Fournisseur"}
+          label={clientOperation ? "Client" : "Fournisseur"}
           value={thirdPartyId}
           onChange={changeParty}
           options={availableParties.map((party) => ({
@@ -482,7 +529,8 @@ function PaymentDialog({
                       Solde ouvert
                     </Typography>
                     <Typography sx={{ fontWeight: 700 }}>
-                      {money(invoice.outstandingAmount)}
+                      {money(Math.abs(Number(invoice.outstandingAmount)))}{" "}
+                      {refund ? "à rembourser" : "restant"}
                     </Typography>
                   </Box>
                   <TextField
@@ -570,12 +618,12 @@ export function PaymentsPanel({
   const { showFeedback } = useFeedback();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
-  const [correctionFor, setCorrectionFor] =
-    useState<ThirdPartyPayment | null>(null);
+  const [correctionFor, setCorrectionFor] = useState<ThirdPartyPayment | null>(
+    null,
+  );
   const [correction, setCorrection] = useState({
     correctionType: "ANNULATION_SAISIE" as
-      | "ANNULATION_SAISIE"
-      | "REMBOURSEMENT",
+      "ANNULATION_SAISIE" | "REMBOURSEMENT",
     correctionDate: new Date().toISOString().slice(0, 10),
     reason: "",
   });
@@ -673,9 +721,9 @@ export function PaymentsPanel({
   };
   const correctionDirty = Boolean(
     correctionFor &&
-      (correction.correctionType !== "ANNULATION_SAISIE" ||
-        correction.correctionDate !== new Date().toISOString().slice(0, 10) ||
-        correction.reason),
+    (correction.correctionType !== "ANNULATION_SAISIE" ||
+      correction.correctionDate !== new Date().toISOString().slice(0, 10) ||
+      correction.reason),
   );
   const correctionCloseGuard = useUnsavedChangesGuard(
     correctionDirty && !correct.isPending,
@@ -773,7 +821,11 @@ export function PaymentsPanel({
                             <Button
                               size="small"
                               variant="contained"
-                              disabled={instrumentAction.isPending}
+                              disabled={
+                                instrumentAction.isPending ||
+                                (column.next === "clear" &&
+                                  payment.status !== "COMPTABILISE")
+                              }
                               onClick={() =>
                                 instrumentAction.mutate({
                                   payment,
@@ -1010,8 +1062,7 @@ export function PaymentsPanel({
                 setCorrection({
                   ...correction,
                   correctionType: event.target.value as
-                    | "ANNULATION_SAISIE"
-                    | "REMBOURSEMENT",
+                    "ANNULATION_SAISIE" | "REMBOURSEMENT",
                 })
               }
             >

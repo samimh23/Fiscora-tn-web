@@ -117,12 +117,12 @@ export function WorkSessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const heartbeat = useCallback(
-    async (active: boolean) => {
+    async (active: boolean, manualPause = false) => {
       if (!organization?.id || !session) return;
       try {
         const next = await api.post<WorkSession>(
           `/api/organizations/${organization.id}/work-sessions/${session.id}/heartbeat`,
-          { active },
+          { active, manualPause },
         );
         setSession(next);
         setDisplaySeconds(next.activeSeconds);
@@ -218,7 +218,7 @@ export function WorkSessionProvider({ children }: { children: ReactNode }) {
 
   const pause = useCallback(async () => {
     manualPause.current = true;
-    await heartbeat(false);
+    await heartbeat(false, true);
   }, [heartbeat]);
 
   const resume = useCallback(async () => {

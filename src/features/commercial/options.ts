@@ -29,6 +29,7 @@ export const settlementStatusLabels: Record<string, string> = {
   NON_REGLEE: "Non réglée",
   PARTIELLEMENT_REGLEE: "Partiellement réglée",
   REGLEE: "Réglée",
+  A_REMBOURSER: "À rembourser",
 };
 
 export const paymentStatusLabels: Record<string, string> = {

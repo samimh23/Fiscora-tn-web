@@ -9,6 +9,7 @@
     "audit:prod": "node scripts/audit-production.mjs",
     "lint": "eslint .",
     "test:session": "node --test scripts/client-session.test.mjs",
+    "test:workflows": "node --test scripts/invoice-workflows.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "preview": "vite preview"
