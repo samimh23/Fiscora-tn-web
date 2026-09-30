@@ -6,7 +6,13 @@ export interface AssistantCitation {
   sourceId: string;
   sourceName: string;
   pageNumber: number | null;
-  kind?: "DOCUMENT" | "BUSINESS_INVOICE" | "PRODUCT_HELP";
+  kind?:
+    | "DOCUMENT"
+    | "BUSINESS_INVOICE"
+    | "PRODUCT_HELP"
+    | "PAYMENT"
+    | "FINANCIAL_REPORT"
+    | "PARTY_BALANCE";
   path?: string;
 }
 

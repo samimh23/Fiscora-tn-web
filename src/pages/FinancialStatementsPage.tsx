@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -195,8 +196,30 @@ function NoteEditor({
 export function FinancialStatementsPage() {
   const { organization, can } = useAuth();
   const [dossierId, setDossierId] = useDossierSelection();
-  const [year, setYear] = useState(new Date().getFullYear() - 1);
+  const [searchParams] = useSearchParams();
+  const requestedYear = Number(searchParams.get("year"));
+  const [year, setYear] = useState(
+    Number.isInteger(requestedYear) &&
+      requestedYear >= 2000 &&
+      requestedYear <= 2100
+      ? requestedYear
+      : new Date().getFullYear() - 1,
+  );
+  useEffect(() => {
+    if (
+      Number.isInteger(requestedYear) &&
+      requestedYear >= 2000 &&
+      requestedYear <= 2100
+    )
+      setYear(requestedYear);
+  }, [requestedYear]);
   const [tab, setTab] = useState(0);
+  const reportYears = Array.from(
+    new Set([
+      year,
+      ...[0, 1, 2, 3, 4].map((offset) => new Date().getFullYear() - offset),
+    ]),
+  ).sort((a, b) => b - a);
   const [message, setMessage] = useState("");
   const qc = useQueryClient();
   const base =
@@ -266,14 +289,11 @@ export function FinancialStatementsPage() {
               onChange={(e) => setYear(Number(e.target.value))}
               sx={{ minWidth: 120 }}
             >
-              {[0, 1, 2, 3, 4].map((offset) => {
-                const value = new Date().getFullYear() - offset;
-                return (
-                  <MenuItem key={value} value={value}>
-                    {value}
-                  </MenuItem>
-                );
-              })}
+              {reportYears.map((value) => (
+                <MenuItem key={value} value={value}>
+                  {value}
+                </MenuItem>
+              ))}
             </TextField>
           </Stack>
         }

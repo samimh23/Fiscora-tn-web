@@ -255,7 +255,7 @@ export function AssistantWidget() {
                   variant="caption"
                   sx={{ color: "rgba(255,255,255,.72)" }}
                 >
-                  Guide des pages et données validées
+                  Guides, documents et données financières
                 </Typography>
               </Box>
               {!isClientPortal && (
@@ -373,7 +373,8 @@ export function AssistantWidget() {
                     sx={{ mt: 0.5 }}
                   >
                     Demandez comment réaliser une tâche sur la page actuelle, ou
-                    interrogez les pièces validées du dossier choisi.
+                    interrogez les documents, soldes, règlements et états
+                    financiers du dossier choisi, selon vos permissions.
                   </Typography>
                 </Box>
               </Stack>

@@ -64,7 +64,9 @@ interface AssistantIndexStatus {
 const suggestions = [
   "Comment déposer une facture et la faire lire par l’IA ?",
   "Quel est le total TTC des factures validées ?",
-  "Où importer un relevé bancaire et le rapprocher ?",
+  "Quels sont les soldes actuels des fournisseurs ?",
+  "Afficher les paiements d’une facture",
+  `Quel est le résumé financier pour ${new Date().getFullYear()} ?`,
 ];
 
 function errorMessage(error: unknown, fallback: string) {
@@ -243,7 +245,7 @@ export function AssistantPage() {
       <PageHeader
         eyebrow="Dossier client"
         title="Assistant Fiscora"
-        description="Demandez comment réaliser une tâche dans Fiscora ou interrogez les données validées d’un dossier. Chaque réponse cite ses sources."
+        description="Interrogez les documents, les soldes clients/fournisseurs, les factures et règlements ou les états financiers du dossier. Consultation en lecture seule, avec sources."
         action={<DossierSelector value={dossierId} onChange={setDossierId} />}
       />
 
@@ -253,7 +255,7 @@ export function AssistantPage() {
       >
         <Chip
           icon={<ShieldOutlined />}
-          label="Sources validées uniquement"
+          label="Accès limité à vos permissions"
           color="success"
           variant="outlined"
         />
@@ -479,7 +481,7 @@ export function AssistantPage() {
                     >
                       <CircularProgress size={18} />
                       <Typography variant="body2" color="text.secondary">
-                        Recherche dans les guides et sources validées…
+                        Consultation des guides et données du dossier…
                       </Typography>
                     </Stack>
                   )}
@@ -549,9 +551,11 @@ export function AssistantPage() {
                 </Stack>
                 <Typography variant="body2" color="text.secondary">
                   Les extractions validées sont indexées automatiquement. Les
-                  factures validées ou comptabilisées sont interrogées
-                  directement depuis la comptabilité. Les brouillons et pièces
-                  rejetées restent exclus.
+                  totaux utilisent les factures validées ou comptabilisées. Les
+                  soldes, règlements et résumés financiers sont lus directement
+                  selon vos permissions. Les brouillons et annulations sont
+                  explicitement identifiés dans l’historique détaillé et exclus
+                  des soldes comptabilisés.
                 </Typography>
                 {automaticIndex.data && (
                   <Alert severity="success">
