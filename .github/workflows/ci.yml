@@ -39,6 +39,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Test session renewal
+        run: npm run test:session
+
       - name: Build application
         run: npm run build
 

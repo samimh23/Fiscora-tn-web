@@ -53,21 +53,50 @@ async function parseError(response: Response) {
   return new ApiError(response.status, message, details);
 }
 
-async function refreshSession(): Promise<AuthResponse | null> {
-  const current = readSession();
+let pendingRefresh: {
+  token: string;
+  promise: Promise<AuthResponse | null>;
+} | null = null;
+
+async function refreshSession(
+  requestedSession: AuthResponse,
+): Promise<AuthResponse | null> {
+  const sessionForRequest = () => {
+    const session = readSession();
+    return session?.user.id === requestedSession.user.id ? session : null;
+  };
+  const current = sessionForRequest();
   if (!current?.refreshToken) return null;
-  const response = await fetch(apiUrl("/api/auth/refresh"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refreshToken: current.refreshToken }),
-  });
-  if (!response.ok) {
-    saveSession(null);
-    return null;
+  // A delayed 401 may belong to a session that has already been renewed.
+  if (current.refreshToken !== requestedSession.refreshToken) return current;
+  if (pendingRefresh?.token === current.refreshToken) {
+    return pendingRefresh.promise;
   }
-  const renewed = (await response.json()) as AuthResponse;
-  saveSession(renewed);
-  return renewed;
+  const token = current.refreshToken;
+  const promise = (async () => {
+    const response = await fetch(apiUrl("/api/auth/refresh"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken: token }),
+    });
+    // Logout or a new login must not be overwritten by an old response.
+    if (readSession()?.refreshToken !== token) return sessionForRequest();
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) saveSession(null);
+      else throw await parseError(response);
+      return null;
+    }
+    const renewed = (await response.json()) as AuthResponse;
+    if (readSession()?.refreshToken !== token) return sessionForRequest();
+    saveSession(renewed);
+    return renewed;
+  })();
+  pendingRefresh = { token, promise };
+  try {
+    return await promise;
+  } finally {
+    if (pendingRefresh?.promise === promise) pendingRefresh = null;
+  }
 }
 
 export async function apiRequest<T>(
@@ -89,7 +118,7 @@ export async function apiRequest<T>(
 
   const response = await fetch(apiUrl(path), { ...init, headers });
   if (response.status === 401 && retryAfterRefresh && session?.refreshToken) {
-    const renewed = await refreshSession();
+    const renewed = await refreshSession(session);
     if (renewed) return apiRequest<T>(path, init, false);
   }
   if (!response.ok) throw await parseError(response);
@@ -127,7 +156,7 @@ export async function fetchApiFile(path: string): Promise<Blob> {
       headers.set("Authorization", `Bearer ${session.accessToken}`);
     const response = await fetch(apiUrl(path), { headers });
     if (response.status === 401 && retryAfterRefresh && session?.refreshToken) {
-      const renewed = await refreshSession();
+      const renewed = await refreshSession(session);
       if (renewed) return fetchFile(false);
     }
     if (!response.ok) throw await parseError(response);
