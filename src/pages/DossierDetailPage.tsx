@@ -476,7 +476,8 @@ export function DossierDetailPage() {
                         label="Honoraires annuels"
                         value={money(item.annualFee)}
                       />
-                    ) : !item.billingFrequency || item.billingFrequency === "MENSUELLE" ? (
+                    ) : !item.billingFrequency ||
+                      item.billingFrequency === "MENSUELLE" ? (
                       <InfoItem
                         label="Honoraires mensuels"
                         value={money(item.monthlyFee)}
@@ -996,6 +997,7 @@ export function DossierDetailPage() {
 
       {tab === "banking" && can("bank_reconciliation.view") && (
         <DossierBankReconciliationPanel
+          key={`${organizationId}:${dossierId}`}
           organizationId={organizationId}
           dossierId={dossierId}
           archived={archived}
@@ -1006,7 +1008,9 @@ export function DossierDetailPage() {
           canAccountingPost={can("accounting.post")}
           canPaymentsView={can("payments.view")}
           canScanDocuments={
-            can("documents.upload") && can("documents.validate")
+            can("documents.view") &&
+            can("documents.upload") &&
+            can("documents.validate")
           }
         />
       )}

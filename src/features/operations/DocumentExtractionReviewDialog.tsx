@@ -1,16 +1,33 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Alert, Box, Button, Checkbox, Dialog, DialogActions, DialogContent,
-  DialogTitle, FormControlLabel, IconButton, Skeleton, TextField, Tooltip,
+  Alert,
+  Box,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  IconButton,
+  Skeleton,
+  TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
-import { AddRounded, ContentCopyRounded, DeleteOutlineRounded } from "@mui/icons-material";
+import {
+  AddRounded,
+  ContentCopyRounded,
+  DeleteOutlineRounded,
+} from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
 import { SearchableSelect } from "../../components/SearchableSelect";
 import { PdfDocumentViewer } from "../../components/PdfDocumentViewer";
 import type {
-  BankAccount, DocumentExtractionReviewItem, DocumentPreview,
+  BankAccount,
+  DocumentExtractionReviewItem,
+  DocumentPreview,
 } from "../../types/api";
 
 const extractionFields = [
@@ -95,7 +112,9 @@ const extractionEvidence = (
     if (
       !Array.isArray(bbox) ||
       bbox.length !== 4 ||
-      !bbox.every((value) => typeof value === "number" && Number.isFinite(value))
+      !bbox.every(
+        (value) => typeof value === "number" && Number.isFinite(value),
+      )
     )
       continue;
     const normalized = bbox.map((value) =>
@@ -113,43 +132,64 @@ const extractionEvidence = (
 };
 
 export function DocumentExtractionReviewDialog({
-  organizationId, dossierId, target: reviewTarget, onClose,
+  organizationId,
+  dossierId,
+  target: reviewTarget,
+  onClose,
+  initialBankAccountId,
 }: {
   organizationId: string;
   dossierId: string;
   target: DocumentExtractionReviewItem;
   onClose: () => void;
+  initialBankAccountId?: string;
 }) {
   const queryClient = useQueryClient();
   const [reviewSource] = useState<Record<string, unknown>>(() =>
-    structuredClone(reviewTarget.sourceData ?? reviewTarget.normalizedData ?? {}),
+    structuredClone(
+      reviewTarget.sourceData ?? reviewTarget.normalizedData ?? {},
+    ),
   );
   const [reviewDraft, setReviewDraft] = useState<Record<string, unknown>>(() =>
     structuredClone(reviewTarget.normalizedData ?? reviewSource),
   );
   const [highlightedEvidencePath, setHighlightedEvidencePath] = useState("");
   const [reviewComment, setReviewComment] = useState("");
-  const [reviewBankAccountId, setReviewBankAccountId] = useState("");
+  const [reviewBankAccountId, setReviewBankAccountId] = useState(
+    initialBankAccountId ?? "",
+  );
   const [forceApproveOpen, setForceApproveOpen] = useState(false);
-  const [forceApprovalAcknowledged, setForceApprovalAcknowledged] = useState(false);
+  const [forceApprovalAcknowledged, setForceApprovalAcknowledged] =
+    useState(false);
   const [error, setError] = useState("");
-  const refresh = () => Promise.all([
-    "dossier-documents", "missing-documents", "document-extraction-reviews",
-    "bank-statements",
-  ].map((key) => queryClient.invalidateQueries({
-    queryKey: [key, organizationId, dossierId],
-  })));
+  const refresh = () =>
+    Promise.all(
+      [
+        "dossier-documents",
+        "missing-documents",
+        "document-extraction-reviews",
+        "bank-statements",
+      ].map((key) =>
+        queryClient.invalidateQueries({
+          queryKey: [key, organizationId, dossierId],
+        }),
+      ),
+    );
   const requestExtraction = useMutation({
-    mutationFn: (documentId: string) => api.post(
-      `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${documentId}/extraction`,
-    ),
+    mutationFn: (documentId: string) =>
+      api.post(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${documentId}/extraction`,
+      ),
     onSuccess: async () => {
       await refresh();
       onClose();
     },
-    onError: (reason) => setError(
-      reason instanceof ApiError ? reason.message : "Impossible de démarrer l’extraction.",
-    ),
+    onError: (reason) =>
+      setError(
+        reason instanceof ApiError
+          ? reason.message
+          : "Impossible de démarrer l’extraction.",
+      ),
   });
   const bankAccounts = useQuery({
     queryKey: ["bank-accounts", organizationId, dossierId],
@@ -157,8 +197,7 @@ export function DocumentExtractionReviewDialog({
       api.get<BankAccount[]>(
         `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/accounts`,
       ),
-    enabled:
-      reviewDraft.document_type === "bank_statement",
+    enabled: reviewDraft.document_type === "bank_statement",
   });
   const reviewPreview = useQuery({
     queryKey: [
@@ -224,9 +263,7 @@ export function DocumentExtractionReviewDialog({
   const approveExtraction = () => {
     if (!reviewTarget) return;
     if (
-      reviewTarget.validationIssues.some(
-        (issue) => issue.severity === "ERROR",
-      )
+      reviewTarget.validationIssues.some((issue) => issue.severity === "ERROR")
     ) {
       setError("");
       setForceApprovalAcknowledged(false);
@@ -275,7 +312,9 @@ export function DocumentExtractionReviewDialog({
     ? extractionEvidence(reviewSource, highlightedEvidencePath)
     : null;
   const focusEvidence = (...paths: string[]) => {
-    const available = paths.find((path) => extractionEvidence(reviewSource, path));
+    const available = paths.find((path) =>
+      extractionEvidence(reviewSource, path),
+    );
     setHighlightedEvidencePath(available ?? paths[0] ?? "");
   };
   const isBankReview = reviewDraft.document_type === "bank_statement";
@@ -353,7 +392,8 @@ export function DocumentExtractionReviewDialog({
     });
   };
   useEffect(() => {
-    if (!isBankReview || reviewBankAccountId || !bankAccounts.data?.length)
+    if (!isBankReview || !bankAccounts.data?.length) return;
+    if (bankAccounts.data.some((account) => account.id === reviewBankAccountId))
       return;
     const extractedIban = String(reviewBankStatement.iban ?? "")
       .replace(/[^a-zA-Z0-9]/g, "")
@@ -365,7 +405,8 @@ export function DocumentExtractionReviewDialog({
           extractedIban,
     );
     setReviewBankAccountId(
-      matching?.id ?? (bankAccounts.data.length === 1 ? bankAccounts.data[0].id : ""),
+      matching?.id ??
+        (bankAccounts.data.length === 1 ? bankAccounts.data[0].id : ""),
     );
   }, [
     bankAccounts.data,
@@ -468,13 +509,17 @@ export function DocumentExtractionReviewDialog({
       <Dialog
         open={Boolean(reviewTarget)}
         onClose={
-          reviewExtraction.isPending || requestExtraction.isPending ? undefined : onClose
+          reviewExtraction.isPending || requestExtraction.isPending
+            ? undefined
+            : onClose
         }
         fullWidth
         maxWidth="xl"
       >
         <DialogTitle>
-          <Typography variant="h3">Vérifier les données lues par l’IA</Typography>
+          <Typography variant="h3">
+            Vérifier les données lues par l’IA
+          </Typography>
           <Typography variant="body2" color="text.secondary">
             {reviewTarget?.document.originalName} · comparez chaque valeur avec
             la pièce originale avant validation.
@@ -639,7 +684,7 @@ export function DocumentExtractionReviewDialog({
                   placeholder="Rechercher un compte bancaire…"
                   helperText={
                     bankAccounts.data?.length
-                      ? "Le compte est proposé automatiquement lorsque l’IBAN correspond."
+                      ? "Vérifiez que ce compte correspond au relevé avant de confirmer l’import."
                       : "Créez d’abord un compte bancaire dans Production > Banque."
                   }
                   sx={{ mb: 2, width: "100%" }}
@@ -654,19 +699,23 @@ export function DocumentExtractionReviewDialog({
               >
                 {(isBankReview ? bankExtractionFields : extractionFields).map(
                   (field) => (
-                  <TextField
-                    key={field.path}
-                    size="small"
-                    label={field.label}
-                    value={readPath(reviewDraft, field.path)}
-                    onFocus={() => focusEvidence(field.path)}
-                    onChange={(event) =>
-                      setReviewDraft(
-                        writePath(reviewDraft, field.path, event.target.value),
-                      )
-                    }
-                    fullWidth
-                  />
+                    <TextField
+                      key={field.path}
+                      size="small"
+                      label={field.label}
+                      value={readPath(reviewDraft, field.path)}
+                      onFocus={() => focusEvidence(field.path)}
+                      onChange={(event) =>
+                        setReviewDraft(
+                          writePath(
+                            reviewDraft,
+                            field.path,
+                            event.target.value,
+                          ),
+                        )
+                      }
+                      fullWidth
+                    />
                   ),
                 )}
               </Box>
@@ -1027,7 +1076,9 @@ export function DocumentExtractionReviewDialog({
                     }}
                   >
                     <Box>
-                      <Typography variant="h4">Champs supplémentaires</Typography>
+                      <Typography variant="h4">
+                        Champs supplémentaires
+                      </Typography>
                       <Typography variant="body2" color="text.secondary">
                         Informations visibles qui ne font pas partie des champs
                         comptables standards.
@@ -1048,7 +1099,8 @@ export function DocumentExtractionReviewDialog({
                         key={index}
                         sx={{
                           display: "grid",
-                          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr) auto",
+                          gridTemplateColumns:
+                            "minmax(0, 1fr) minmax(0, 1fr) auto",
                           gap: 1,
                           alignItems: "center",
                         }}
@@ -1110,8 +1162,7 @@ export function DocumentExtractionReviewDialog({
             variant="outlined"
             disabled={requestExtraction.isPending || reviewExtraction.isPending}
             onClick={() =>
-              reviewTarget &&
-              requestExtraction.mutate(reviewTarget.documentId)
+              reviewTarget && requestExtraction.mutate(reviewTarget.documentId)
             }
           >
             {requestExtraction.isPending
@@ -1127,7 +1178,11 @@ export function DocumentExtractionReviewDialog({
           <Button
             color="error"
             variant="outlined"
-            disabled={!reviewComment.trim() || reviewExtraction.isPending || requestExtraction.isPending}
+            disabled={
+              !reviewComment.trim() ||
+              reviewExtraction.isPending ||
+              requestExtraction.isPending
+            }
             onClick={() =>
               reviewTarget &&
               reviewExtraction.mutate({
@@ -1209,9 +1264,7 @@ export function DocumentExtractionReviewDialog({
           <Button
             color="warning"
             variant="contained"
-            disabled={
-              !forceApprovalAcknowledged || reviewExtraction.isPending
-            }
+            disabled={!forceApprovalAcknowledged || reviewExtraction.isPending}
             onClick={() =>
               reviewTarget &&
               reviewExtraction.mutate({

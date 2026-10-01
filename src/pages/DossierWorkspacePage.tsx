@@ -339,6 +339,7 @@ export function DossierWorkspacePage({ module }: { module: WorkspaceModule }) {
       )}
       {dossier.data && module === "banking" && (
         <DossierBankReconciliationPanel
+          key={`${organizationId}:${dossierId}`}
           organizationId={organizationId}
           dossierId={dossierId}
           archived={archived}
@@ -349,7 +350,9 @@ export function DossierWorkspacePage({ module }: { module: WorkspaceModule }) {
           canAccountingPost={can("accounting.post")}
           canPaymentsView={can("payments.view")}
           canScanDocuments={
-            can("documents.upload") && can("documents.validate")
+            can("documents.view") &&
+            can("documents.upload") &&
+            can("documents.validate")
           }
         />
       )}

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import {
   Alert,
   Autocomplete,
@@ -38,6 +37,7 @@ import {
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
 import { BankMatchSuggestion } from "./BankMatchSuggestion";
+import { BankStatementAiImports } from "./BankStatementAiImports";
 import { SearchableSelect } from "../../components/SearchableSelect";
 import type {
   AccountingJournal,
@@ -127,9 +127,9 @@ function BankAccountDialog({
   );
   const selectedAccountIsIneligible = Boolean(
     ledgerAccountId &&
-      !eligibleLedgerAccounts.some(
-        (ledgerAccount) => ledgerAccount.id === ledgerAccountId,
-      ),
+    !eligibleLedgerAccounts.some(
+      (ledgerAccount) => ledgerAccount.id === ledgerAccountId,
+    ),
   );
   const mutation = useMutation({
     mutationFn: () => {
@@ -192,15 +192,14 @@ function BankAccountDialog({
         )}
         {eligibleLedgerAccounts.length === 0 && (
           <Alert severity="warning" sx={{ gridColumn: "1 / -1" }}>
-            Aucun compte de banque saisissable n’est configuré. Créez d’abord
-            un compte 532 (par exemple 5321) dans le plan comptable du dossier.
+            Aucun compte de banque saisissable n’est configuré. Créez d’abord un
+            compte 532 (par exemple 5321) dans le plan comptable du dossier.
           </Alert>
         )}
         {selectedAccountIsIneligible && (
           <Alert severity="warning" sx={{ gridColumn: "1 / -1" }}>
             Le compte comptable actuellement associé n’appartient pas à la
-            classe 532. Sélectionnez un compte bancaire valide pour le
-            corriger.
+            classe 532. Sélectionnez un compte bancaire valide pour le corriger.
           </Alert>
         )}
         <TextField
@@ -540,8 +539,8 @@ function BankRulesCard({
       {!rules.length ? (
         <Box sx={{ px: 2.5, pb: 2.5 }}>
           <Alert severity="info">
-            Aucune règle mémorisée. Vous pouvez en créer ici ou en mémoriser
-            une depuis une opération bancaire non rapprochée.
+            Aucune règle mémorisée. Vous pouvez en créer ici ou en mémoriser une
+            depuis une opération bancaire non rapprochée.
           </Alert>
         </Box>
       ) : (
@@ -624,6 +623,7 @@ function ImportDialog({
   dossierId,
   bankAccounts,
   canScan,
+  onScan,
 }: {
   open: boolean;
   onClose: () => void;
@@ -631,16 +631,13 @@ function ImportDialog({
   dossierId: string;
   bankAccounts: BankAccount[];
   canScan: boolean;
+  onScan: (bankAccountId: string) => void;
 }) {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const now = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth(), 1)
-    .toISOString()
-    .slice(0, 10);
-  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-    .toISOString()
-    .slice(0, 10);
+  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const first = `${yearMonth}-01`;
+  const last = `${yearMonth}-${String(new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()).padStart(2, "0")}`;
   const [bankAccountId, setBankAccountId] = useState(bankAccounts[0]?.id ?? "");
   const [periodStart, setPeriodStart] = useState(first);
   const [periodEnd, setPeriodEnd] = useState(last);
@@ -776,11 +773,8 @@ function ImportDialog({
             <Button
               variant="outlined"
               startIcon={<AutoAwesomeRounded />}
-              onClick={() =>
-                navigate(
-                  `/documents?dossierId=${encodeURIComponent(dossierId)}&scan=bank`,
-                )
-              }
+              disabled={!bankAccountId || mutation.isPending}
+              onClick={() => onScan(bankAccountId)}
               sx={{ ml: 1 }}
             >
               Scanner une image avec l’IA
@@ -1104,6 +1098,9 @@ export function DossierBankReconciliationPanel({
     null,
   );
   const [importOpen, setImportOpen] = useState(false);
+  const [scanBankAccountId, setScanBankAccountId] = useState<string | null>(
+    null,
+  );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [match, setMatch] = useState<{
     mode: MatchMode;
@@ -1449,6 +1446,13 @@ export function DossierBankReconciliationPanel({
             )
           )}
         </Card>
+        <BankStatementAiImports
+          organizationId={organizationId}
+          dossierId={dossierId}
+          canImport={canManage && canScanDocuments && !archived}
+          scanBankAccountId={scanBankAccountId}
+          onScanClose={() => setScanBankAccountId(null)}
+        />
         {canAccountsView && (
           <BankRulesCard
             organizationId={organizationId}
@@ -1876,6 +1880,10 @@ export function DossierBankReconciliationPanel({
           dossierId={dossierId}
           bankAccounts={bankAccounts.data ?? []}
           canScan={canScanDocuments}
+          onScan={(accountId) => {
+            setImportOpen(false);
+            setScanBankAccountId(accountId);
+          }}
         />
       )}
       {match && selected && (
