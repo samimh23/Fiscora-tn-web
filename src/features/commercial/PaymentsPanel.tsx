@@ -21,6 +21,7 @@ import {
 import {
   AddRounded,
   AccountBalanceWalletOutlined,
+  EditOutlined,
   PostAddRounded,
   UndoRounded,
 } from "@mui/icons-material";
@@ -86,6 +87,12 @@ const correctionTypeLabels: Record<string, string> = {
   ANNULATION_SAISIE: "Saisie annulée",
   REMBOURSEMENT: "Remboursé",
 };
+
+const paymentDateHint = (value: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  !Number.isNaN(new Date(`${value}T00:00:00`).getTime())
+    ? `Date retenue : ${new Intl.DateTimeFormat("fr-TN", { dateStyle: "long" }).format(new Date(`${value}T00:00:00`))}`
+    : "Le format du calendrier dépend de votre navigateur (jour/mois ou mois/jour).";
 
 function PaymentDialog({
   open,
@@ -404,6 +411,7 @@ function PaymentDialog({
           type="date"
           value={paymentDate}
           onChange={(event) => setPaymentDate(event.target.value)}
+          helperText={paymentDateHint(paymentDate)}
           slotProps={{ inputLabel: { shrink: true } }}
         />
         <TextField
@@ -440,6 +448,7 @@ function PaymentDialog({
               type="date"
               value={instrumentDueDate}
               onChange={(event) => setInstrumentDueDate(event.target.value)}
+              helperText={paymentDateHint(instrumentDueDate)}
               slotProps={{ inputLabel: { shrink: true } }}
             />
           </>
@@ -589,6 +598,104 @@ function PaymentDialog({
   );
 }
 
+function PaymentDraftEditDialog({
+  payment,
+  organizationId,
+  dossierId,
+  onClose,
+  onSaved,
+}: {
+  payment: ThirdPartyPayment;
+  organizationId: string;
+  dossierId: string;
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}) {
+  const { showFeedback } = useFeedback();
+  const [paymentDate, setPaymentDate] = useState(payment.paymentDate);
+  const [reference, setReference] = useState(payment.reference ?? "");
+  const update = useMutation({
+    mutationFn: () =>
+      api.put<ThirdPartyPayment>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/payments/${payment.id}`,
+        { paymentDate, reference },
+      ),
+    onSuccess: async () => {
+      await onSaved();
+      showFeedback(
+        "La date et la référence du règlement ont été mises à jour.",
+      );
+      onClose();
+    },
+  });
+  const dirty =
+    paymentDate !== payment.paymentDate ||
+    reference !== (payment.reference ?? "");
+  const closeGuard = useUnsavedChangesGuard(
+    dirty && !update.isPending,
+    onClose,
+  );
+  return (
+    <>
+      <Dialog
+        open
+        onClose={update.isPending ? undefined : closeGuard.requestClose}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Modifier le règlement non comptabilisé</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Alert severity="info">
+              Modifiez la date ou la référence avant comptabilisation. Le
+              montant de {money(payment.amount)}, les comptes et les factures
+              affectées restent inchangés.
+            </Alert>
+            {update.error && (
+              <Alert severity="error">
+                {update.error instanceof ApiError
+                  ? update.error.message
+                  : "La modification du règlement est impossible."}
+              </Alert>
+            )}
+            <TextField
+              label="Date du règlement"
+              type="date"
+              value={paymentDate}
+              onChange={(event) => setPaymentDate(event.target.value)}
+              disabled={update.isPending}
+              helperText={paymentDateHint(paymentDate)}
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <TextField
+              label="Référence"
+              value={reference}
+              onChange={(event) => setReference(event.target.value)}
+              disabled={update.isPending}
+              slotProps={{ htmlInput: { maxLength: 120 } }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={update.isPending} onClick={closeGuard.requestClose}>
+            Annuler
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!paymentDate || !dirty || update.isPending}
+            onClick={() => update.mutate()}
+          >
+            {update.isPending
+              ? "Enregistrement…"
+              : "Enregistrer les modifications"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <UnsavedChangesDialog guard={closeGuard} />
+    </>
+  );
+}
+
 export function PaymentsPanel({
   organizationId,
   dossierId,
@@ -618,6 +725,8 @@ export function PaymentsPanel({
   const { showFeedback } = useFeedback();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
+  const [editingPayment, setEditingPayment] =
+    useState<ThirdPartyPayment | null>(null);
   const [correctionFor, setCorrectionFor] = useState<ThirdPartyPayment | null>(
     null,
   );
@@ -640,6 +749,9 @@ export function PaymentsPanel({
       }),
       queryClient.invalidateQueries({ queryKey: ["bank-statements"] }),
       queryClient.invalidateQueries({ queryKey: ["bank-statement"] }),
+      queryClient.invalidateQueries({
+        queryKey: ["journal-entries", organizationId, dossierId],
+      }),
     ]);
   };
   const post = useMutation({
@@ -996,8 +1108,22 @@ export function PaymentsPanel({
             <Stack
               direction="row"
               spacing={1}
-              sx={{ justifyContent: { xs: "flex-start", md: "flex-end" } }}
+              sx={{
+                justifyContent: { xs: "flex-start", md: "flex-end" },
+                flexWrap: "wrap",
+                gap: 1,
+              }}
             >
+              {canManage && !archived && payment.status === "BROUILLON" && (
+                <Button
+                  size="small"
+                  startIcon={<EditOutlined />}
+                  disabled={post.isPending || correct.isPending}
+                  onClick={() => setEditingPayment(payment)}
+                >
+                  Modifier
+                </Button>
+              )}
               {canPost && !archived && payment.status === "BROUILLON" && (
                 <Button
                   size="small"
@@ -1024,6 +1150,16 @@ export function PaymentsPanel({
           </Box>
         ))}
       </Card>
+      {editingPayment && (
+        <PaymentDraftEditDialog
+          key={editingPayment.id}
+          payment={editingPayment}
+          organizationId={organizationId}
+          dossierId={dossierId}
+          onClose={() => setEditingPayment(null)}
+          onSaved={refreshPaymentData}
+        />
+      )}
       {open && (
         <PaymentDialog
           open={open}
@@ -1048,10 +1184,9 @@ export function PaymentsPanel({
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Alert severity="warning">
-              Le règlement original de {money(correctionFor?.amount)} restera
-              visible. Ses affectations seront retirées des factures et son
-              écriture sera extournée si elle est comptabilisée. Tout
-              rapprochement bancaire associé sera rouvert.
+              {correctionFor?.status === "BROUILLON"
+                ? "Le brouillon sera annulé et restera visible pour la piste d’audit. Aucune extourne n’est nécessaire car il n’est pas comptabilisé. Pour changer uniquement sa date ou sa référence, utilisez Modifier."
+                : `Le règlement original de ${money(correctionFor?.amount)} restera visible. Ses affectations seront retirées des factures et son écriture sera extournée. Tout rapprochement bancaire associé sera rouvert.`}
             </Alert>
             {error && <Alert severity="error">{error}</Alert>}
             <TextField
@@ -1079,6 +1214,7 @@ export function PaymentsPanel({
             <TextField
               type="date"
               label="Date de correction"
+              helperText={paymentDateHint(correction.correctionDate)}
               value={correction.correctionDate}
               onChange={(event) =>
                 setCorrection({
