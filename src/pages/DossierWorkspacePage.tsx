@@ -300,6 +300,7 @@ export function DossierWorkspacePage({ module }: { module: WorkspaceModule }) {
       )}
       {dossier.data && module === "documents" && (
         <DossierDocumentsPanel
+          key={`${organizationId}:${dossierId}`}
           organizationId={organizationId}
           dossierId={dossierId}
           archived={archived}

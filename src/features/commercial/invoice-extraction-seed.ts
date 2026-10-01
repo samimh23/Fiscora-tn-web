@@ -33,6 +33,7 @@ export interface InvoiceDraftSeed {
   exciseAccountId?: string;
   fodecAccountId?: string;
   extractionData?: Record<string, unknown>;
+  extractionReviewed?: boolean;
   vatInferenceNotice?: string;
   extractionNotice?: string;
   notes: string;

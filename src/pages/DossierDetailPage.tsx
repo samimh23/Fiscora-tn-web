@@ -929,6 +929,7 @@ export function DossierDetailPage() {
 
       {tab === "documents" && can("documents.view") && (
         <DossierDocumentsPanel
+          key={`${organizationId}:${dossierId}`}
           organizationId={organizationId}
           dossierId={dossierId}
           archived={archived}

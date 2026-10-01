@@ -15,7 +15,7 @@ const statuses = {
 } as const;
 
 export function InvoiceAiImports({
-  organizationId, dossierId, invoices, canPrepare, preparing, onPrepare,
+  organizationId, dossierId, invoices, canPrepare, preparing, onPrepare, onReview,
 }: {
   organizationId: string;
   dossierId: string;
@@ -23,6 +23,7 @@ export function InvoiceAiImports({
   canPrepare: boolean;
   preparing: boolean;
   onPrepare: (documentId: string) => void;
+  onReview: (document: AccountingDocument) => void;
 }) {
   const { can } = useAuth();
   const queryClient = useQueryClient();
@@ -77,7 +78,6 @@ export function InvoiceAiImports({
       {imports.map((document) => {
         const status = statuses[document.extractionStatus as keyof typeof statuses];
         const processing = ["EN_ATTENTE", "EN_COURS"].includes(document.extractionStatus);
-        const ready = ["A_REVOIR", "VALIDEE"].includes(document.extractionStatus);
         const actionable = canPrepare && can("documents.validate");
         return (
           <Box key={document.id} sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 2, mb: 1 }}>
@@ -92,7 +92,11 @@ export function InvoiceAiImports({
               <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}>
                 {processing && <CircularProgress size={18} aria-label="Traitement IA" />}
                 <Chip size="small" variant="outlined" label={status.label} color={status.color} />
-                {ready && actionable && (
+                {document.extractionStatus === "A_REVOIR" && actionable && (
+                  <Button size="small" variant="contained" disabled={preparing}
+                    onClick={() => onReview(document)}>Vérifier les données</Button>
+                )}
+                {document.extractionStatus === "VALIDEE" && actionable && (
                   <Button size="small" variant="outlined" disabled={preparing}
                     onClick={() => onPrepare(document.id)}>Préparer la facture</Button>
                 )}

@@ -32,6 +32,7 @@ import {
 import { api, ApiError, downloadApiFile } from "../../api/client";
 import { SearchableSelect } from "../../components/SearchableSelect";
 import { InvoiceAiImports } from "./InvoiceAiImports";
+import { DocumentExtractionReviewDialog } from "../operations/DocumentExtractionReviewDialog";
 import type {
   AccountingJournal,
   AccountingDocument,
@@ -41,6 +42,7 @@ import type {
   LedgerAccount,
   ThirdParty,
   DocumentExtractionJob,
+  DocumentExtractionReviewItem,
 } from "../../types/api";
 import {
   invoiceStatusLabels,
@@ -434,7 +436,10 @@ function InvoiceDialog({
       const saved = invoice
         ? await api.put<BusinessInvoice>(`${base}/${invoice.id}`, body)
         : await api.post<BusinessInvoice>(base, body);
-      if (!invoice && form.sourceDocumentId && draftSeed?.extractionData) {
+      if (
+        !invoice && form.sourceDocumentId && draftSeed?.extractionData &&
+        !draftSeed.extractionReviewed
+      ) {
         // Saving a business draft must not rewrite printed document totals or
         // turn a TTC-to-HT display conversion into a correction of the source.
         const correctedData = {
@@ -1178,6 +1183,8 @@ export function InvoicesPanel({
     null,
   );
   const [scanError, setScanError] = useState("");
+  const [reviewTarget, setReviewTarget] =
+    useState<DocumentExtractionReviewItem | null>(null);
   const [filter, setFilter] = useState("TOUTES");
   const [error, setError] = useState("");
   const [matchingInvoice, setMatchingInvoice] =
@@ -1269,15 +1276,16 @@ export function InvoicesPanel({
     }
     setError("");
     setSelected(null);
-    setAiDraftSeed(
-      invoiceSeedFromExtraction(
+    setAiDraftSeed({
+      ...invoiceSeedFromExtraction(
         data,
         sourceDocumentId,
         parties,
         accounts,
         journals,
       ),
-    );
+      extractionReviewed: sourceExtraction.data.status === "VALIDEE",
+    });
     setDialogOpen(true);
     onSourceDocumentConsumed?.();
   }, [
@@ -1411,6 +1419,29 @@ export function InvoicesPanel({
           : "Impossible de lancer la lecture IA.",
       ),
   });
+  const reviewAiExtraction = useMutation({
+    mutationFn: async (document: AccountingDocument) => {
+      const job = await api.get<DocumentExtractionJob>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${document.id}/extraction`,
+      );
+      if (job.status !== "A_REVOIR" || !job.normalizedData)
+        throw new Error("Cette extraction n’est plus en attente de vérification. Actualisez les imports IA.");
+      return { ...job, document };
+    },
+    onSuccess: (target) => {
+      setError("");
+      setScanError("");
+      setScanOpen(false);
+      setScanDocument(null);
+      setScanFile(null);
+      setReviewTarget(target);
+    },
+    onError: (reason) => {
+      const message = reason instanceof Error ? reason.message : "Impossible d’ouvrir la vérification.";
+      setError(message);
+      setScanError(message);
+    },
+  });
   const prepareAiInvoice = useMutation({
     mutationFn: async (documentId: string) => {
       if (invoices.some((invoice) => invoice.sourceDocumentId === documentId))
@@ -1418,8 +1449,8 @@ export function InvoicesPanel({
       const job = await api.get<DocumentExtractionJob>(
         `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${documentId}/extraction`,
       );
-      if (!["A_REVOIR", "VALIDEE"].includes(job.status) || !job.normalizedData)
-        throw new Error("Les données extraites ne sont pas disponibles.");
+      if (job.status !== "VALIDEE" || !job.normalizedData)
+        throw new Error("Vérifiez et confirmez les données extraites avant de préparer la facture.");
       const mappedData = job.normalizedData;
       if (
         !["invoice", "credit_note", "receipt"].includes(
@@ -1427,13 +1458,16 @@ export function InvoicesPanel({
         )
       )
         throw new Error("Le document détecté n’est pas une facture.");
-      return invoiceSeedFromExtraction(
-        mappedData,
-        documentId,
-        parties,
-        accounts,
-        journals,
-      );
+      return {
+        ...invoiceSeedFromExtraction(
+          mappedData,
+          documentId,
+          parties,
+          accounts,
+          journals,
+        ),
+        extractionReviewed: true,
+      };
     },
     onSuccess: (seed) => {
       setError("");
@@ -1453,7 +1487,7 @@ export function InvoicesPanel({
     },
   });
   const closeScan = () => {
-    if (uploadForExtraction.isPending || prepareAiInvoice.isPending) return;
+    if (uploadForExtraction.isPending || prepareAiInvoice.isPending || reviewAiExtraction.isPending) return;
     setScanOpen(false);
     setScanFile(null);
     setScanDocument(null);
@@ -1527,8 +1561,9 @@ export function InvoicesPanel({
           dossierId={dossierId}
           invoices={invoices}
           canPrepare={canManage && !archived && !loading}
-          preparing={prepareAiInvoice.isPending}
+          preparing={prepareAiInvoice.isPending || reviewAiExtraction.isPending}
           onPrepare={(documentId) => prepareAiInvoice.mutate(documentId)}
+          onReview={(document) => reviewAiExtraction.mutate(document)}
         />
         {loading && (
           <Box sx={{ p: 2.5 }}>
@@ -1756,6 +1791,15 @@ export function InvoicesPanel({
           withholdingRates={withholdingRates}
         />
       )}
+      {reviewTarget && (
+        <DocumentExtractionReviewDialog
+          key={`${organizationId}:${dossierId}:${reviewTarget.id}`}
+          organizationId={organizationId}
+          dossierId={dossierId}
+          target={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+        />
+      )}
       <Dialog open={scanOpen} onClose={closeScan} fullWidth maxWidth="sm">
         <DialogTitle>Scanner une facture avec l’IA</DialogTitle>
         <DialogContent>
@@ -1807,16 +1851,16 @@ export function InvoicesPanel({
             )}
             {scanJob.data?.status === "A_REVOIR" && (
               <Alert severity="success">
-                Lecture terminée. Cliquez sur « Préparer la facture » : les
-                champs et lignes seront d’abord mappés vers le format Fiscora,
-                puis resteront modifiables avant création.
+                Lecture terminée. Cliquez sur « Vérifier les données » pour
+                comparer les valeurs avec la pièce originale et les confirmer.
+                Vous pourrez ensuite préparer la facture.
               </Alert>
             )}
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeScan}
-            disabled={uploadForExtraction.isPending || prepareAiInvoice.isPending}>
+            disabled={uploadForExtraction.isPending || prepareAiInvoice.isPending || reviewAiExtraction.isPending}>
             {scanDocument ? "Continuer en arrière-plan" : "Annuler"}
           </Button>
           {!scanDocument ? (
@@ -1831,14 +1875,16 @@ export function InvoicesPanel({
             <Button
               variant="contained"
               disabled={
-                scanJob.data?.status !== "A_REVOIR" ||
-                prepareAiInvoice.isPending
+                !["A_REVOIR", "VALIDEE"].includes(scanJob.data?.status ?? "") ||
+                prepareAiInvoice.isPending || reviewAiExtraction.isPending
               }
-              onClick={() => prepareAiInvoice.mutate(scanDocument.id)}
+              onClick={() => scanJob.data?.status === "VALIDEE"
+                ? prepareAiInvoice.mutate(scanDocument.id)
+                : reviewAiExtraction.mutate(scanDocument)}
             >
-              {prepareAiInvoice.isPending
-                ? "Préparation…"
-                : "Préparer la facture"}
+              {prepareAiInvoice.isPending || reviewAiExtraction.isPending
+                ? "Chargement…"
+                : scanJob.data?.status === "VALIDEE" ? "Préparer la facture" : "Vérifier les données"}
             </Button>
           )}
         </DialogActions>
