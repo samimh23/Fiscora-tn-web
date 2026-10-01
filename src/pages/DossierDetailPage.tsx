@@ -471,14 +471,28 @@ export function DossierDetailPage() {
                       label="Secteur d’activité"
                       value={item.activitySector}
                     />
-                    <InfoItem
-                      label="Honoraires mensuels"
-                      value={money(item.monthlyFee)}
-                    />
-                    <InfoItem
-                      label="Honoraires annuels"
-                      value={money(item.annualFee)}
-                    />
+                    {item.billingFrequency === "ANNUELLE" ? (
+                      <InfoItem
+                        label="Honoraires annuels"
+                        value={money(item.annualFee)}
+                      />
+                    ) : !item.billingFrequency || item.billingFrequency === "MENSUELLE" ? (
+                      <InfoItem
+                        label="Honoraires mensuels"
+                        value={money(item.monthlyFee)}
+                      />
+                    ) : (
+                      <>
+                        <InfoItem
+                          label="Honoraires mensuels (ancien dossier)"
+                          value={money(item.monthlyFee)}
+                        />
+                        <InfoItem
+                          label="Honoraires annuels (ancien dossier)"
+                          value={money(item.annualFee)}
+                        />
+                      </>
+                    )}
                     <InfoItem
                       label="Facturation"
                       value={billingFrequencyLabel(item.billingFrequency)}

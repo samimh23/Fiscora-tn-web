@@ -65,7 +65,10 @@ const dossierSchema = z.object({
   fiscalYearStartDay: z.number().int().min(1).max(31),
   monthlyFee: money,
   annualFee: money,
-  billingFrequency: z.string().min(1),
+  billingFrequency: z.string().refine(
+    (value): boolean => value === "MENSUELLE" || value === "ANNUELLE",
+    "Choisissez des honoraires mensuels ou annuels.",
+  ),
   internalNotes: z.string().max(10_000),
   tags: z.string(),
   status: z.enum(["ACTIF", "SUSPENDU"]),
@@ -148,11 +151,18 @@ export function DossierFormDialog({
     control,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isDirty },
   } = useForm<DossierFormValues>({
     resolver: zodResolver(dossierSchema),
     defaultValues: valuesFromDossier(dossier),
   });
+  const billingFrequency = watch("billingFrequency");
+  const feeField = billingFrequency === "ANNUELLE" ? "annualFee" : "monthlyFee";
+  const legacyFrequency = Boolean(
+    dossier?.billingFrequency &&
+      !["MENSUELLE", "ANNUELLE"].includes(dossier.billingFrequency),
+  );
 
   useEffect(() => {
     if (open) {
@@ -409,29 +419,48 @@ export function DossierFormDialog({
                 error={Boolean(errors.fiscalYearStartDay)}
                 {...register("fiscalYearStartDay", { valueAsNumber: true })}
               />
-              <TextField
-                label="Honoraires mensuels (TND)"
-                error={Boolean(errors.monthlyFee)}
-                helperText={errors.monthlyFee?.message}
-                {...register("monthlyFee")}
-              />
-              <TextField
-                label="Honoraires annuels (TND)"
-                error={Boolean(errors.annualFee)}
-                helperText={errors.annualFee?.message}
-                {...register("annualFee")}
-              />
               <Controller
                 name="billingFrequency"
                 control={control}
                 render={({ field }) => (
-                  <TextField select label="Fréquence de facturation" {...field}>
-                    {billingFrequencyOptions.map((item) => (
+                  <TextField
+                    select
+                    label="Période des honoraires"
+                    error={Boolean(errors.billingFrequency)}
+                    helperText={errors.billingFrequency?.message}
+                    {...field}
+                  >
+                    {legacyFrequency && (
+                      <MenuItem value={dossier?.billingFrequency} disabled>
+                        Ancienne fréquence — choisir une période
+                      </MenuItem>
+                    )}
+                    {billingFrequencyOptions.filter((item) =>
+                      ["MENSUELLE", "ANNUELLE"].includes(item.value),
+                    ).map((item) => (
                       <MenuItem key={item.value} value={item.value}>
-                        {item.label}
+                        {item.value === "ANNUELLE" ? "Annuel" : "Mensuel"}
                       </MenuItem>
                     ))}
                   </TextField>
+                )}
+              />
+              <Controller
+                name={feeField}
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    label="Honoraires (TND)"
+                    error={Boolean(errors[feeField])}
+                    helperText={errors[feeField]?.message ?? (
+                      billingFrequency === "ANNUELLE"
+                        ? "Montant par an. Facultatif."
+                        : "Montant par mois. Facultatif."
+                    )}
+                    sx={{ gridColumn: { sm: "span 2" } }}
+                    slotProps={{ htmlInput: { inputMode: "decimal" } }}
+                    {...field}
+                  />
                 )}
               />
               {editing && (
