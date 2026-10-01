@@ -58,6 +58,7 @@ test("TOPNET preserves signed printed HT prices and flags the millime discrepanc
     net: 55.433,
     vat: 3.88,
     excise: 0,
+    fodec: 0,
   });
   expect(result.extractionNotice).toContain("55.433");
   expect(result.extractionNotice).toContain("55.434");

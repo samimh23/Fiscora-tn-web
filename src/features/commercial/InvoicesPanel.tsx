@@ -31,6 +31,7 @@ import {
 } from "@mui/icons-material";
 import { api, ApiError, downloadApiFile } from "../../api/client";
 import { SearchableSelect } from "../../components/SearchableSelect";
+import { InvoiceAiImports } from "./InvoiceAiImports";
 import type {
   AccountingJournal,
   AccountingDocument,
@@ -1399,6 +1400,9 @@ export function InvoicesPanel({
     onSuccess: (document) => {
       setScanError("");
       setScanDocument(document);
+      void queryClient.invalidateQueries({
+        queryKey: ["dossier-documents", organizationId, dossierId],
+      });
     },
     onError: (reason) =>
       setScanError(
@@ -1408,10 +1412,15 @@ export function InvoicesPanel({
       ),
   });
   const prepareAiInvoice = useMutation({
-    mutationFn: async () => {
-      if (!scanDocument || !scanJob.data?.normalizedData)
+    mutationFn: async (documentId: string) => {
+      if (invoices.some((invoice) => invoice.sourceDocumentId === documentId))
+        throw new Error("Une facture est déjà liée à ce document.");
+      const job = await api.get<DocumentExtractionJob>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${documentId}/extraction`,
+      );
+      if (!["A_REVOIR", "VALIDEE"].includes(job.status) || !job.normalizedData)
         throw new Error("Les données extraites ne sont pas disponibles.");
-      const mappedData = scanJob.data.normalizedData;
+      const mappedData = job.normalizedData;
       if (
         !["invoice", "credit_note", "receipt"].includes(
           String(mappedData.document_type),
@@ -1420,13 +1429,15 @@ export function InvoicesPanel({
         throw new Error("Le document détecté n’est pas une facture.");
       return invoiceSeedFromExtraction(
         mappedData,
-        scanDocument.id,
+        documentId,
         parties,
         accounts,
         journals,
       );
     },
     onSuccess: (seed) => {
+      setError("");
+      setScanError("");
       setScanOpen(false);
       setScanFile(null);
       setScanDocument(null);
@@ -1434,12 +1445,12 @@ export function InvoicesPanel({
       setAiDraftSeed(seed);
       setDialogOpen(true);
     },
-    onError: (reason) =>
-      setScanError(
-        reason instanceof ApiError || reason instanceof Error
-          ? reason.message
-          : "Impossible de préparer la facture.",
-      ),
+    onError: (reason) => {
+      const message = reason instanceof Error
+        ? reason.message : "Impossible de préparer la facture.";
+      setScanError(message);
+      setError(message);
+    },
   });
   const closeScan = () => {
     if (uploadForExtraction.isPending || prepareAiInvoice.isPending) return;
@@ -1511,6 +1522,14 @@ export function InvoicesPanel({
             {error}
           </Alert>
         )}
+        <InvoiceAiImports
+          organizationId={organizationId}
+          dossierId={dossierId}
+          invoices={invoices}
+          canPrepare={canManage && !archived && !loading}
+          preparing={prepareAiInvoice.isPending}
+          onPrepare={(documentId) => prepareAiInvoice.mutate(documentId)}
+        />
         {loading && (
           <Box sx={{ p: 2.5 }}>
             <Skeleton height={90} />
@@ -1523,7 +1542,7 @@ export function InvoicesPanel({
               sx={{ fontSize: 46, color: "text.disabled" }}
             />
             <Typography sx={{ fontWeight: 700, mt: 1 }}>
-              Aucune facture
+              Aucune facture enregistrée
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Créez la première facture d’achat ou de vente de ce dossier.
@@ -1796,7 +1815,10 @@ export function InvoicesPanel({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeScan}>Annuler</Button>
+          <Button onClick={closeScan}
+            disabled={uploadForExtraction.isPending || prepareAiInvoice.isPending}>
+            {scanDocument ? "Continuer en arrière-plan" : "Annuler"}
+          </Button>
           {!scanDocument ? (
             <Button
               variant="contained"
@@ -1812,7 +1834,7 @@ export function InvoicesPanel({
                 scanJob.data?.status !== "A_REVOIR" ||
                 prepareAiInvoice.isPending
               }
-              onClick={() => prepareAiInvoice.mutate()}
+              onClick={() => prepareAiInvoice.mutate(scanDocument.id)}
             >
               {prepareAiInvoice.isPending
                 ? "Préparation…"

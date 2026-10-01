@@ -152,6 +152,7 @@ export function DossierCommercialPanel({
       )}
       {tab === "invoices" && canInvoicesView && (
         <InvoicesPanel
+          key={`${organizationId}:${dossierId}`}
           organizationId={organizationId}
           dossierId={dossierId}
           invoices={invoices.data ?? []}
