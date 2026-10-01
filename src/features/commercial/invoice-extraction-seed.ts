@@ -124,16 +124,22 @@ export function invoiceSeedFromExtraction(
   parties: ThirdParty[],
   accounts: LedgerAccount[],
   journals: AccountingJournal[],
+  type: "ACHAT" | "VENTE" = "ACHAT",
 ): InvoiceDraftSeed {
-  const supplier = recordValue(data.supplier);
+  const sale = type === "VENTE";
+  const supplier = recordValue(sale ? data.customer : data.supplier);
   const supplierName = String(supplier.name ?? "").trim();
   const supplierTaxId = String(supplier.tax_id ?? "").trim();
   const comparable = (value: string) =>
     value.toLocaleLowerCase("fr").replace(/[^a-z0-9]/g, "");
   const party = parties.find(
     (candidate) =>
-      (supplierTaxId && candidate.taxIdentifier === supplierTaxId) ||
-      (supplierName && comparable(candidate.name) === comparable(supplierName)),
+      candidate.isActive &&
+      (candidate.type === (sale ? "CLIENT" : "FOURNISSEUR") ||
+        candidate.type === "CLIENT_ET_FOURNISSEUR") &&
+      ((supplierTaxId && candidate.taxIdentifier === supplierTaxId) ||
+        (supplierName &&
+          comparable(candidate.name) === comparable(supplierName))),
   );
   const posting = accounts.filter(
     (account) => account.isActive && account.allowsPosting,
@@ -149,19 +155,17 @@ export function invoiceSeedFromExtraction(
     }
     return undefined;
   };
-  const purchaseAccount =
-    account("607", "606", "604") ??
-    posting.find((item) => item.type === "Expense");
-  const supplierAccount =
-    account("4011", "401") ??
-    posting.find(
-      (item) => item.type === "Liability" && item.normalBalance === "Credit",
-    );
-  const vatAccount =
-    account("43666", "4366") ??
-    posting.find(
-      (item) => item.code.startsWith("436") && item.normalBalance === "Debit",
-    );
+  const purchaseAccount = sale
+    ? data.invoice_nature === "SERVICES"
+      ? account("705")
+      : account("707", "701", "705")
+    : data.invoice_nature === "SERVICES"
+      ? account("604", "606")
+      : account("607", "606", "604");
+  const supplierAccount = sale ? account("411") : account("4011", "401");
+  const vatAccount = sale
+    ? account("436711", "43671")
+    : account("43666", "4366");
   const stampAccount =
     account("665") ??
     posting.find(
@@ -286,10 +290,14 @@ export function invoiceSeedFromExtraction(
         }
         return {
           accountId:
-            (line.item_nature === "SERVICES"
-              ? account("604", "606")
+            ((line.item_nature ?? data.invoice_nature) === "SERVICES"
+              ? sale
+                ? account("705")
+                : account("604", "606")
               : line.item_nature === "BIENS"
-                ? account("607", "606")
+                ? sale
+                  ? account("707", "701")
+                  : account("607", "606")
                 : purchaseAccount
             )?.id ?? "",
           description: String(line.description ?? "Article extrait par IA"),
@@ -361,7 +369,7 @@ export function invoiceSeedFromExtraction(
 
   return {
     sourceDocumentId: documentId,
-    type: "ACHAT",
+    type,
     nature:
       data.invoice_nature === "BIENS" ||
       data.invoice_nature === "SERVICES" ||
@@ -377,8 +385,12 @@ export function invoiceSeedFromExtraction(
       .slice(0, 3)
       .toUpperCase(),
     stampDuty: printedNumber(data.stamp_tax),
-    journalId: journals.find((journal) => journal.type === "ACHATS")?.id,
-    thirdPartyAccountId: party?.payableAccountId ?? supplierAccount?.id,
+    journalId: journals.find(
+      (journal) => journal.type === (sale ? "VENTES" : "ACHATS"),
+    )?.id,
+    thirdPartyAccountId:
+      (sale ? party?.receivableAccountId : party?.payableAccountId) ??
+      supplierAccount?.id,
     vatAccountId: vatAccount?.id,
     stampAccountId: stampAccount?.id,
     exciseAccountId: account("43668", "437")?.id,

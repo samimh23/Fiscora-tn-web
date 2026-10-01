@@ -54,6 +54,11 @@ async function mockWorkspace(
     manage?: boolean;
     failStart?: boolean;
     iban?: string | null;
+    matched?: boolean;
+    validated?: boolean;
+    generated?: boolean;
+    failUndo?: boolean;
+    archived?: boolean;
   } = {},
 ) {
   page.setDefaultTimeout(30_000);
@@ -89,7 +94,7 @@ async function mockWorkspace(
   const dossier = (id: string) => ({
     id,
     legalName: `${id} SARL`,
-    status: "ACTIF",
+    status: options.archived ? "ARCHIVE" : "ACTIF",
     legalForm: "SARL",
     taxRegime: "REEL",
     isVatSubject: true,
@@ -131,6 +136,39 @@ async function mockWorkspace(
     validationIssues: [],
   });
   const statements: Record<string, unknown>[] = [];
+  let undoCount = 0;
+  let undoPayload: Record<string, unknown> | undefined;
+  const bankTransaction = {
+    id: "transaction",
+    statementId: "statement",
+    transactionDate: "2026-09-18",
+    description: "VIREMENT CARTHAGE TEST",
+    reference: "DEC-SEP-001",
+    amount: "-700.000",
+    status: "RAPPROCHEE",
+    matchType: options.generated ? "ECRITURE_GENEREE" : "REGLEMENT",
+    matchConfidence: 90,
+    matchedPaymentId: options.generated ? null : "payment",
+    journalEntryId: "entry",
+    paymentSuggestions: [],
+  };
+  const matchedStatement = {
+    id: "statement",
+    bankAccountId: "a",
+    bankAccount: accounts[0],
+    sourceFileName: "releve.png",
+    periodStart: "2026-09-01",
+    periodEnd: "2026-09-30",
+    openingBalance: "5000.000",
+    closingBalance: "4300.000",
+    bookClosingBalance: "4300.000",
+    difference: "0.000",
+    rowCount: 1,
+    matchedCount: 1,
+    status: options.validated ? "RAPPROCHE" : "PRET_A_VALIDER",
+    transactions: [bankTransaction],
+  };
+  if (options.matched) statements.push(matchedStatement);
   let failStart = options.failStart ?? false;
   let gate: Promise<void> | undefined;
   let reviewStarted = false;
@@ -172,7 +210,28 @@ async function mockWorkspace(
     else if (path.endsWith("/bank-reconciliation/accounts")) body = accounts;
     else if (path.endsWith("/bank-reconciliation/statements"))
       body = path.includes("/alpha/") ? statements : [];
-    else if (path.endsWith("/documents") && request.method() === "POST") {
+    else if (path.endsWith("/bank-reconciliation/statements/statement"))
+      body = matchedStatement;
+    else if (
+      path.endsWith("/bank-reconciliation/transactions/transaction/unmatch")
+    ) {
+      undoCount += 1;
+      undoPayload = request.postDataJSON();
+      if (options.failUndo) {
+        responseStatus = 409;
+        body = {
+          message: "Un rapprochement validé ne peut plus être modifié.",
+        };
+      } else {
+        bankTransaction.status = "NON_RAPPROCHEE";
+        bankTransaction.matchType = "";
+        bankTransaction.matchedPaymentId = null;
+        bankTransaction.journalEntryId = "";
+        matchedStatement.status = "IMPORTE";
+        matchedStatement.matchedCount = 0;
+        body = bankTransaction;
+      }
+    } else if (path.endsWith("/documents") && request.method() === "POST") {
       expect(request.postData()).toContain("RELEVES_BANCAIRES");
       uploadCount += 1;
       status = "NON_DEMANDEE";
@@ -239,7 +298,111 @@ async function mockWorkspace(
       gate = value;
     },
     reviewStarted: () => reviewStarted,
+    undo: () => ({ count: undoCount, payload: undoPayload }),
   };
+}
+
+for (const generated of [false, true]) {
+  test(`undo ${generated ? "generated entry" : "payment"} match requires confirmation and restores manual matching`, async ({
+    page,
+  }) => {
+    const mock = await mockWorkspace(page, { matched: true, generated });
+    await page.goto("/banque?dossierId=alpha");
+    await page.getByRole("button", { name: /^Compte A .*Solde final/ }).click();
+    await page
+      .getByRole("button", { name: "Annuler le rapprochement", exact: true })
+      .click();
+    const dialog = page.getByRole("dialog", {
+      name: "Annuler le rapprochement ?",
+    });
+    await expect(
+      dialog.getByText(/Seul le lien de rapprochement sera retiré/),
+    ).toBeVisible();
+    await expect(
+      dialog.getByRole("button", { name: "Confirmer l’annulation" }),
+    ).toBeDisabled();
+    await dialog
+      .getByRole("button", { name: "Conserver le rapprochement" })
+      .click();
+    expect(mock.undo().count).toBe(0);
+    await page
+      .getByRole("button", { name: "Annuler le rapprochement", exact: true })
+      .click();
+    await dialog
+      .getByLabel("Motif de l’annulation")
+      .fill("Mauvaise association de test");
+    await dialog
+      .getByRole("button", { name: "Confirmer l’annulation" })
+      .click();
+    await expect(dialog).toBeHidden();
+    await expect(
+      page.getByRole("button", {
+        name: "Annuler le rapprochement",
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    await expect(page.getByText("À rapprocher", { exact: true })).toBeVisible();
+    expect(mock.undo()).toEqual({
+      count: 1,
+      payload: {
+        reason: "Mauvaise association de test",
+        journalEntryId: "entry",
+        paymentId: generated ? null : "payment",
+      },
+    });
+  });
+}
+
+test("failed undo stays visible and preserves the current reconciliation", async ({
+  page,
+}) => {
+  await mockWorkspace(page, { matched: true, failUndo: true });
+  await page.goto("/banque?dossierId=alpha");
+  await page.getByRole("button", { name: /^Compte A .*Solde final/ }).click();
+  await page
+    .getByRole("button", { name: "Annuler le rapprochement", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Annuler le rapprochement ?",
+  });
+  await dialog.getByLabel("Motif de l’annulation").fill("Test d’erreur");
+  await dialog.getByRole("button", { name: "Confirmer l’annulation" }).click();
+  await expect(
+    dialog.getByText("Un rapprochement validé ne peut plus être modifié."),
+  ).toBeVisible();
+  await expect(dialog.getByLabel("Motif de l’annulation")).toHaveValue(
+    "Test d’erreur",
+  );
+  await dialog
+    .getByRole("button", { name: "Conserver le rapprochement" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Annuler le rapprochement", exact: true }),
+  ).toBeVisible();
+});
+
+for (const options of [
+  { manage: false },
+  { validated: true },
+  { archived: true },
+]) {
+  test(`undo is unavailable for ${JSON.stringify(options)}`, async ({
+    page,
+  }) => {
+    const mock = await mockWorkspace(page, { matched: true, ...options });
+    await page.goto("/banque?dossierId=alpha");
+    await page.getByRole("button", { name: /^Compte A .*Solde final/ }).click();
+    await expect(
+      page.getByText("VIREMENT CARTHAGE TEST", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: "Annuler le rapprochement",
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    expect(mock.undo().count).toBe(0);
+  });
 }
 
 async function openScanner(page: Page) {

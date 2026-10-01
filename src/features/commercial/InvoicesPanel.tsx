@@ -319,16 +319,32 @@ function InvoiceDialog({
     [form.lines],
   );
   const changeType = (type: Form["type"]) => {
+    if (type === form.type) return;
     setAutoCreatedParty(null);
+    const seed = invoiceSeedFromExtraction(
+      draftSeed?.extractionData ?? {},
+      form.sourceDocumentId,
+      parties,
+      accounts,
+      journals,
+      type,
+    );
     setForm((current) => ({
       ...current,
       type,
-      thirdPartyId: "",
-      thirdPartyName: "",
-      thirdPartyTaxIdentifier: "",
+      thirdPartyId: seed.thirdPartyId,
+      thirdPartyName: seed.thirdPartyName ?? "",
+      thirdPartyTaxIdentifier: seed.thirdPartyTaxIdentifier ?? "",
       originalInvoiceId: "",
-      journalId: "",
-      thirdPartyAccountId: "",
+      journalId: seed.journalId ?? "",
+      thirdPartyAccountId: seed.thirdPartyAccountId ?? "",
+      vatAccountId: seed.vatAccountId ?? "",
+      lines: current.lines.map((line, index) => ({
+        ...line,
+        accountId: draftSeed?.extractionData
+          ? (seed.lines[index]?.accountId ?? "")
+          : "",
+      })),
     }));
   };
   const selectParty = (id: string) => {
@@ -437,7 +453,9 @@ function InvoiceDialog({
         ? await api.put<BusinessInvoice>(`${base}/${invoice.id}`, body)
         : await api.post<BusinessInvoice>(base, body);
       if (
-        !invoice && form.sourceDocumentId && draftSeed?.extractionData &&
+        !invoice &&
+        form.sourceDocumentId &&
+        draftSeed?.extractionData &&
         !draftSeed.extractionReviewed
       ) {
         // Saving a business draft must not rewrite printed document totals or
@@ -1425,7 +1443,9 @@ export function InvoicesPanel({
         `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${document.id}/extraction`,
       );
       if (job.status !== "A_REVOIR" || !job.normalizedData)
-        throw new Error("Cette extraction n’est plus en attente de vérification. Actualisez les imports IA.");
+        throw new Error(
+          "Cette extraction n’est plus en attente de vérification. Actualisez les imports IA.",
+        );
       return { ...job, document };
     },
     onSuccess: (target) => {
@@ -1437,7 +1457,10 @@ export function InvoicesPanel({
       setReviewTarget(target);
     },
     onError: (reason) => {
-      const message = reason instanceof Error ? reason.message : "Impossible d’ouvrir la vérification.";
+      const message =
+        reason instanceof Error
+          ? reason.message
+          : "Impossible d’ouvrir la vérification.";
       setError(message);
       setScanError(message);
     },
@@ -1450,7 +1473,9 @@ export function InvoicesPanel({
         `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${documentId}/extraction`,
       );
       if (job.status !== "VALIDEE" || !job.normalizedData)
-        throw new Error("Vérifiez et confirmez les données extraites avant de préparer la facture.");
+        throw new Error(
+          "Vérifiez et confirmez les données extraites avant de préparer la facture.",
+        );
       const mappedData = job.normalizedData;
       if (
         !["invoice", "credit_note", "receipt"].includes(
@@ -1480,14 +1505,21 @@ export function InvoicesPanel({
       setDialogOpen(true);
     },
     onError: (reason) => {
-      const message = reason instanceof Error
-        ? reason.message : "Impossible de préparer la facture.";
+      const message =
+        reason instanceof Error
+          ? reason.message
+          : "Impossible de préparer la facture.";
       setScanError(message);
       setError(message);
     },
   });
   const closeScan = () => {
-    if (uploadForExtraction.isPending || prepareAiInvoice.isPending || reviewAiExtraction.isPending) return;
+    if (
+      uploadForExtraction.isPending ||
+      prepareAiInvoice.isPending ||
+      reviewAiExtraction.isPending
+    )
+      return;
     setScanOpen(false);
     setScanFile(null);
     setScanDocument(null);
@@ -1859,8 +1891,14 @@ export function InvoicesPanel({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={closeScan}
-            disabled={uploadForExtraction.isPending || prepareAiInvoice.isPending || reviewAiExtraction.isPending}>
+          <Button
+            onClick={closeScan}
+            disabled={
+              uploadForExtraction.isPending ||
+              prepareAiInvoice.isPending ||
+              reviewAiExtraction.isPending
+            }
+          >
             {scanDocument ? "Continuer en arrière-plan" : "Annuler"}
           </Button>
           {!scanDocument ? (
@@ -1876,15 +1914,20 @@ export function InvoicesPanel({
               variant="contained"
               disabled={
                 !["A_REVOIR", "VALIDEE"].includes(scanJob.data?.status ?? "") ||
-                prepareAiInvoice.isPending || reviewAiExtraction.isPending
+                prepareAiInvoice.isPending ||
+                reviewAiExtraction.isPending
               }
-              onClick={() => scanJob.data?.status === "VALIDEE"
-                ? prepareAiInvoice.mutate(scanDocument.id)
-                : reviewAiExtraction.mutate(scanDocument)}
+              onClick={() =>
+                scanJob.data?.status === "VALIDEE"
+                  ? prepareAiInvoice.mutate(scanDocument.id)
+                  : reviewAiExtraction.mutate(scanDocument)
+              }
             >
               {prepareAiInvoice.isPending || reviewAiExtraction.isPending
                 ? "Chargement…"
-                : scanJob.data?.status === "VALIDEE" ? "Préparer la facture" : "Vérifier les données"}
+                : scanJob.data?.status === "VALIDEE"
+                  ? "Préparer la facture"
+                  : "Vérifier les données"}
             </Button>
           )}
         </DialogActions>

@@ -138,8 +138,11 @@ export function ReconciliationsPanel({
           <Box sx={{ flex: 1 }}>
             <Typography variant="h3">Lettrage des comptes</Typography>
             <Typography variant="body2" color="text.secondary">
-              Associez des débits et crédits comptabilisés dont le total est
-              exactement équilibré.
+              Les règlements comptabilisés qui soldent une facture sont lettrés
+              automatiquement lorsque les lignes sont compatibles. Utilisez cet
+              écran pour les cas manuels ; les débits et crédits sélectionnés
+              doivent être exactement équilibrés. Le lettrage ne crée aucun
+              paiement et ne remplace pas le rapprochement bancaire.
             </Typography>
           </Box>
           <SearchableSelect

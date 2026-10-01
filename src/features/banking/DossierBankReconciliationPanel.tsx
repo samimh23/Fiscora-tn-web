@@ -1098,6 +1098,8 @@ export function DossierBankReconciliationPanel({
     null,
   );
   const [importOpen, setImportOpen] = useState(false);
+  const [undoTarget, setUndoTarget] = useState<BankTransaction | null>(null);
+  const [undoReason, setUndoReason] = useState("");
   const [scanBankAccountId, setScanBankAccountId] = useState<string | null>(
     null,
   );
@@ -1279,6 +1281,29 @@ export function DossierBankReconciliationPanel({
   const filteredTransactions = (selected?.transactions ?? []).filter(
     (transaction) => filter === "TOUTES" || transaction.status === filter,
   );
+  const undoMatch = useMutation({
+    mutationFn: ({
+      transaction,
+      reason,
+    }: {
+      transaction: BankTransaction;
+      reason: string;
+    }) =>
+      api.post(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/transactions/${transaction.id}/unmatch`,
+        {
+          reason: reason.trim(),
+          journalEntryId: transaction.journalEntryId,
+          paymentId: transaction.matchedPaymentId,
+        },
+      ),
+    onSuccess: async () => {
+      setUndoTarget(null);
+      setUndoReason("");
+      setError("");
+      await refresh();
+    },
+  });
   const totalMovement = useMemo(
     () =>
       (selected?.transactions ?? []).reduce(
@@ -1765,6 +1790,23 @@ export function DossierBankReconciliationPanel({
                         >
                           {canManage &&
                             !archived &&
+                            selected.status !== "RAPPROCHE" &&
+                            transaction.status === "RAPPROCHEE" && (
+                              <Button
+                                size="small"
+                                color="warning"
+                                disabled={undoMatch.isPending}
+                                onClick={() => {
+                                  undoMatch.reset();
+                                  setUndoReason("");
+                                  setUndoTarget(transaction);
+                                }}
+                              >
+                                Annuler le rapprochement
+                              </Button>
+                            )}
+                          {canManage &&
+                            !archived &&
                             transaction.status === "NON_RAPPROCHEE" &&
                             canPaymentsView && (
                               <Tooltip title="Associer un règlement">
@@ -1872,6 +1914,68 @@ export function DossierBankReconciliationPanel({
           banks={banks.data ?? []}
         />
       )}
+      <Dialog
+        open={Boolean(undoTarget)}
+        onClose={undoMatch.isPending ? undefined : () => setUndoTarget(null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Annuler le rapprochement ?</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Typography>
+              {undoTarget?.description} ·{" "}
+              {undoTarget ? money(undoTarget.amount) : ""}
+            </Typography>
+            <Alert severity="warning">
+              Seul le lien de rapprochement sera retiré. Le règlement et
+              l’écriture comptable restent inchangés, y compris une écriture
+              créée depuis Banque. L’opération reviendra à « À rapprocher » :
+              associez ensuite le bon règlement ou la bonne écriture existante,
+              sans les créer en double.
+            </Alert>
+            {undoMatch.isError && (
+              <Alert severity="error">
+                {undoMatch.error instanceof ApiError
+                  ? undoMatch.error.message
+                  : "Impossible d’annuler le rapprochement."}
+              </Alert>
+            )}
+            <TextField
+              label="Motif de l’annulation"
+              value={undoReason}
+              onChange={(event) => setUndoReason(event.target.value)}
+              required
+              multiline
+              minRows={2}
+              slotProps={{ htmlInput: { maxLength: 500 } }}
+              disabled={undoMatch.isPending}
+              helperText="Le motif sera conservé dans l’historique d’audit."
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            disabled={undoMatch.isPending}
+            onClick={() => setUndoTarget(null)}
+          >
+            Conserver le rapprochement
+          </Button>
+          <Button
+            color="warning"
+            variant="contained"
+            disabled={
+              !undoTarget || undoReason.trim().length < 3 || undoMatch.isPending
+            }
+            onClick={() =>
+              undoTarget &&
+              undoMatch.mutate({ transaction: undoTarget, reason: undoReason })
+            }
+          >
+            {undoMatch.isPending ? "Annulation…" : "Confirmer l’annulation"}
+          </Button>
+        </DialogActions>
+      </Dialog>
       {importOpen && (
         <ImportDialog
           open={importOpen}

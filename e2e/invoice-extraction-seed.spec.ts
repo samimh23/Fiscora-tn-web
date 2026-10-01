@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import type {
+  AccountingJournal,
+  LedgerAccount,
+  ThirdParty,
+} from "../src/types/api";
 import {
   calculateInvoiceDraftLines,
   invoiceSeedFromExtraction,
@@ -6,6 +11,126 @@ import {
 
 const seed = (data: Record<string, unknown>) =>
   invoiceSeedFromExtraction(data, "document", [], [], []);
+
+const accountFixtures = [
+  "604",
+  "607",
+  "705",
+  "707",
+  "4011",
+  "411",
+  "43666",
+  "436711",
+  "665",
+].map((code) => ({
+  id: code,
+  code,
+  name: code,
+  dossierId: "dossier",
+  description: null,
+  type: code.startsWith("7") ? "Revenue" : "Expense",
+  normalBalance: "Debit",
+  parentAccountId: null,
+  allowsPosting: true,
+  isActive: true,
+})) satisfies LedgerAccount[];
+const journalFixtures = [
+  { id: "AC", code: "AC", name: "Achats", type: "ACHATS", isActive: true },
+  { id: "VT", code: "VT", name: "Ventes", type: "VENTES", isActive: true },
+] satisfies AccountingJournal[];
+
+for (const type of ["ACHAT", "VENTE"] as const) {
+  test(`selects direction-specific party, journal, VAT and mixed line accounts: ${type}`, () => {
+    const result = invoiceSeedFromExtraction(
+      {
+        supplier: { name: "Supplier", tax_id: "SUP" },
+        customer: { name: "Customer", tax_id: "CLI" },
+        invoice_nature: "MIXTE",
+        line_items: [
+          { item_nature: "SERVICES", unit_price: "100", quantity: "1" },
+          { item_nature: "BIENS", unit_price: "200", quantity: "1" },
+        ],
+      },
+      "document",
+      [],
+      accountFixtures,
+      journalFixtures,
+      type,
+    );
+    expect(result.type).toBe(type);
+    expect(result.thirdPartyName).toBe(
+      type === "VENTE" ? "Customer" : "Supplier",
+    );
+    expect(result.thirdPartyTaxIdentifier).toBe(
+      type === "VENTE" ? "CLI" : "SUP",
+    );
+    expect(result.thirdPartyAccountId).toBe(type === "VENTE" ? "411" : "4011");
+    expect(result.journalId).toBe(type === "VENTE" ? "VT" : "AC");
+    expect(result.vatAccountId).toBe(type === "VENTE" ? "436711" : "43666");
+    expect(result.lines.map((line) => line.accountId)).toEqual(
+      type === "VENTE" ? ["705", "707"] : ["604", "607"],
+    );
+  });
+}
+test("uses invoice service nature when line nature is absent", () => {
+  const result = invoiceSeedFromExtraction(
+    { invoice_nature: "SERVICES", line_items: [{ unit_price: "100" }] },
+    "document",
+    [],
+    accountFixtures,
+    journalFixtures,
+    "VENTE",
+  );
+  expect(result.lines[0].accountId).toBe("705");
+  const headerOnly = invoiceSeedFromExtraction(
+    { invoice_nature: "SERVICES", subtotal_excl_tax: "100" },
+    "document",
+    [],
+    accountFixtures,
+    journalFixtures,
+    "VENTE",
+  );
+  expect(headerOnly.lines[0].accountId).toBe("705");
+});
+test("does not fall back to unrelated tax or liability accounts", () => {
+  const result = invoiceSeedFromExtraction(
+    {},
+    "document",
+    [],
+    accountFixtures.filter((account) =>
+      ["4011", "43666"].includes(account.code),
+    ),
+    journalFixtures,
+    "VENTE",
+  );
+  expect(result.thirdPartyAccountId).toBeUndefined();
+  expect(result.vatAccountId).toBeUndefined();
+  expect(result.lines[0].accountId).toBe("");
+});
+test("matches only an active party of the appropriate type", () => {
+  const party = {
+    id: "supplier",
+    name: "Same Name",
+    taxIdentifier: "MF",
+    type: "FOURNISSEUR",
+    isActive: true,
+  } as ThirdParty;
+  const customer = {
+    ...party,
+    id: "customer",
+    type: "CLIENT",
+    receivableAccountId: "411",
+  } as ThirdParty;
+  const result = invoiceSeedFromExtraction(
+    { customer: { name: "Same Name", tax_id: "MF" } },
+    "doc",
+    [party, customer],
+    accountFixtures,
+    journalFixtures,
+    "VENTE",
+  );
+  expect(result.thirdPartyId).toBe("customer");
+});
 
 for (const nature of ["BIENS", "SERVICES", "MIXTE"]) {
   test(`prefills a valid AI nature suggestion: ${nature}`, () => {
@@ -183,6 +308,7 @@ for (const suggestedNature of [undefined, "SERVICES", "INDETERMINE"]) {
       document_number: "20261966543",
       issue_date: "2026-05-26",
       supplier: { name: "TOPNET" },
+      customer: { name: "ATLAS" },
       subtotal_excl_tax: "55.434",
       tax_amount: "3.880",
       stamp_tax: "1.000",
@@ -205,7 +331,16 @@ for (const suggestedNature of [undefined, "SERVICES", "INDETERMINE"]) {
         },
       ],
     };
-    const accounts = ["607", "4011", "43666", "665"].map((code) => ({
+    const accounts = [
+      "604",
+      "607",
+      "705",
+      "411",
+      "436711",
+      "4011",
+      "43666",
+      "665",
+    ].map((code) => ({
       id: code,
       code,
       name: code,
@@ -253,6 +388,13 @@ for (const suggestedNature of [undefined, "SERVICES", "INDETERMINE"]) {
             type: "ACHATS",
             isActive: true,
           },
+          {
+            id: "sales-journal",
+            code: "VT",
+            name: "Ventes",
+            type: "VENTES",
+            isActive: true,
+          },
         ];
       else if (path.endsWith("/third-parties"))
         body = [
@@ -260,7 +402,15 @@ for (const suggestedNature of [undefined, "SERVICES", "INDETERMINE"]) {
             id: "topnet",
             name: "TOPNET",
             type: "FOURNISSEUR",
+            isActive: true,
             payableAccountId: "4011",
+          },
+          {
+            id: "atlas",
+            name: "ATLAS",
+            type: "CLIENT",
+            isActive: true,
+            receivableAccountId: "411",
           },
         ];
       else if (path.endsWith("/extraction")) body = { normalizedData: data };
@@ -312,6 +462,27 @@ for (const suggestedNature of [undefined, "SERVICES", "INDETERMINE"]) {
     await dialog.getByRole("combobox", { name: "Nature", exact: true }).click();
     await page.getByRole("option", { name: "Services", exact: true }).click();
     await expect(save).toBeEnabled();
+    if (suggestedNature === "SERVICES") {
+      await dialog.getByRole("combobox", { name: "Flux", exact: true }).click();
+      await page.getByRole("option", { name: "Vente", exact: true }).click();
+      await expect(
+        dialog.getByRole("combobox", { name: "Compte tiers", exact: true }),
+      ).toHaveValue(/411/);
+      await expect(
+        dialog.getByRole("combobox", { name: "Compte TVA", exact: true }),
+      ).toHaveValue(/436711/);
+      await expect(
+        dialog.getByRole("combobox", { name: "Client", exact: true }),
+      ).toHaveValue(/ATLAS/);
+      await expect(
+        dialog.getByLabel("PU HT", { exact: true }).nth(0),
+      ).toHaveValue("-38.941");
+      await dialog.getByRole("combobox", { name: "Flux", exact: true }).click();
+      await page.getByRole("option", { name: "Achat", exact: true }).click();
+      await expect(
+        dialog.getByRole("combobox", { name: "Compte TVA", exact: true }),
+      ).toHaveValue(/43666/);
+    }
     await save.click();
     await expect(dialog).toBeHidden();
     expect(invoiceBody?.nature).toBe("SERVICES");
