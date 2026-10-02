@@ -29,7 +29,12 @@ async function openCostForm(page: Page) {
     if (path === "/api/auth/me") body = { ...user, organizations: [organization] };
     else if (path.endsWith("/dossiers")) body = { items: [], total: 0, page: 1, pageSize: 100 };
     else if (path.endsWith("/profitability")) body = { basis: { warning: "" }, totals: {}, dossiers: [], members: [] };
-    else if (path.endsWith("/members")) body = [{ membershipId: "worker", fullName: "Colab", isActive: true }];
+    else if (path.endsWith("/members")) body = [
+      { membershipId: "worker", fullName: "Colab", role: "Collaborateur", isActive: true },
+      { membershipId: "portal", fullName: "Moula el moul", role: "Portail client", isActive: true },
+      { membershipId: "owner", fullName: "Owner", role: "Propriétaire", isActive: true },
+      { membershipId: "inactive", fullName: "Inactive", role: "Collaborateur", isActive: false },
+    ];
     else if (path.endsWith("/team-cost-rates") && route.request().method() === "POST") {
       saved = route.request().postDataJSON();
       body = { id: "rate", ...saved };
@@ -40,6 +45,9 @@ async function openCostForm(page: Page) {
   await page.getByRole("button", { name: "Coût collaborateur", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("combobox", { name: "Collaborateur", exact: true }).click();
+  await expect(page.getByRole("option", { name: "Moula el moul", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("option", { name: "Inactive", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("option", { name: "Owner", exact: true })).toBeVisible();
   await page.getByRole("option", { name: "Colab", exact: true }).click();
   return { dialog, saved: () => saved };
 }

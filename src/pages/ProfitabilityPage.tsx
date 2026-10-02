@@ -436,7 +436,11 @@ export function ProfitabilityPage() {
               }
             >
               {members.data
-                ?.filter((m) => m.isActive)
+                ?.filter(
+                  (m) =>
+                    m.isActive &&
+                    m.role.trim().toLocaleLowerCase() !== "portail client",
+                )
                 .map((m) => (
                   <MenuItem key={m.membershipId} value={m.membershipId}>
                     {m.fullName}
