@@ -26,7 +26,7 @@ import { MetricCard, Money, QueryState } from "../components/WorkspaceTools";
 import { PageHeader } from "../components/PageHeader";
 import type { OrganizationMember } from "../types/api";
 interface Profitability {
-  basis: { warning: string };
+  basis?: { warning: string; estimate?: string };
   totals: {
     approvedHours: string;
     billedRevenueNet: string;
@@ -34,6 +34,9 @@ interface Profitability {
     allocatedEmployerCost: string;
     marginOnBilled: string;
     marginOnCollected: string;
+    estimatedRevenueNet: string;
+    estimatedMargin: string;
+    missingContractFeeCount: number;
   };
   dossiers: Array<{
     dossierId: string;
@@ -50,6 +53,10 @@ interface Profitability {
     marginOnCollected: string;
     marginRateOnBilled: string;
     missingCostRateCount: number;
+    estimatedRevenueNet: string;
+    estimatedMargin: string;
+    estimatedMarginRate: string;
+    missingContractFee: boolean;
   }>;
   members: Array<{
     membershipId: string;
@@ -62,6 +69,8 @@ interface Profitability {
     allocatedBilledRevenue: string;
     contributionMarginBilled: string;
     missingCostRate: boolean;
+    allocatedEstimatedRevenue: string;
+    contributionMarginEstimated: string;
   }>;
 }
 interface CostRate {
@@ -83,10 +92,10 @@ export function ProfitabilityPage() {
     `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`,
   );
   const [to, setTo] = useState(
-    new Date(now.getFullYear(), now.getMonth() + 1, 0)
-      .toISOString()
-      .slice(0, 10),
+    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()}`,
   );
+  const [revenueBasis, setRevenueBasis] = useState("ESTIMEE");
+  const estimated = revenueBasis === "ESTIMEE";
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     membershipId: "",
@@ -133,13 +142,26 @@ export function ProfitabilityPage() {
       <PageHeader
         eyebrow="Pilotage économique"
         title="Rentabilité & performance"
-        description="Comparez honoraires, coût employeur affecté et temps approuvé par client et collaborateur."
+        description="Honoraires convenus dans le dossier − coût du travail approuvé = marge estimée."
         action={
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1}
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
+            <TextField
+              select
+              size="small"
+              label="Base de calcul"
+              value={revenueBasis}
+              onChange={(event) => setRevenueBasis(event.target.value)}
+              sx={{ minWidth: 220 }}
+            >
+              <MenuItem value="ESTIMEE">
+                Honoraires du dossier (estimés)
+              </MenuItem>
+              <MenuItem value="FACTUREE">Honoraires facturés</MenuItem>
+            </TextField>
             <TextField
               size="small"
               type="date"
@@ -168,7 +190,20 @@ export function ProfitabilityPage() {
           </Stack>
         }
       />
-      {query.data?.basis.warning && (
+      {estimated && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {query.data?.basis?.estimate ??
+            "Estimation selon les honoraires HT enregistrés dans le dossier. Aucune facture à créer pour ce calcul. Les mois partiels sont proratisés ; les honoraires annuels sont répartis sur 12 mois."}
+        </Alert>
+      )}
+      {estimated && (query.data?.totals.missingContractFeeCount ?? 0) > 0 && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {query.data?.totals.missingContractFeeCount} dossier(s) sans
+          honoraires mensuels/annuels configurés : renseignez-les dans Dossiers
+          clients → Modifier.
+        </Alert>
+      )}
+      {query.data?.basis?.warning && (
         <Alert severity="info" sx={{ mb: 2 }}>
           {query.data.basis.warning}
         </Alert>
@@ -184,18 +219,45 @@ export function ProfitabilityPage() {
           value={`${query.data?.totals.approvedHours ?? 0} h`}
         />
         <MetricCard
-          label="Honoraires HT"
-          value={<Money value={query.data?.totals.billedRevenueNet} />}
+          label={
+            estimated
+              ? "Honoraires convenus HT (estimés)"
+              : "Honoraires facturés HT"
+          }
+          value={
+            <Money
+              value={
+                estimated
+                  ? query.data?.totals.estimatedRevenueNet
+                  : query.data?.totals.billedRevenueNet
+              }
+            />
+          }
         />
         <MetricCard
           label="Coût employeur affecté"
           value={<Money value={query.data?.totals.allocatedEmployerCost} />}
         />
         <MetricCard
-          label="Marge sur facturé"
-          value={<Money value={query.data?.totals.marginOnBilled} />}
+          label={estimated ? "Marge estimée" : "Marge sur facturé"}
+          value={
+            <Money
+              value={
+                estimated
+                  ? query.data?.totals.estimatedMargin
+                  : query.data?.totals.marginOnBilled
+              }
+            />
+          }
         />
       </Stack>
+      {!estimated && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          Honoraires encaissés HT :{" "}
+          <Money value={query.data?.totals.collectedRevenueNet} />. Les
+          honoraires convenus du dossier ne sont pas ajoutés aux factures.
+        </Typography>
+      )}
       <Card sx={{ mb: 2 }}>
         <CardContent>
           <Typography variant="h5" sx={{ mb: 2 }}>
@@ -212,9 +274,13 @@ export function ProfitabilityPage() {
                 <TableCell>Dossier</TableCell>
                 <TableCell align="right">Heures</TableCell>
                 <TableCell align="right">Facturable</TableCell>
-                <TableCell align="right">Honoraires</TableCell>
+                <TableCell align="right">
+                  {estimated ? "Honoraires estimés" : "Honoraires facturés"}
+                </TableCell>
                 <TableCell align="right">Coût affecté</TableCell>
-                <TableCell align="right">Marge</TableCell>
+                <TableCell align="right">
+                  {estimated ? "Marge estimée" : "Marge sur facturé"}
+                </TableCell>
                 <TableCell align="right">Taux de marge</TableCell>
               </TableRow>
             </TableHead>
@@ -223,6 +289,15 @@ export function ProfitabilityPage() {
                 <TableRow key={d.dossierId}>
                   <TableCell>
                     <b>{d.dossierName}</b>
+                    {estimated && d.missingContractFee && (
+                      <Typography
+                        color="warning.main"
+                        variant="caption"
+                        sx={{ display: "block" }}
+                      >
+                        Honoraires à renseigner
+                      </Typography>
+                    )}
                     {d.missingCostRateCount > 0 && (
                       <Typography
                         color="error"
@@ -236,15 +311,23 @@ export function ProfitabilityPage() {
                   <TableCell align="right">{d.approvedHours} h</TableCell>
                   <TableCell align="right">{d.billableRate}%</TableCell>
                   <TableCell align="right">
-                    <Money value={d.billedRevenueNet} />
+                    <Money
+                      value={
+                        estimated ? d.estimatedRevenueNet : d.billedRevenueNet
+                      }
+                    />
                   </TableCell>
                   <TableCell align="right">
                     <Money value={d.allocatedEmployerCost} />
                   </TableCell>
                   <TableCell align="right">
-                    <Money value={d.marginOnBilled} />
+                    <Money
+                      value={estimated ? d.estimatedMargin : d.marginOnBilled}
+                    />
                   </TableCell>
-                  <TableCell align="right">{d.marginRateOnBilled}%</TableCell>
+                  <TableCell align="right">
+                    {estimated ? d.estimatedMarginRate : d.marginRateOnBilled}%
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -264,8 +347,16 @@ export function ProfitabilityPage() {
                 <TableCell align="right">Facturable</TableCell>
                 <TableCell align="right">Rémunération</TableCell>
                 <TableCell align="right">Coût employeur</TableCell>
-                <TableCell align="right">CA affecté</TableCell>
-                <TableCell align="right">Contribution</TableCell>
+                <TableCell align="right">
+                  {estimated
+                    ? "Honoraires estimés affectés"
+                    : "CA facturé affecté"}
+                </TableCell>
+                <TableCell align="right">
+                  {estimated
+                    ? "Contribution estimée"
+                    : "Contribution sur facturé"}
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -292,15 +383,34 @@ export function ProfitabilityPage() {
                     <Money value={m.employerCost} />
                   </TableCell>
                   <TableCell align="right">
-                    <Money value={m.allocatedBilledRevenue} />
+                    <Money
+                      value={
+                        estimated
+                          ? m.allocatedEstimatedRevenue
+                          : m.allocatedBilledRevenue
+                      }
+                    />
                   </TableCell>
                   <TableCell align="right">
-                    <Money value={m.contributionMarginBilled} />
+                    <Money
+                      value={
+                        estimated
+                          ? m.contributionMarginEstimated
+                          : m.contributionMarginBilled
+                      }
+                    />
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
+          {estimated && (
+            <Typography variant="caption" color="text.secondary">
+              Les honoraires estimés sont répartis entre collaborateurs selon
+              leurs heures approuvées. Ce montant n’est ni une facture ni un
+              encaissement.
+            </Typography>
+          )}
           {rates.data && (
             <Typography variant="caption" color="text.secondary">
               {rates.data.length} version(s) de coûts configurée(s).

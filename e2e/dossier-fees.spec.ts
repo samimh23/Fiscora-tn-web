@@ -57,11 +57,11 @@ test("new dossier has one fee field and only monthly/annual choices", async ({ p
   await page.goto("/dossiers?nouveau=1");
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Raison sociale").fill("Nouveau test SARL");
-  await expect(dialog.getByLabel("Honoraires (TND)", { exact: true })).toHaveCount(1);
+  await expect(dialog.getByLabel("Honoraires HT (TND)", { exact: true })).toHaveCount(1);
   await page.getByRole("combobox", { name: "Période des honoraires" }).click();
   await expect(page.getByRole("option")).toHaveText(["Mensuel", "Annuel"]);
   await page.getByRole("option", { name: "Annuel", exact: true }).click();
-  await dialog.getByLabel("Honoraires (TND)", { exact: true }).fill("3600.125");
+  await dialog.getByLabel("Honoraires HT (TND)", { exact: true }).fill("3600.125");
   await dialog.getByRole("button", { name: "Créer le dossier", exact: true }).click();
   await expect.poll(saved).toMatchObject({ billingFrequency: "ANNUELLE", annualFee: "3600.125", monthlyFee: null });
 });
@@ -71,7 +71,7 @@ test("existing fees survive switching periods and editing the selected amount", 
   await page.goto("/dossiers/fee-dossier");
   await page.getByRole("button", { name: "Modifier", exact: true }).click();
   const dialog = page.getByRole("dialog");
-  const amount = dialog.getByLabel("Honoraires (TND)", { exact: true });
+  const amount = dialog.getByLabel("Honoraires HT (TND)", { exact: true });
   await expect(amount).toHaveValue("300.000");
   await selectPeriod(page, "Annuel");
   await expect(amount).toHaveValue("3600.000");
@@ -87,7 +87,7 @@ test("fees remain optional and invalid amounts are rejected", async ({ page }) =
   await page.goto("/dossiers?nouveau=1");
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Raison sociale").fill("Sans honoraires SARL");
-  const amount = dialog.getByLabel("Honoraires (TND)", { exact: true });
+  const amount = dialog.getByLabel("Honoraires HT (TND)", { exact: true });
   await amount.fill("-10");
   await dialog.getByRole("button", { name: "Créer le dossier", exact: true }).click();
   await expect(dialog.getByText("Montant invalide (3 décimales maximum).", { exact: true })).toBeVisible();

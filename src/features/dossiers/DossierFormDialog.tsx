@@ -450,7 +450,7 @@ export function DossierFormDialog({
                 control={control}
                 render={({ field }) => (
                   <TextField
-                    label="Honoraires (TND)"
+                    label="Honoraires HT (TND)"
                     error={Boolean(errors[feeField])}
                     helperText={errors[feeField]?.message ?? (
                       billingFrequency === "ANNUELLE"
