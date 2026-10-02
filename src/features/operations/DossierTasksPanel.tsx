@@ -819,6 +819,11 @@ export function DossierTasksPanel({
                 Les tâches sont organisées comme un circuit de cabinet :
                 affectation, exécution, révision puis validation.
               </Typography>
+              {!canAssign && !canValidate && (
+                <Typography variant="body2" color="text.secondary">
+                  Seules les tâches qui vous sont affectées sont affichées.
+                </Typography>
+              )}
             </Box>
             {canManage && !archived && (
               <Button

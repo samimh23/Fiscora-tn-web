@@ -223,6 +223,13 @@ export function TimeTrackingPage() {
         </Alert>
       )}
 
+      {!can("tasks.assign") && !can("tasks.validate") && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Seules les tâches qui vous sont affectées sont proposées. Vos heures
+          doivent être approuvées avant d’être prises en compte dans les coûts.
+        </Alert>
+      )}
+
       <Card sx={{ mb: 2.5 }}>
         <CardContent>
           <Stack
