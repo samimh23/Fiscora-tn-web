@@ -114,7 +114,14 @@ export function ProfitabilityPage() {
     enabled: Boolean(base && can("team_costs.manage")),
   });
   const save = useMutation({
-    mutationFn: () => api.post(`${base}/team-cost-rates`, form),
+    mutationFn: () =>
+      api.post(`${base}/team-cost-rates`, {
+        ...form,
+        employerCostRateAmount:
+          form.compensationType === "HORAIRE"
+            ? form.payRateAmount
+            : form.employerCostRateAmount,
+      }),
     onSuccess: () => {
       setOpen(false);
       void qc.invalidateQueries({ queryKey: ["cost-rates"] });
@@ -128,7 +135,11 @@ export function ProfitabilityPage() {
         title="Rentabilité & performance"
         description="Comparez honoraires, coût employeur affecté et temps approuvé par client et collaborateur."
         action={
-          <Stack direction="row" spacing={1}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
             <TextField
               size="small"
               type="date"
@@ -346,30 +357,34 @@ export function ProfitabilityPage() {
                   setForm({ ...form, payRateAmount: e.target.value })
                 }
               />
+              {form.compensationType === "MENSUELLE" && (
+                <TextField
+                  fullWidth
+                  label="Coût employeur mensuel"
+                  value={form.employerCostRateAmount}
+                  onChange={(e) =>
+                    setForm({ ...form, employerCostRateAmount: e.target.value })
+                  }
+                />
+              )}
+            </Stack>
+            {form.compensationType === "HORAIRE" ? (
+              <Typography variant="body2" color="text.secondary">
+                Coût calculé = taux horaire × heures approuvées.
+              </Typography>
+            ) : (
               <TextField
-                fullWidth
-                label={
-                  form.compensationType === "MENSUELLE"
-                    ? "Coût employeur mensuel"
-                    : "Coût horaire employeur"
-                }
-                value={form.employerCostRateAmount}
+                type="number"
+                label="Objectif mensuel (minutes)"
+                value={form.monthlyTargetMinutes}
                 onChange={(e) =>
-                  setForm({ ...form, employerCostRateAmount: e.target.value })
+                  setForm({
+                    ...form,
+                    monthlyTargetMinutes: Number(e.target.value),
+                  })
                 }
               />
-            </Stack>
-            <TextField
-              type="number"
-              label="Objectif mensuel (minutes)"
-              value={form.monthlyTargetMinutes}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  monthlyTargetMinutes: Number(e.target.value),
-                })
-              }
-            />
+            )}
             <TextField
               type="date"
               label="Applicable depuis"
@@ -388,7 +403,8 @@ export function ProfitabilityPage() {
             disabled={
               !form.membershipId ||
               !form.payRateAmount ||
-              !form.employerCostRateAmount ||
+              (form.compensationType === "MENSUELLE" &&
+                !form.employerCostRateAmount) ||
               save.isPending
             }
             onClick={() => save.mutate()}
