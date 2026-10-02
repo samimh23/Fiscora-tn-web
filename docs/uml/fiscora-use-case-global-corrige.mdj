@@ -1,0 +1,4087 @@
+{
+  "_type": "Project",
+  "_id": "FISCORA_PROJECT_00001",
+  "name": "Fiscora - Use Case Model",
+  "ownedElements": [
+    {
+      "_type": "UMLModel",
+      "_id": "FISCORA_MODEL_00002",
+      "_parent": {
+        "$ref": "FISCORA_PROJECT_00001"
+      },
+      "name": "Fiscora Use Cases",
+      "ownedElements": [
+        {
+          "_type": "UMLPackage",
+          "_id": "FISCORA_PACKAGE_00003",
+          "_parent": {
+            "$ref": "FISCORA_MODEL_00002"
+          },
+          "name": "01 - Vue globale corrigée",
+          "ownedElements": [
+            {
+              "_type": "UMLUseCaseDiagram",
+              "_id": "FISCORA_DIAGRAM_00004",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Fiscora — Diagramme de cas d’utilisation global",
+              "defaultDiagram": true,
+              "visible": true,
+              "ownedViews": [
+                {
+                  "_type": "UMLUseCaseSubjectView",
+                  "_id": "FISCORA_SUBJECTVIEW_00006",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_SUBJECT_00005"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00007",
+                      "_parent": {
+                        "$ref": "FISCORA_SUBJECTVIEW_00006"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_SUBJECT_00005"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00008",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00007"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 268,
+                          "top": 85,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00009",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00007"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 268,
+                          "top": 85,
+                          "width": 1334,
+                          "height": 26,
+                          "text": "SYSTÈME FISCORA",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00010",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00007"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 268,
+                          "top": 85,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00011",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00007"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 268,
+                          "top": 85,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 268,
+                      "top": 85,
+                      "width": 1334,
+                      "height": 26,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00008"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00009"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00010"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00011"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#1f2937",
+                  "fillColor": "#ffffff",
+                  "left": 260,
+                  "top": 80,
+                  "width": 1350,
+                  "height": 1090,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00007"
+                  }
+                },
+                {
+                  "_type": "UMLActorView",
+                  "_id": "FISCORA_ACTORVIEW_00013",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ACTOR_00012"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00014",
+                      "_parent": {
+                        "$ref": "FISCORA_ACTORVIEW_00013"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_ACTOR_00012"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00015",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00014"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 40,
+                          "top": 499,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00016",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00014"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 40,
+                          "top": 499,
+                          "width": 150,
+                          "height": 34,
+                          "text": "Collaborateur du cabinet",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00017",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00014"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 40,
+                          "top": 499,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00018",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00014"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 40,
+                          "top": 499,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 40,
+                      "top": 499,
+                      "width": 150,
+                      "height": 34,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00015"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00016"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00017"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00018"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#17211e",
+                  "fontColor": "#17211e",
+                  "fillColor": "#ffffff",
+                  "containerChangeable": true,
+                  "left": 40,
+                  "top": 440,
+                  "width": 150,
+                  "height": 96,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00014"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLActorView",
+                  "_id": "FISCORA_ACTORVIEW_00020",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ACTOR_00019"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00021",
+                      "_parent": {
+                        "$ref": "FISCORA_ACTORVIEW_00020"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_ACTOR_00019"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00022",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00021"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 40,
+                          "top": 1079,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00023",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00021"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 40,
+                          "top": 1079,
+                          "width": 150,
+                          "height": 34,
+                          "text": "Propriétaire du cabinet",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00024",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00021"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 40,
+                          "top": 1079,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00025",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00021"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 40,
+                          "top": 1079,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 40,
+                      "top": 1079,
+                      "width": 150,
+                      "height": 34,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00022"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00023"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00024"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00025"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#17211e",
+                  "fontColor": "#17211e",
+                  "fillColor": "#ffffff",
+                  "containerChangeable": true,
+                  "left": 40,
+                  "top": 1020,
+                  "width": 150,
+                  "height": 96,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00021"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLActorView",
+                  "_id": "FISCORA_ACTORVIEW_00027",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ACTOR_00026"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00028",
+                      "_parent": {
+                        "$ref": "FISCORA_ACTORVIEW_00027"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_ACTOR_00026"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00029",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00028"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1640,
+                          "top": 329,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00030",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00028"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 1640,
+                          "top": 329,
+                          "width": 200,
+                          "height": 34,
+                          "text": "Client (portail client)",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00031",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00028"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1640,
+                          "top": 329,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00032",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00028"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1640,
+                          "top": 329,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 1640,
+                      "top": 329,
+                      "width": 200,
+                      "height": 34,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00029"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00030"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00031"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00032"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#17211e",
+                  "fontColor": "#17211e",
+                  "fillColor": "#ffffff",
+                  "containerChangeable": true,
+                  "left": 1640,
+                  "top": 270,
+                  "width": 200,
+                  "height": 96,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00028"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLActorView",
+                  "_id": "FISCORA_ACTORVIEW_00034",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ACTOR_00033"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00035",
+                      "_parent": {
+                        "$ref": "FISCORA_ACTORVIEW_00034"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_ACTOR_00033"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00036",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00035"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1640,
+                          "top": 909,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00037",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00035"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 1640,
+                          "top": 909,
+                          "width": 200,
+                          "height": 34,
+                          "text": "Administrateur de plateforme",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00038",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00035"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1640,
+                          "top": 909,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00039",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00035"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1640,
+                          "top": 909,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 1640,
+                      "top": 909,
+                      "width": 200,
+                      "height": 34,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00036"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00037"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00038"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00039"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#17211e",
+                  "fontColor": "#17211e",
+                  "fillColor": "#ffffff",
+                  "containerChangeable": true,
+                  "left": 1640,
+                  "top": 850,
+                  "width": 200,
+                  "height": 96,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00035"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLActorView",
+                  "_id": "FISCORA_ACTORVIEW_00041",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ACTOR_00040"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00042",
+                      "_parent": {
+                        "$ref": "FISCORA_ACTORVIEW_00041"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_ACTOR_00040"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00043",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00042"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 350,
+                          "top": 1264,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00044",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00042"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 350,
+                          "top": 1264,
+                          "width": 260,
+                          "height": 34,
+                          "text": "Service d’extraction documentaire",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00045",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00042"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 350,
+                          "top": 1264,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00046",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00042"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 350,
+                          "top": 1264,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 350,
+                      "top": 1264,
+                      "width": 260,
+                      "height": 34,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00043"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00044"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00045"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00046"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6b4fa1",
+                  "fontColor": "#6b4fa1",
+                  "fillColor": "#ffffff",
+                  "containerChangeable": true,
+                  "left": 350,
+                  "top": 1205,
+                  "width": 260,
+                  "height": 96,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00042"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLActorView",
+                  "_id": "FISCORA_ACTORVIEW_00048",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ACTOR_00047"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00049",
+                      "_parent": {
+                        "$ref": "FISCORA_ACTORVIEW_00048"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_ACTOR_00047"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00050",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00049"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 820,
+                          "top": 1264,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00051",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00049"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 820,
+                          "top": 1264,
+                          "width": 260,
+                          "height": 34,
+                          "text": "Service IA conversationnelle (Vertex AI)",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00052",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00049"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 820,
+                          "top": 1264,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00053",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00049"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 820,
+                          "top": 1264,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 820,
+                      "top": 1264,
+                      "width": 260,
+                      "height": 34,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00050"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00051"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00052"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00053"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6b4fa1",
+                  "fontColor": "#6b4fa1",
+                  "fillColor": "#ffffff",
+                  "containerChangeable": true,
+                  "left": 820,
+                  "top": 1205,
+                  "width": 260,
+                  "height": 96,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00049"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00055",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00054"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00056",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00055"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00054"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00057",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00056"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 173,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00058",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00056"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 308,
+                          "top": 173,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Consulter et tenir les dossiers autorisés",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00059",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00056"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 173,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00060",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00056"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 173,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 308,
+                      "top": 173,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00057"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00058"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00059"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00060"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#dcefe4",
+                  "containerChangeable": true,
+                  "left": 300,
+                  "top": 165,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00056"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00062",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00061"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00063",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00062"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00061"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00064",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00063"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 288,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00065",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00063"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 308,
+                          "top": 288,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Importer, extraire et contrôler les pièces",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00066",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00063"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 288,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00067",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00063"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 288,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 308,
+                      "top": 288,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00064"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00065"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00066"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00067"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#dcefe4",
+                  "containerChangeable": true,
+                  "left": 300,
+                  "top": 280,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00063"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00069",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00068"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00070",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00069"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00068"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00071",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00070"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 403,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00072",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00070"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 308,
+                          "top": 403,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Gérer factures, avoirs, règlements et documents commerciaux",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00073",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00070"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 403,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00074",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00070"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 403,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 308,
+                      "top": 403,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00071"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00072"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00073"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00074"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#dcefe4",
+                  "containerChangeable": true,
+                  "left": 300,
+                  "top": 395,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00070"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00076",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00075"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00077",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00076"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00075"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00078",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00077"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 518,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00079",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00077"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 308,
+                          "top": 518,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Préparer la comptabilité, le lettrage et les rapprochements",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00080",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00077"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 518,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00081",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00077"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 518,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 308,
+                      "top": 518,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00078"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00079"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00080"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00081"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#dcefe4",
+                  "containerChangeable": true,
+                  "left": 300,
+                  "top": 510,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00077"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00083",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00082"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00084",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00083"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00082"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00085",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00084"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 633,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00086",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00084"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 308,
+                          "top": 633,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Suivre les échéances et préparer les déclarations",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00087",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00084"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 633,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00088",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00084"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 633,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 308,
+                      "top": 633,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00085"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00086"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00087"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00088"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#dcefe4",
+                  "containerChangeable": true,
+                  "left": 300,
+                  "top": 625,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00084"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00090",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00089"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00091",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00090"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00089"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00092",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00091"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 748,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00093",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00091"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 308,
+                          "top": 748,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Préparer la paie et gérer les immobilisations",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00094",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00091"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 748,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00095",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00091"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 748,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 308,
+                      "top": 748,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00092"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00093"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00094"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00095"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#dcefe4",
+                  "containerChangeable": true,
+                  "left": 300,
+                  "top": 740,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00091"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00097",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00096"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00098",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00097"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00096"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00099",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00098"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 863,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00100",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00098"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 308,
+                          "top": 863,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Produire les états comptables et financiers et les exports",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00101",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00098"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 863,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00102",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00098"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 863,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 308,
+                      "top": 863,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00099"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00100"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00101"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00102"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#dcefe4",
+                  "containerChangeable": true,
+                  "left": 300,
+                  "top": 855,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00098"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00104",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00103"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00105",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00104"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00103"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00106",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00105"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 978,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00107",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00105"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 308,
+                          "top": 978,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Traiter les tâches affectées et saisir le temps de travail",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00108",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00105"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 978,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00109",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00105"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 308,
+                          "top": 978,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 308,
+                      "top": 978,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00106"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00107"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00108"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00109"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#dcefe4",
+                  "containerChangeable": true,
+                  "left": 300,
+                  "top": 970,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00105"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00111",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00110"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00112",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00111"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00110"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00113",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00112"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 288,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00114",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00112"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 778,
+                          "top": 288,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Interroger l’assistant avec des sources du dossier",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00115",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00112"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 288,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00116",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00112"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 288,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 778,
+                      "top": 288,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00113"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00114"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00115"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00116"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#eadff5",
+                  "containerChangeable": true,
+                  "left": 770,
+                  "top": 280,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00112"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00118",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00117"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00119",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00118"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00117"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00120",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00119"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 518,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00121",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00119"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 778,
+                          "top": 518,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Valider et clôturer les périodes comptables",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00122",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00119"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 518,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00123",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00119"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 518,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 778,
+                      "top": 518,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00120"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00121"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00122"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00123"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#fff1c9",
+                  "containerChangeable": true,
+                  "left": 770,
+                  "top": 510,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00119"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00125",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00124"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00126",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00125"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00124"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00127",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00126"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 633,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00128",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00126"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 778,
+                          "top": 633,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Administrer les dossiers, l’équipe et les droits",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00129",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00126"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 633,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00130",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00126"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 633,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 778,
+                      "top": 633,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00127"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00128"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00129"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00130"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#fff1c9",
+                  "containerChangeable": true,
+                  "left": 770,
+                  "top": 625,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00126"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00132",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00131"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00133",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00132"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00131"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00134",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00133"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 748,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00135",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00133"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 778,
+                          "top": 748,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Affecter, réviser et valider les travaux et les temps",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00136",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00133"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 748,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00137",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00133"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 748,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 778,
+                      "top": 748,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00134"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00135"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00136"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00137"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#fff1c9",
+                  "containerChangeable": true,
+                  "left": 770,
+                  "top": 740,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00133"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00139",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00138"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00140",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00139"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00138"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00141",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00140"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 863,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00142",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00140"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 778,
+                          "top": 863,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Gérer les honoraires et l’abonnement du cabinet",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00143",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00140"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 863,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00144",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00140"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 863,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 778,
+                      "top": 863,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00141"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00142"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00143"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00144"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#fff1c9",
+                  "containerChangeable": true,
+                  "left": 770,
+                  "top": 855,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00140"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00146",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00145"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00147",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00146"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00145"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00148",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00147"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 978,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00149",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00147"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 778,
+                          "top": 978,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Suivre les coûts et la rentabilité estimée ou facturée",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00150",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00147"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 978,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00151",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00147"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 778,
+                          "top": 978,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 778,
+                      "top": 978,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00148"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00149"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00150"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00151"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#fff1c9",
+                  "containerChangeable": true,
+                  "left": 770,
+                  "top": 970,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00147"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00153",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00152"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00154",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00153"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00152"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00155",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00154"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 173,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00156",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00154"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 1218,
+                          "top": 173,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Consulter ses dossiers et les éléments partagés",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00157",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00154"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 173,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00158",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00154"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 173,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 1218,
+                      "top": 173,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00155"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00156"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00157"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00158"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#d9eafd",
+                  "containerChangeable": true,
+                  "left": 1210,
+                  "top": 165,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00154"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00160",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00159"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00161",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00160"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00159"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00162",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00161"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 288,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00163",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00161"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 1218,
+                          "top": 288,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Déposer et consulter ses documents",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00164",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00161"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 288,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00165",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00161"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 288,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 1218,
+                      "top": 288,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00162"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00163"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00164"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00165"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#d9eafd",
+                  "containerChangeable": true,
+                  "left": 1210,
+                  "top": 280,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00161"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00167",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00166"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00168",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00167"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00166"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00169",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00168"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 403,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00170",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00168"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 1218,
+                          "top": 403,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Échanger avec le cabinet et approuver les demandes",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00171",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00168"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 403,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00172",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00168"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 403,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 1218,
+                      "top": 403,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00169"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00170"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00171"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00172"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#d9eafd",
+                  "containerChangeable": true,
+                  "left": 1210,
+                  "top": 395,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00168"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLUseCaseView",
+                  "_id": "FISCORA_USECASEVIEW_00174",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_USECASE_00173"
+                  },
+                  "subViews": [
+                    {
+                      "_type": "UMLNameCompartmentView",
+                      "_id": "FISCORA_NAMECOMP_00175",
+                      "_parent": {
+                        "$ref": "FISCORA_USECASEVIEW_00174"
+                      },
+                      "model": {
+                        "$ref": "FISCORA_USECASE_00173"
+                      },
+                      "subViews": [
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00176",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00175"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 863,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00177",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00175"
+                          },
+                          "font": "Arial;13;1",
+                          "left": 1218,
+                          "top": 863,
+                          "width": 344,
+                          "height": 62,
+                          "text": "Superviser les organisations, les comptes et la plateforme",
+                          "horizontalAlignment": 1,
+                          "verticalAlignment": 1,
+                          "wordWrap": true
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00178",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00175"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 863,
+                          "height": 13
+                        },
+                        {
+                          "_type": "LabelView",
+                          "_id": "FISCORA_LABEL_00179",
+                          "_parent": {
+                            "$ref": "FISCORA_NAMECOMP_00175"
+                          },
+                          "visible": false,
+                          "font": "Arial;13;0",
+                          "left": 1218,
+                          "top": 863,
+                          "height": 13
+                        }
+                      ],
+                      "font": "Arial;13;0",
+                      "left": 1218,
+                      "top": 863,
+                      "width": 344,
+                      "height": 62,
+                      "stereotypeLabel": {
+                        "$ref": "FISCORA_LABEL_00176"
+                      },
+                      "nameLabel": {
+                        "$ref": "FISCORA_LABEL_00177"
+                      },
+                      "namespaceLabel": {
+                        "$ref": "FISCORA_LABEL_00178"
+                      },
+                      "propertyLabel": {
+                        "$ref": "FISCORA_LABEL_00179"
+                      }
+                    }
+                  ],
+                  "font": "Arial;13;0",
+                  "lineColor": "#48615a",
+                  "fontColor": "#17211e",
+                  "fillColor": "#fff1c9",
+                  "containerChangeable": true,
+                  "left": 1210,
+                  "top": 855,
+                  "width": 360,
+                  "height": 78,
+                  "nameCompartment": {
+                    "$ref": "FISCORA_NAMECOMP_00175"
+                  },
+                  "wordWrap": true,
+                  "suppressAttributes": true,
+                  "suppressOperations": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00183",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00180"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00153"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00027"
+                  },
+                  "lineStyle": 1,
+                  "points": "1640:318;1570:204",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00187",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00184"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00160"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00027"
+                  },
+                  "lineStyle": 1,
+                  "points": "1640:318;1570:319",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00191",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00188"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00167"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00027"
+                  },
+                  "lineStyle": 1,
+                  "points": "1640:318;1570:434",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00195",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00192"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00055"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00013"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:488;300:204",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00199",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00196"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00062"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00013"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:488;300:319",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00203",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00200"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00069"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00013"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:488;300:434",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00207",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00204"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00076"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00013"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:488;300:549",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00211",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00208"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00083"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00013"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:488;300:664",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00215",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00212"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00090"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00013"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:488;300:779",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00219",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00216"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00097"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00013"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:488;300:894",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00223",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00220"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00104"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00013"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:488;300:1009",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00227",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00224"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00111"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00013"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:488;225:488;225:260;950:260;950:280",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00231",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00228"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00118"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00020"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:1068;225:1068;225:1125;735:1125;735:549;770:549",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00235",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00232"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00125"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00020"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:1068;225:1068;225:1125;735:1125;735:664;770:664",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00239",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00236"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00132"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00020"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:1068;225:1068;225:1125;735:1125;735:779;770:779",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00243",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00240"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00139"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00020"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:1068;225:1068;225:1125;735:1125;735:894;770:894",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00247",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00244"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00146"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00020"
+                  },
+                  "lineStyle": 1,
+                  "points": "190:1068;225:1068;225:1125;735:1125;735:1009;770:1009",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00251",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00248"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00174"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00034"
+                  },
+                  "lineStyle": 1,
+                  "points": "1640:898;1570:894",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00255",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00252"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00062"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00041"
+                  },
+                  "lineStyle": 1,
+                  "points": "480:1205;480:1145;695:1145;695:319;660:319",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLAssociationView",
+                  "_id": "FISCORA_ASSOCIATIONVIEW_00259",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_ASSOCIATION_00256"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_USECASEVIEW_00111"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00048"
+                  },
+                  "lineStyle": 1,
+                  "points": "950:1205;950:1145;1175:1145;1175:319;1130:319",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLGeneralizationView",
+                  "_id": "FISCORA_GENERALIZATIONVIEW_00261",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "model": {
+                    "$ref": "FISCORA_GENERALIZATION_00260"
+                  },
+                  "subViews": [],
+                  "font": "Arial;13;0",
+                  "lineColor": "#6d7d78",
+                  "head": {
+                    "$ref": "FISCORA_ACTORVIEW_00013"
+                  },
+                  "tail": {
+                    "$ref": "FISCORA_ACTORVIEW_00020"
+                  },
+                  "lineStyle": 1,
+                  "points": "115:1020;115:550",
+                  "showVisibility": true
+                },
+                {
+                  "_type": "UMLTextView",
+                  "_id": "FISCORA_TEXTVIEW_00262",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "text": "Production du cabinet",
+                  "font": "Arial;14;0",
+                  "fontColor": "#17211e",
+                  "left": 300,
+                  "top": 121,
+                  "width": 360,
+                  "height": 24,
+                  "horzAlign": 1,
+                  "vertAlign": 3,
+                  "wordWrap": false
+                },
+                {
+                  "_type": "UMLTextView",
+                  "_id": "FISCORA_TEXTVIEW_00263",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "text": "Pilotage du cabinet",
+                  "font": "Arial;14;0",
+                  "fontColor": "#17211e",
+                  "left": 770,
+                  "top": 121,
+                  "width": 360,
+                  "height": 24,
+                  "horzAlign": 1,
+                  "vertAlign": 3,
+                  "wordWrap": false
+                },
+                {
+                  "_type": "UMLTextView",
+                  "_id": "FISCORA_TEXTVIEW_00264",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "text": "Portail client / plateforme",
+                  "font": "Arial;14;0",
+                  "fontColor": "#17211e",
+                  "left": 1210,
+                  "top": 121,
+                  "width": 360,
+                  "height": 24,
+                  "horzAlign": 1,
+                  "vertAlign": 3,
+                  "wordWrap": false
+                },
+                {
+                  "_type": "UMLTextView",
+                  "_id": "FISCORA_TEXTVIEW_00265",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "text": "Précondition commune : authentification et contrôle des permissions (MFA si activée).",
+                  "font": "Arial;14;0",
+                  "fontColor": "#17211e",
+                  "left": 36,
+                  "top": 1327,
+                  "width": 1460,
+                  "height": 24,
+                  "horzAlign": 0,
+                  "vertAlign": 3,
+                  "wordWrap": false
+                },
+                {
+                  "_type": "UMLTextView",
+                  "_id": "FISCORA_TEXTVIEW_00266",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "text": "Le propriétaire hérite des actions du collaborateur. Le client reste limité à ses dossiers partagés.",
+                  "font": "Arial;14;0",
+                  "fontColor": "#17211e",
+                  "left": 36,
+                  "top": 1351,
+                  "width": 1460,
+                  "height": 24,
+                  "horzAlign": 0,
+                  "vertAlign": 3,
+                  "wordWrap": false
+                },
+                {
+                  "_type": "UMLTextView",
+                  "_id": "FISCORA_TEXTVIEW_00267",
+                  "_parent": {
+                    "$ref": "FISCORA_DIAGRAM_00004"
+                  },
+                  "text": "Les services IA assistent le traitement ; la validation comptable et fiscale reste humaine.",
+                  "font": "Arial;14;0",
+                  "fontColor": "#17211e",
+                  "left": 36,
+                  "top": 1375,
+                  "width": 1460,
+                  "height": 24,
+                  "horzAlign": 0,
+                  "vertAlign": 3,
+                  "wordWrap": false
+                }
+              ]
+            },
+            {
+              "_type": "UMLUseCaseSubject",
+              "_id": "FISCORA_SUBJECT_00005",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "SYSTÈME FISCORA"
+            },
+            {
+              "_type": "UMLActor",
+              "_id": "FISCORA_ACTOR_00012",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Collaborateur du cabinet",
+              "isAbstract": false,
+              "ownedElements": [
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00192",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00012"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00193",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00192"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00012"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00194",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00192"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00054"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00196",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00012"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00197",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00196"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00012"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00198",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00196"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00061"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00200",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00012"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00201",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00200"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00012"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00202",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00200"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00068"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00204",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00012"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00205",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00204"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00012"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00206",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00204"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00075"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00208",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00012"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00209",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00208"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00012"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00210",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00208"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00082"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00212",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00012"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00213",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00212"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00012"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00214",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00212"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00089"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00216",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00012"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00217",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00216"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00012"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00218",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00216"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00096"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00220",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00012"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00221",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00220"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00012"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00222",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00220"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00103"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00224",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00012"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00225",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00224"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00012"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00226",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00224"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00110"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "_type": "UMLActor",
+              "_id": "FISCORA_ACTOR_00019",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Propriétaire du cabinet",
+              "isAbstract": false,
+              "ownedElements": [
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00228",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00019"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00229",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00228"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00019"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00230",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00228"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00117"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00232",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00019"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00233",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00232"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00019"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00234",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00232"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00124"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00236",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00019"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00237",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00236"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00019"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00238",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00236"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00131"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00240",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00019"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00241",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00240"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00019"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00242",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00240"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00138"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00244",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00019"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00245",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00244"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00019"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00246",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00244"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00145"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLGeneralization",
+                  "_id": "FISCORA_GENERALIZATION_00260",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00019"
+                  },
+                  "source": {
+                    "$ref": "FISCORA_ACTOR_00019"
+                  },
+                  "target": {
+                    "$ref": "FISCORA_ACTOR_00012"
+                  }
+                }
+              ]
+            },
+            {
+              "_type": "UMLActor",
+              "_id": "FISCORA_ACTOR_00026",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Client (portail client)",
+              "isAbstract": false,
+              "ownedElements": [
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00180",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00026"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00181",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00180"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00026"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00182",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00180"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00152"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00184",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00026"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00185",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00184"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00026"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00186",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00184"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00159"
+                    }
+                  }
+                },
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00188",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00026"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00189",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00188"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00026"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00190",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00188"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00166"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "_type": "UMLActor",
+              "_id": "FISCORA_ACTOR_00033",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Administrateur de plateforme",
+              "isAbstract": false,
+              "ownedElements": [
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00248",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00033"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00249",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00248"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00033"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00250",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00248"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00173"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "_type": "UMLActor",
+              "_id": "FISCORA_ACTOR_00040",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Service d’extraction documentaire",
+              "isAbstract": false,
+              "ownedElements": [
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00252",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00040"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00253",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00252"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00040"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00254",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00252"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00061"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "_type": "UMLActor",
+              "_id": "FISCORA_ACTOR_00047",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Service IA conversationnelle (Vertex AI)",
+              "isAbstract": false,
+              "ownedElements": [
+                {
+                  "_type": "UMLAssociation",
+                  "_id": "FISCORA_ASSOCIATION_00256",
+                  "_parent": {
+                    "$ref": "FISCORA_ACTOR_00047"
+                  },
+                  "end1": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00257",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00256"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_ACTOR_00047"
+                    }
+                  },
+                  "end2": {
+                    "_type": "UMLAssociationEnd",
+                    "_id": "FISCORA_ASSOCEND_00258",
+                    "_parent": {
+                      "$ref": "FISCORA_ASSOCIATION_00256"
+                    },
+                    "reference": {
+                      "$ref": "FISCORA_USECASE_00110"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00054",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Consulter et tenir les dossiers autorisés",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00061",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Importer, extraire et contrôler les pièces",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00068",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Gérer factures, avoirs, règlements et documents commerciaux",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00075",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Préparer la comptabilité, le lettrage et les rapprochements",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00082",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Suivre les échéances et préparer les déclarations",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00089",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Préparer la paie et gérer les immobilisations",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00096",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Produire les états comptables et financiers et les exports",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00103",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Traiter les tâches affectées et saisir le temps de travail",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00110",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Interroger l’assistant avec des sources du dossier",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00117",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Valider et clôturer les périodes comptables",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00124",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Administrer les dossiers, l’équipe et les droits",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00131",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Affecter, réviser et valider les travaux et les temps",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00138",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Gérer les honoraires et l’abonnement du cabinet",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00145",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Suivre les coûts et la rentabilité estimée ou facturée",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00152",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Consulter ses dossiers et les éléments partagés",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00159",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Déposer et consulter ses documents",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00166",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Échanger avec le cabinet et approuver les demandes",
+              "ownedElements": []
+            },
+            {
+              "_type": "UMLUseCase",
+              "_id": "FISCORA_USECASE_00173",
+              "_parent": {
+                "$ref": "FISCORA_PACKAGE_00003"
+              },
+              "name": "Superviser les organisations, les comptes et la plateforme",
+              "ownedElements": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
