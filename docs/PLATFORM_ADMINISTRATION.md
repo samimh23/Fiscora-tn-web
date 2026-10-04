@@ -11,7 +11,8 @@ La première version permet au propriétaire de Fiscora de consulter :
 - les alertes opérationnelles ;
 - la liste agrégée des cabinets ;
 - les comptes utilisateurs et leurs accès ;
-- le nombre de sessions actives par utilisateur ;
+- les cabinets et rôles de chaque utilisateur ;
+- les statuts de vérification de l'e-mail et de double authentification ;
 - la suspension et la réactivation motivées des cabinets ;
 - la désactivation et la réactivation motivées des utilisateurs ;
 - la révocation des sessions renouvelables ;
@@ -37,6 +38,23 @@ sont indépendantes et conservées lors des changements de section dans la page.
 
 La navigation ne modifie aucune donnée. Les listes de cabinets, utilisateurs,
 traitements et audit sont chargées quand leur section est ouverte.
+
+La liste des utilisateurs propose une recherche et des filtres par cabinet,
+rôle et statut du compte. Le rôle est lié au cabinet : les filtres combinés
+cabinet/rôle doivent correspondre à la même affectation active. Les comptes
+« Portail client » restent distingués des collaborateurs internes. Le rôle
+« Admin Fiscora » est un privilège global, affiché séparément.
+
+Sur mobile, les comptes sont présentés en cartes avec leurs actions visibles,
+sans défilement horizontal. Sur les autres écrans, une table compacte est utilisée.
+
+Le menu d'actions de chaque compte permet de consulter ses détails, de le
+désactiver/réactiver et de révoquer ses connexions. Les détails montrent les
+informations de sécurité, sans secret MFA ni jeton d'authentification. Les
+compteurs de jetons ne sont pas présentés comme des appareils ou des personnes
+en ligne. La révocation bloque le renouvellement des connexions ; les jetons
+d'accès déjà délivrés expirent normalement. Les actions sur son propre compte
+restent protégées.
 
 Chaque action sensible demande une justification et affiche une confirmation.
 L'administrateur connecté ne peut pas désactiver son propre compte depuis

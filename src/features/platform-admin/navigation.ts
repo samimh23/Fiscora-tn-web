@@ -27,7 +27,8 @@ export const platformAdminSections = [
     key: "utilisateurs",
     label: "Utilisateurs",
     icon: GroupsOutlined,
-    description: "Gérez les comptes, les accès et les sessions de connexion.",
+    description:
+      "Gérez les comptes, leurs cabinets, leurs rôles et leur sécurité.",
   },
   {
     key: "abonnements",

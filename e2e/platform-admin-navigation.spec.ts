@@ -111,6 +111,16 @@ async function setup(page: Page) {
           membershipsCount: 1,
           activeSessionsCount: 3,
           lastLoginAtUtc: date,
+          createdAtUtc: date,
+          emailVerified: true,
+          mfaEnabled: true,
+          memberships: [
+            {
+              organizationId: "cabinet-0",
+              organizationName: "Cabinet Pro",
+              role: "Propriétaire",
+            },
+          ],
         },
         {
           ...user,
@@ -119,9 +129,60 @@ async function setup(page: Page) {
           email: "colab@example.invalid",
           isPlatformAdmin: false,
           isActive: true,
-          membershipsCount: 1,
+          membershipsCount: 2,
           activeSessionsCount: 2,
           lastLoginAtUtc: date,
+          createdAtUtc: date,
+          emailVerified: true,
+          mfaEnabled: false,
+          memberships: [
+            {
+              organizationId: "cabinet-0",
+              organizationName: "Cabinet Pro",
+              role: "Collaborateur",
+            },
+            {
+              organizationId: "cabinet-1",
+              organizationName: "Cabinet Demo",
+              role: "Portail client",
+            },
+          ],
+        },
+        {
+          ...user,
+          id: "portal",
+          fullName: "Client Test",
+          email: "client@example.invalid",
+          isPlatformAdmin: false,
+          isActive: false,
+          emailVerified: false,
+          mfaEnabled: true,
+          membershipsCount: 1,
+          activeSessionsCount: 0,
+          lastLoginAtUtc: null,
+          createdAtUtc: date,
+          disabledReason: "Désactivation de test",
+          memberships: [
+            {
+              organizationId: "cabinet-0",
+              organizationName: "Cabinet Pro",
+              role: "Portail client",
+            },
+          ],
+        },
+        {
+          ...user,
+          id: "no-cabinet",
+          fullName: "Sans Cabinet",
+          email: "sans@example.invalid",
+          isPlatformAdmin: false,
+          isActive: true,
+          emailVerified: false,
+          membershipsCount: 0,
+          activeSessionsCount: 0,
+          lastLoginAtUtc: null,
+          createdAtUtc: date,
+          memberships: [],
         },
       ];
     else if (path.endsWith("/jobs"))
@@ -352,7 +413,117 @@ test("destructive actions still require explicit confirmation and an audited rea
   await dialog.getByRole("button", { name: "Annuler", exact: true }).click();
   expect(writes).toEqual([]);
   await selectSection(page, "Utilisateurs");
+  await page.getByRole("button", { name: "Actions pour Admin Test" }).click();
   await expect(
-    page.getByRole("button", { name: "Votre compte" }),
+    page.getByRole("menuitem", { name: "Votre compte" }),
   ).toBeDisabled();
+  await expect(
+    page.getByRole("menuitem", { name: "Révoquer les connexions" }),
+  ).toBeDisabled();
+});
+
+test("users filters respect roles within the selected cabinet and account details show security", async ({
+  page,
+}, testInfo) => {
+  const { writes } = await setup(page);
+  await page.goto("/administration-plateforme?section=utilisateurs");
+  await expect(
+    page.getByRole("button", { name: "Actions pour Colab Test" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Sessions", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("combobox", { name: "Cabinet", exact: true }).click();
+  await page.getByRole("option", { name: "Cabinet Pro", exact: true }).click();
+  await page.getByRole("combobox", { name: "Rôle", exact: true }).click();
+  await page
+    .getByRole("option", { name: "Portail client", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Actions pour Colab Test" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Actions pour Client Test" }),
+  ).toBeVisible();
+  await page.getByRole("combobox", { name: "Statut", exact: true }).click();
+  await page.getByRole("option", { name: "Actif", exact: true }).click();
+  await expect(
+    page.getByText("Aucun utilisateur trouvé.", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Réinitialiser les filtres" }).click();
+  await page.getByRole("button", { name: "Actions pour Colab Test" }).click();
+  await page.getByRole("menuitem", { name: "Voir les détails" }).click();
+  const detail = page.getByRole("dialog", { name: "Détails du compte" });
+  await expect(
+    detail.getByText("E-mail : Vérifié", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    detail.getByText("Double authentification (MFA) : Désactivée", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(detail.getByText("Cabinet Pro", { exact: true })).toBeVisible();
+  await expect(detail.getByText("Cabinet Demo", { exact: true })).toBeVisible();
+  await detail.getByRole("button", { name: "Fermer" }).click();
+  await expect(detail).toHaveCount(0);
+  await expect(page.getByText("Colab Test", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Actions pour Colab Test" }),
+  ).toBeVisible();
+  await expectNoPageOverflow(page);
+  await page.screenshot({
+    path: testInfo.outputPath("users.png"),
+    fullPage: true,
+  });
+  expect(writes).toEqual([]);
+});
+
+test("user actions remain guarded and revocation uses the existing audited endpoint", async ({
+  page,
+}) => {
+  const { writes } = await setup(page);
+  await page.goto("/administration-plateforme?section=utilisateurs");
+  await page.getByRole("button", { name: "Actions pour Sans Cabinet" }).click();
+  await expect(
+    page.getByRole("menuitem", { name: "Révoquer les connexions" }),
+  ).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Actions pour Client Test" }).click();
+  await page.getByRole("menuitem", { name: "Réactiver le compte" }).click();
+  let dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByRole("button", { name: "Confirmer la réactivation" }),
+  ).toBeDisabled();
+  await dialog.getByRole("button", { name: "Annuler", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await page.getByRole("button", { name: "Actions pour Colab Test" }).click();
+  await page.getByRole("menuitem", { name: "Désactiver le compte" }).click();
+  dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByRole("button", { name: "Confirmer la suspension" }),
+  ).toBeDisabled();
+  await dialog.getByRole("button", { name: "Annuler", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await page.getByRole("button", { name: "Actions pour Colab Test" }).click();
+  await page.getByRole("menuitem", { name: "Révoquer les connexions" }).click();
+  dialog = page.getByRole("dialog", { name: "Révoquer les connexions" });
+  await expect(
+    dialog.getByRole("button", { name: "Confirmer la révocation" }),
+  ).toBeDisabled();
+  await dialog
+    .getByLabel("Justification obligatoire")
+    .fill("Appareil perdu par le collaborateur");
+  expect(writes).toEqual([]);
+  const requestPromise = page.waitForRequest(
+    (request) =>
+      request.url().endsWith("/users/worker/revoke-sessions") &&
+      request.method() === "POST",
+  );
+  await dialog.getByRole("button", { name: "Confirmer la révocation" }).click();
+  expect((await requestPromise).postDataJSON()).toEqual({
+    reason: "Appareil perdu par le collaborateur",
+  });
+  await expect(
+    page.getByText("Les connexions de Colab Test ont été révoquées."),
+  ).toBeVisible();
 });

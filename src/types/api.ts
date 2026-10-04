@@ -101,6 +101,12 @@ export interface PlatformUser {
   email: string;
   isActive: boolean;
   emailVerified: boolean;
+  mfaEnabled?: boolean;
+  memberships?: Array<{
+    organizationId: string;
+    organizationName: string;
+    role: string;
+  }>;
   isPlatformAdmin: boolean;
   disabledAtUtc: string | null;
   disabledReason: string | null;

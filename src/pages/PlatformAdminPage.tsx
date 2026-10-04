@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  AdminPanelSettingsOutlined,
   ApartmentOutlined,
   ApiRounded,
   BackupOutlined,
@@ -10,10 +9,8 @@ import {
   CheckCircleOutlineRounded,
   CloudQueueOutlined,
   DescriptionOutlined,
-  DevicesOutlined,
   EmailOutlined,
   GroupsOutlined,
-  ManageAccountsOutlined,
   ReceiptLongOutlined,
   RefreshRounded,
   RestartAltRounded,
@@ -54,6 +51,7 @@ import { api, readSession } from "../api/client";
 import { MetricCard } from "../components/MetricCard";
 import { PlatformEmailPanel } from "../features/platform-admin/PlatformEmailPanel";
 import { PlatformMonitoringPanel } from "../features/platform-admin/PlatformMonitoringPanel";
+import { PlatformUsersPanel } from "../features/platform-admin/PlatformUsersPanel";
 import {
   getPlatformAdminSection,
   platformAdminSections,
@@ -138,10 +136,10 @@ const actionCopy = (action: AdminAction | null) => {
   if (!action) return null;
   if (action.kind === "revoke-sessions") {
     return {
-      title: "Révoquer toutes les sessions",
+      title: "Révoquer les connexions",
       description: `${action.name} devra se reconnecter sur tous ses appareils. La session d’accès actuelle expirera normalement, mais aucun jeton ne pourra être renouvelé.`,
-      confirm: "Révoquer les sessions",
-      success: `Les sessions de ${action.name} ont été révoquées.`,
+      confirm: "Confirmer la révocation",
+      success: `Les connexions de ${action.name} ont été révoquées.`,
       destructive: true,
     };
   }
@@ -270,15 +268,6 @@ export function PlatformAdminPage() {
           .includes(normalizedSearch),
       ) ?? [],
     [normalizedSearch, organizations.data],
-  );
-  const filteredUsers = useMemo(
-    () =>
-      users.data?.filter((item) =>
-        `${item.fullName} ${item.email}`
-          .toLocaleLowerCase("fr")
-          .includes(normalizedSearch),
-      ) ?? [],
-    [normalizedSearch, users.data],
   );
   const copy = actionCopy(action);
   const mutationError =
@@ -498,7 +487,7 @@ export function PlatformAdminPage() {
             <MetricCard
               label="Utilisateurs"
               value={overview.data?.totals.usersTotal ?? 0}
-              hint={`${overview.data?.totals.activeSessions ?? 0} sessions actives`}
+              hint={`${overview.data?.totals.usersActive ?? 0} actifs`}
               icon={GroupsOutlined}
               color="#3f7c8d"
               loading={isLoading}
@@ -725,7 +714,7 @@ export function PlatformAdminPage() {
           {activeQuery?.isFetching && (
             <LinearProgress aria-label="Chargement de la section" />
           )}
-          {(tab === 0 || tab === 1) && (
+          {tab === 0 && (
             <Stack
               direction={{ xs: "column", md: "row" }}
               sx={{
@@ -740,9 +729,7 @@ export function PlatformAdminPage() {
               }}
             >
               <Typography variant="subtitle2" color="text.secondary">
-                {tab === 0
-                  ? `${filteredOrganizations.length} cabinet(s)`
-                  : `${filteredUsers.length} utilisateur(s)`}
+                {filteredOrganizations.length} cabinet(s)
               </Typography>
               {(tab === 0 || tab === 1) && (
                 <TextField
@@ -874,131 +861,34 @@ export function PlatformAdminPage() {
           )}
 
           {tab === 1 && (
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Utilisateur</TableCell>
-                    <TableCell>Accès</TableCell>
-                    <TableCell align="right">Cabinets</TableCell>
-                    <TableCell align="right">Sessions</TableCell>
-                    <TableCell>Dernière connexion</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id} hover>
-                      <TableCell>
-                        <Typography sx={{ fontWeight: 600 }}>
-                          {user.fullName}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {user.email}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Stack spacing={0.5} sx={{ alignItems: "flex-start" }}>
-                          <Stack direction="row" spacing={0.8}>
-                            <Chip
-                              label={user.isActive ? "Actif" : "Désactivé"}
-                              size="small"
-                              color={user.isActive ? "success" : "default"}
-                            />
-                            {user.isPlatformAdmin && (
-                              <Chip
-                                icon={<AdminPanelSettingsOutlined />}
-                                label="Admin Fiscora"
-                                size="small"
-                                sx={{ color: "#4d58b8", bgcolor: "#eef0ff" }}
-                              />
-                            )}
-                          </Stack>
-                          {!user.isActive && user.disabledReason && (
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              {user.disabledReason}
-                            </Typography>
-                          )}
-                        </Stack>
-                      </TableCell>
-                      <TableCell align="right">
-                        {user.membershipsCount}
-                      </TableCell>
-                      <TableCell align="right">
-                        {user.activeSessionsCount}
-                      </TableCell>
-                      <TableCell>{formatDate(user.lastLoginAtUtc)}</TableCell>
-                      <TableCell align="right">
-                        <Stack
-                          direction="row"
-                          spacing={0.5}
-                          sx={{ justifyContent: "flex-end" }}
-                        >
-                          <Button
-                            size="small"
-                            disabled={
-                              user.id === currentUserId ||
-                              user.activeSessionsCount === 0
-                            }
-                            startIcon={<DevicesOutlined />}
-                            onClick={() => {
-                              setReason("");
-                              setAction({
-                                kind: "revoke-sessions",
-                                id: user.id,
-                                name: user.fullName,
-                                activeSessions: user.activeSessionsCount,
-                              });
-                            }}
-                          >
-                            Sessions
-                          </Button>
-                          <Button
-                            size="small"
-                            disabled={user.id === currentUserId}
-                            color={user.isActive ? "error" : "success"}
-                            startIcon={
-                              user.isActive ? (
-                                <BlockOutlined />
-                              ) : (
-                                <ManageAccountsOutlined />
-                              )
-                            }
-                            onClick={() => {
-                              setReason("");
-                              setAction({
-                                kind: "user-status",
-                                id: user.id,
-                                name: user.fullName,
-                                isActive: user.isActive,
-                              });
-                            }}
-                          >
-                            {user.id === currentUserId
-                              ? "Votre compte"
-                              : user.isActive
-                                ? "Désactiver"
-                                : "Réactiver"}
-                          </Button>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {!users.isLoading &&
-                    !users.isError &&
-                    !filteredUsers.length && (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center">
-                          Aucun utilisateur trouvé.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <PlatformUsersPanel
+              users={users.data ?? []}
+              currentUserId={currentUserId}
+              search={search}
+              onSearchChange={(value) =>
+                setSearches((current) => ({ ...current, [section.key]: value }))
+              }
+              loading={users.isLoading}
+              hasError={users.isError}
+              onStatusChange={(user) => {
+                setReason("");
+                setAction({
+                  kind: "user-status",
+                  id: user.id,
+                  name: user.fullName,
+                  isActive: user.isActive,
+                });
+              }}
+              onRevoke={(user) => {
+                setReason("");
+                setAction({
+                  kind: "revoke-sessions",
+                  id: user.id,
+                  name: user.fullName,
+                  activeSessions: user.activeSessionsCount,
+                });
+              }}
+            />
           )}
 
           {tab === 2 && <PlatformSubscriptionsPanel />}
