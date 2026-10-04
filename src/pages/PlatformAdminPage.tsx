@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AdminPanelSettingsOutlined,
@@ -37,16 +38,15 @@ import {
   DialogTitle,
   Divider,
   InputAdornment,
+  LinearProgress,
   Snackbar,
   Stack,
-  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Tabs,
   TextField,
   Typography,
 } from "@mui/material";
@@ -54,6 +54,10 @@ import { api, readSession } from "../api/client";
 import { MetricCard } from "../components/MetricCard";
 import { PlatformEmailPanel } from "../features/platform-admin/PlatformEmailPanel";
 import { PlatformMonitoringPanel } from "../features/platform-admin/PlatformMonitoringPanel";
+import {
+  getPlatformAdminSection,
+  platformAdminSections,
+} from "../features/platform-admin/navigation";
 import { PlatformSaasAnalyticsPanel } from "../features/saas/PlatformSaasAnalyticsPanel";
 import { PlatformSubscriptionsPanel } from "../features/saas/PlatformSubscriptionsPanel";
 import type {
@@ -166,30 +170,44 @@ const actionCopy = (action: AdminAction | null) => {
 export function PlatformAdminPage() {
   const queryClient = useQueryClient();
   const currentUserId = readSession()?.user.id;
-  const [tab, setTab] = useState(0);
-  const [search, setSearch] = useState("");
+  const [params] = useSearchParams();
+  const section = getPlatformAdminSection(params.get("section"));
+  const tab =
+    platformAdminSections.findIndex((item) => item.key === section.key) - 1;
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [searches, setSearches] = useState<Record<string, string>>({});
+  const search = searches[section.key] ?? "";
   const [action, setAction] = useState<AdminAction | null>(null);
   const [reason, setReason] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+    titleRef.current?.focus({ preventScroll: true });
+  }, [section.key]);
 
   const overview = useQuery({
     queryKey: ["platform-admin", "overview"],
     queryFn: () => api.get<PlatformOverview>("/api/platform-admin/overview"),
   });
   const organizations = useQuery({
+    enabled: section.key === "cabinets",
     queryKey: ["platform-admin", "organizations"],
     queryFn: () =>
       api.get<PlatformOrganization[]>("/api/platform-admin/organizations"),
   });
   const users = useQuery({
+    enabled: section.key === "utilisateurs",
     queryKey: ["platform-admin", "users"],
     queryFn: () => api.get<PlatformUser[]>("/api/platform-admin/users"),
   });
   const jobs = useQuery({
+    enabled: section.key === "traitements",
     queryKey: ["platform-admin", "jobs"],
     queryFn: () => api.get<PlatformJobsOverview>("/api/platform-admin/jobs"),
   });
   const audit = useQuery({
+    enabled: section.key === "audit",
     queryKey: ["platform-admin", "audit"],
     queryFn: () =>
       api.get<PlatformAuditLog[]>("/api/platform-admin/audit-logs"),
@@ -230,9 +248,19 @@ export function PlatformAdminPage() {
   });
 
   const isLoading = overview.isLoading;
-  const hasError = [overview, organizations, users, jobs, audit].some(
-    (query) => query.isError,
-  );
+  const activeQuery =
+    section.key === "overview"
+      ? overview
+      : tab === 0
+        ? organizations
+        : tab === 1
+          ? users
+          : tab === 4
+            ? jobs
+            : tab === 7
+              ? audit
+              : undefined;
+  const hasError = activeQuery?.isError ?? false;
   const normalizedSearch = search.trim().toLocaleLowerCase("fr");
   const filteredOrganizations = useMemo(
     () =>
@@ -271,778 +299,844 @@ export function PlatformAdminPage() {
 
   return (
     <>
-      <Card
-        sx={{
-          mb: 2,
-          overflow: "hidden",
-          color: "#fff",
-          border: 0,
-          background:
-            "radial-gradient(circle at 82% 18%, rgba(242,197,107,.19), transparent 28%), linear-gradient(118deg, #102d25 0%, #164737 62%, #1a5944 100%)",
-        }}
-      >
-        <CardContent
+      {section.key !== "overview" && (
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
           sx={{
-            p: { xs: 2.5, md: 3.5 },
-            "&:last-child": { pb: { xs: 2.5, md: 3.5 } },
+            mb: 3,
+            justifyContent: "space-between",
+            alignItems: { sm: "center" },
           }}
         >
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            spacing={3}
+          <Box>
+            <Typography variant="overline" color="text.secondary">
+              Administration plateforme
+            </Typography>
+            <Typography
+              component="h1"
+              variant="h1"
+              tabIndex={-1}
+              ref={titleRef}
+              sx={{ outline: "none", mt: 0.5 }}
+            >
+              {section.label}
+            </Typography>
+            <Typography color="text.secondary" sx={{ mt: 1 }}>
+              {section.description}
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshRounded />}
+            onClick={() => void refresh()}
+            disabled={activeQuery?.isFetching}
             sx={{
-              justifyContent: "space-between",
-              alignItems: { md: "center" },
+              alignSelf: { xs: "flex-start", sm: "center" },
+              flexShrink: 0,
             }}
           >
-            <Box sx={{ maxWidth: 720 }}>
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ alignItems: "center", mb: 1.2 }}
-              >
-                <ShieldOutlined sx={{ color: "#f2c56b", fontSize: 20 }} />
-                <Typography
-                  variant="overline"
-                  sx={{
-                    color: "rgba(255,255,255,.72)",
-                    letterSpacing: ".12em",
-                  }}
-                >
-                  Administration de la plateforme
-                </Typography>
-              </Stack>
-              <Typography
-                component="h1"
-                sx={{
-                  fontSize: { xs: 30, md: 40 },
-                  fontWeight: 700,
-                  lineHeight: 1.12,
-                  letterSpacing: "-.025em",
-                }}
-              >
-                Centre de contrôle Fiscora
-              </Typography>
-              <Typography
-                sx={{ mt: 1.1, color: "rgba(255,255,255,.72)", maxWidth: 640 }}
-              >
-                Suivez la disponibilité, la sécurité et l’activité globale sans
-                accéder aux données comptables des cabinets.
-              </Typography>
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ mt: 2.2, flexWrap: "wrap", gap: 1 }}
-              >
-                <Chip
-                  icon={<CheckCircleOutlineRounded />}
-                  label={
-                    serviceIssues
-                      ? `${serviceIssues} service(s) à vérifier`
-                      : "Services essentiels disponibles"
-                  }
-                  size="small"
-                  sx={{
-                    color: serviceIssues ? "#ffe1b2" : "#d8f4e8",
-                    bgcolor: "rgba(255,255,255,.1)",
-                    border: "1px solid rgba(255,255,255,.14)",
-                    "& .MuiChip-icon": { color: "inherit" },
-                  }}
-                />
-                <Chip
-                  label={`${alertCount} alerte${alertCount === 1 ? "" : "s"}`}
-                  size="small"
-                  sx={{
-                    color: "rgba(255,255,255,.8)",
-                    bgcolor: "rgba(255,255,255,.07)",
-                    border: "1px solid rgba(255,255,255,.12)",
-                  }}
-                />
-              </Stack>
-            </Box>
-            <Stack
-              sx={{
-                alignItems: { xs: "flex-start", md: "flex-end" },
-                minWidth: 210,
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{ color: "rgba(255,255,255,.58)", mb: 1 }}
-              >
-                Dernière mise à jour ·{" "}
-                {formatDate(overview.data?.generatedAtUtc ?? null)}
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<RefreshRounded />}
-                onClick={() => void refresh()}
-                disabled={overview.isFetching}
-                sx={{
-                  color: "#14382d",
-                  bgcolor: "#fff",
-                  px: 2.2,
-                  "&:hover": { bgcolor: "#f4f7f5" },
-                  "&.Mui-disabled": { bgcolor: "rgba(255,255,255,.7)" },
-                }}
-              >
-                {overview.isFetching
-                  ? "Actualisation…"
-                  : "Actualiser les données"}
-              </Button>
-            </Stack>
-          </Stack>
-        </CardContent>
-      </Card>
-
+            Actualiser les données
+          </Button>
+        </Stack>
+      )}
       {hasError && (
-        <Alert severity="error" sx={{ mb: 2.5 }}>
-          Certaines informations de la plateforme ne sont pas disponibles.
+        <Alert
+          severity="error"
+          sx={{ mb: 2.5 }}
+          action={
+            <Button color="inherit" onClick={() => void refresh()}>
+              Réessayer
+            </Button>
+          }
+        >
+          Les informations de cette section ne sont pas disponibles.
         </Alert>
       )}
-
-      <Box className="metric-grid">
-        <MetricCard
-          label="Cabinets"
-          value={overview.data?.totals.organizationsTotal ?? 0}
-          hint={`${overview.data?.totals.organizationsActive ?? 0} actifs`}
-          icon={ApartmentOutlined}
-          color="#6672d8"
-          loading={isLoading}
-        />
-        <MetricCard
-          label="Utilisateurs"
-          value={overview.data?.totals.usersTotal ?? 0}
-          hint={`${overview.data?.totals.activeSessions ?? 0} sessions actives`}
-          icon={GroupsOutlined}
-          color="#3f7c8d"
-          loading={isLoading}
-        />
-        <MetricCard
-          label="Dossiers actifs"
-          value={overview.data?.totals.dossiersActive ?? 0}
-          hint="Indicateur d’adoption global"
-          icon={DescriptionOutlined}
-          color="#2f7d5d"
-          loading={isLoading}
-        />
-        <MetricCard
-          label="Stockage documentaire"
-          value={formatBytes(overview.data?.totals.storageBytes ?? 0)}
-          hint={`${overview.data?.totals.documentsTotal ?? 0} documents`}
-          icon={StorageOutlined}
-          color="#bd6b4f"
-          loading={isLoading}
-        />
-      </Box>
-
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            lg: "minmax(0, 1.45fr) minmax(320px, .55fr)",
-          },
-          gap: 2.5,
-          mt: 2.5,
-        }}
-      >
-        <Card>
-          <CardContent sx={{ p: 3 }}>
-            <Stack
-              direction="row"
+      {section.key === "overview" && (
+        <>
+          <Card
+            sx={{
+              mb: 2,
+              overflow: "hidden",
+              color: "#fff",
+              border: 0,
+              background:
+                "radial-gradient(circle at 82% 18%, rgba(242,197,107,.19), transparent 28%), linear-gradient(118deg, #102d25 0%, #164737 62%, #1a5944 100%)",
+            }}
+          >
+            <CardContent
               sx={{
-                mb: 2.5,
-                alignItems: "flex-start",
-                justifyContent: "space-between",
+                p: { xs: 2.5, md: 3.5 },
+                "&:last-child": { pb: { xs: 2.5, md: 3.5 } },
               }}
             >
-              <Box>
-                <Typography variant="h3">Services et intégrations</Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 0.4 }}
-                >
-                  Configuration et disponibilité des briques essentielles.
-                </Typography>
-              </Box>
-              <Chip
-                label={`${overview.data?.services.length ?? 0} services`}
-                size="small"
-                variant="outlined"
-              />
-            </Stack>
-            {overview.isLoading && <CircularProgress size={28} />}
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2, minmax(0, 1fr))",
-                },
-                gap: 1.25,
-              }}
-            >
-              {overview.data?.services.map((service) => (
-                <Box
-                  key={service.code}
-                  sx={{
-                    minHeight: 118,
-                    p: 1.75,
-                    border: "1px solid",
-                    borderColor: "divider",
-                    borderRadius: 2.5,
-                    bgcolor: "#fbfcfb",
-                  }}
-                >
-                  {(() => {
-                    const meta = serviceMeta[
-                      service.code as keyof typeof serviceMeta
-                    ] ?? {
-                      icon: CheckCircleOutlineRounded,
-                      color: "#45665b",
-                      background: "#edf3f0",
-                    };
-                    const Icon = meta.icon;
-                    return (
-                      <Stack
-                        direction="row"
-                        sx={{
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 2,
-                            display: "grid",
-                            placeItems: "center",
-                            bgcolor: meta.background,
-                            color: meta.color,
-                          }}
-                        >
-                          <Icon sx={{ fontSize: 19 }} />
-                        </Box>
-                        <Chip
-                          label={service.status.replace(/_/g, " ")}
-                          size="small"
-                          color={serviceColor(service.status)}
-                          variant="outlined"
-                        />
-                      </Stack>
-                    );
-                  })()}
-                  <Typography sx={{ fontWeight: 700, mt: 1.35 }}>
-                    {service.label}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "block", mt: 0.25 }}
-                  >
-                    {service.detail}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent sx={{ p: 3 }}>
-            <Stack
-              direction="row"
-              sx={{
-                mb: 2.5,
-                alignItems: "flex-start",
-                justifyContent: "space-between",
-              }}
-            >
-              <Box>
-                <Typography variant="h3">À surveiller</Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mt: 0.4 }}
-                >
-                  Anomalies nécessitant une action.
-                </Typography>
-              </Box>
-              <Chip
-                icon={<WarningAmberRounded />}
-                label={alertCount}
-                size="small"
-                color={alertCount ? "warning" : "success"}
-                variant="outlined"
-              />
-            </Stack>
-            {!overview.isLoading && !overview.data?.alerts.length && (
-              <Box
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                spacing={3}
                 sx={{
-                  minHeight: 190,
-                  display: "grid",
-                  placeItems: "center",
-                  textAlign: "center",
-                  p: 2,
-                  borderRadius: 2.5,
-                  bgcolor: "#f5faf7",
-                  border: "1px solid #dcece4",
+                  justifyContent: "space-between",
+                  alignItems: { md: "center" },
                 }}
               >
-                <Box>
-                  <CheckCircleOutlineRounded
-                    sx={{ fontSize: 36, color: "success.main", mb: 1 }}
-                  />
-                  <Typography sx={{ fontWeight: 700 }}>
-                    Tout est sous contrôle
+                <Box sx={{ maxWidth: 720 }}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ alignItems: "center", mb: 1.2 }}
+                  >
+                    <ShieldOutlined sx={{ color: "#f2c56b", fontSize: 20 }} />
+                    <Typography
+                      variant="overline"
+                      sx={{
+                        color: "rgba(255,255,255,.72)",
+                        letterSpacing: ".12em",
+                      }}
+                    >
+                      Administration de la plateforme
+                    </Typography>
+                  </Stack>
+                  <Typography
+                    component="h1"
+                    tabIndex={-1}
+                    ref={titleRef}
+                    sx={{
+                      outline: "none",
+                      fontSize: { xs: 28, md: 32 },
+                      fontWeight: 700,
+                      lineHeight: 1.12,
+                      letterSpacing: "-.025em",
+                    }}
+                  >
+                    Centre de contrôle Fiscora
                   </Typography>
                   <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mt: 0.4 }}
+                    sx={{
+                      mt: 1.1,
+                      color: "rgba(255,255,255,.72)",
+                      maxWidth: 640,
+                    }}
                   >
-                    Aucune alerte opérationnelle active.
+                    Suivez la disponibilité, la sécurité et l’activité globale
+                    sans accéder aux données comptables des cabinets.
                   </Typography>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ mt: 2.2, flexWrap: "wrap", gap: 1 }}
+                  >
+                    <Chip
+                      icon={<CheckCircleOutlineRounded />}
+                      label={
+                        serviceIssues
+                          ? `${serviceIssues} service(s) à vérifier`
+                          : "Services essentiels disponibles"
+                      }
+                      size="small"
+                      sx={{
+                        color: serviceIssues ? "#ffe1b2" : "#d8f4e8",
+                        bgcolor: "rgba(255,255,255,.1)",
+                        border: "1px solid rgba(255,255,255,.14)",
+                        "& .MuiChip-icon": { color: "inherit" },
+                      }}
+                    />
+                    <Chip
+                      label={`${alertCount} alerte${alertCount === 1 ? "" : "s"}`}
+                      size="small"
+                      sx={{
+                        color: "rgba(255,255,255,.8)",
+                        bgcolor: "rgba(255,255,255,.07)",
+                        border: "1px solid rgba(255,255,255,.12)",
+                      }}
+                    />
+                  </Stack>
                 </Box>
-              </Box>
-            )}
-            <Stack spacing={1.2}>
-              {overview.data?.alerts.map((item) => (
-                <Alert
-                  key={item.code}
-                  severity={item.severity}
-                  variant="outlined"
+                <Stack
+                  sx={{
+                    alignItems: { xs: "flex-start", md: "flex-end" },
+                    minWidth: 210,
+                  }}
                 >
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {item.label}
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "rgba(255,255,255,.58)", mb: 1 }}
+                  >
+                    Dernière mise à jour ·{" "}
+                    {formatDate(overview.data?.generatedAtUtc ?? null)}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {item.count} élément{item.count === 1 ? "" : "s"} concerné
-                    {item.count === 1 ? "" : "s"}
-                  </Typography>
-                </Alert>
-              ))}
-            </Stack>
-          </CardContent>
-        </Card>
-      </Box>
+                  <Button
+                    variant="contained"
+                    startIcon={<RefreshRounded />}
+                    onClick={() => void refresh()}
+                    disabled={overview.isFetching}
+                    sx={{
+                      color: "#14382d",
+                      bgcolor: "#fff",
+                      px: 2.2,
+                      "&:hover": { bgcolor: "#f4f7f5" },
+                      "&.Mui-disabled": { bgcolor: "rgba(255,255,255,.7)" },
+                    }}
+                  >
+                    {overview.isFetching
+                      ? "Actualisation…"
+                      : "Actualiser les données"}
+                  </Button>
+                </Stack>
+              </Stack>
+            </CardContent>
+          </Card>
 
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        sx={{
-          mt: 3.5,
-          mb: 1.5,
-          justifyContent: "space-between",
-          alignItems: { sm: "flex-end" },
-        }}
-      >
-        <Box>
-          <Typography variant="h2">Pilotage détaillé</Typography>
-          <Typography color="text.secondary" sx={{ mt: 0.4 }}>
-            Gérez les accès, les abonnements et les opérations de la plateforme.
-          </Typography>
-        </Box>
-      </Stack>
-
-      <Card sx={{ overflow: "hidden" }}>
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          sx={{
-            px: 2,
-            bgcolor: "#fbfcfb",
-            borderBottom: "1px solid",
-            borderColor: "divider",
-            justifyContent: "space-between",
-            alignItems: { xs: "stretch", md: "center" },
-          }}
-        >
-          <Tabs
-            value={tab}
-            onChange={(_event, value: number) => setTab(value)}
-            variant="scrollable"
-            scrollButtons="auto"
-          >
-            <Tab label={`Cabinets (${organizations.data?.length ?? 0})`} />
-            <Tab label={`Utilisateurs (${users.data?.length ?? 0})`} />
-            <Tab label="Abonnements" />
-            <Tab label="Analytics SaaS" />
-            <Tab label="Traitements" />
-            <Tab label="E-mails" />
-            <Tab label="Supervision" />
-            <Tab label="Journal d’audit" />
-          </Tabs>
-          {(tab === 0 || tab === 1) && (
-            <TextField
-              size="small"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={
-                tab === 0 ? "Rechercher un cabinet" : "Rechercher un compte"
-              }
-              sx={{ minWidth: { md: 260 }, my: 1 }}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchRounded fontSize="small" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
+          <Box className="metric-grid">
+            <MetricCard
+              label="Cabinets"
+              value={overview.data?.totals.organizationsTotal ?? 0}
+              hint={`${overview.data?.totals.organizationsActive ?? 0} actifs`}
+              icon={ApartmentOutlined}
+              color="#6672d8"
+              loading={isLoading}
             />
-          )}
-        </Stack>
+            <MetricCard
+              label="Utilisateurs"
+              value={overview.data?.totals.usersTotal ?? 0}
+              hint={`${overview.data?.totals.activeSessions ?? 0} sessions actives`}
+              icon={GroupsOutlined}
+              color="#3f7c8d"
+              loading={isLoading}
+            />
+            <MetricCard
+              label="Dossiers actifs"
+              value={overview.data?.totals.dossiersActive ?? 0}
+              hint="Indicateur d’adoption global"
+              icon={DescriptionOutlined}
+              color="#2f7d5d"
+              loading={isLoading}
+            />
+            <MetricCard
+              label="Stockage documentaire"
+              value={formatBytes(overview.data?.totals.storageBytes ?? 0)}
+              hint={`${overview.data?.totals.documentsTotal ?? 0} documents`}
+              icon={StorageOutlined}
+              color="#bd6b4f"
+              loading={isLoading}
+            />
+          </Box>
 
-        {tab === 0 && (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Cabinet</TableCell>
-                  <TableCell>Statut</TableCell>
-                  <TableCell align="right">Membres</TableCell>
-                  <TableCell align="right">Dossiers</TableCell>
-                  <TableCell align="right">Documents</TableCell>
-                  <TableCell>Dernière activité</TableCell>
-                  <TableCell align="right">Action</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredOrganizations.map((organization) => (
-                  <TableRow key={organization.id} hover>
-                    <TableCell>
-                      <Typography sx={{ fontWeight: 600 }}>
-                        {organization.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {organization.slug} ·{" "}
-                        {formatBytes(organization.storageBytes)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Stack spacing={0.5} sx={{ alignItems: "flex-start" }}>
-                        <Chip
-                          label={organization.isActive ? "Actif" : "Suspendu"}
-                          size="small"
-                          color={organization.isActive ? "success" : "default"}
-                        />
-                        {!organization.isActive &&
-                          organization.suspensionReason && (
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                lg: "minmax(0, 1.45fr) minmax(320px, .55fr)",
+              },
+              gap: 2.5,
+              mt: 2.5,
+            }}
+          >
+            <Card>
+              <CardContent sx={{ p: 3 }}>
+                <Stack
+                  direction="row"
+                  sx={{
+                    mb: 2.5,
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Box>
+                    <Typography variant="h3">
+                      Services et intégrations
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 0.4 }}
+                    >
+                      Configuration et disponibilité des briques essentielles.
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={`${overview.data?.services.length ?? 0} services`}
+                    size="small"
+                    variant="outlined"
+                  />
+                </Stack>
+                {overview.isLoading && <CircularProgress size={28} />}
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: {
+                      xs: "1fr",
+                      sm: "repeat(2, minmax(0, 1fr))",
+                    },
+                    gap: 1.25,
+                  }}
+                >
+                  {overview.data?.services.map((service) => (
+                    <Box
+                      key={service.code}
+                      sx={{
+                        minHeight: 118,
+                        p: 1.75,
+                        border: "1px solid",
+                        borderColor: "divider",
+                        borderRadius: 2.5,
+                        bgcolor: "#fbfcfb",
+                      }}
+                    >
+                      {(() => {
+                        const meta = serviceMeta[
+                          service.code as keyof typeof serviceMeta
+                        ] ?? {
+                          icon: CheckCircleOutlineRounded,
+                          color: "#45665b",
+                          background: "#edf3f0",
+                        };
+                        const Icon = meta.icon;
+                        return (
+                          <Stack
+                            direction="row"
+                            sx={{
+                              justifyContent: "space-between",
+                              alignItems: "flex-start",
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                width: 34,
+                                height: 34,
+                                borderRadius: 2,
+                                display: "grid",
+                                placeItems: "center",
+                                bgcolor: meta.background,
+                                color: meta.color,
+                              }}
                             >
-                              {organization.suspensionReason}
-                            </Typography>
-                          )}
-                      </Stack>
-                    </TableCell>
-                    <TableCell align="right">
-                      {organization.membersCount}
-                    </TableCell>
-                    <TableCell align="right">
-                      {organization.dossiersCount}
-                    </TableCell>
-                    <TableCell align="right">
-                      {organization.documentsCount}
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(organization.lastActivityAtUtc)}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Button
-                        size="small"
-                        color={organization.isActive ? "error" : "success"}
-                        startIcon={
-                          organization.isActive ? (
-                            <BlockOutlined />
-                          ) : (
-                            <RestartAltRounded />
-                          )
-                        }
-                        onClick={() => {
-                          setReason("");
-                          setAction({
-                            kind: "organization-status",
-                            id: organization.id,
-                            name: organization.name,
-                            isActive: organization.isActive,
-                          });
-                        }}
+                              <Icon sx={{ fontSize: 19 }} />
+                            </Box>
+                            <Chip
+                              label={service.status.replace(/_/g, " ")}
+                              size="small"
+                              color={serviceColor(service.status)}
+                              variant="outlined"
+                            />
+                          </Stack>
+                        );
+                      })()}
+                      <Typography sx={{ fontWeight: 700, mt: 1.35 }}>
+                        {service.label}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: "block", mt: 0.25 }}
                       >
-                        {organization.isActive ? "Suspendre" : "Réactiver"}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {!filteredOrganizations.length && (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      Aucun cabinet trouvé.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
+                        {service.detail}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
 
-        {tab === 1 && (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Utilisateur</TableCell>
-                  <TableCell>Accès</TableCell>
-                  <TableCell align="right">Cabinets</TableCell>
-                  <TableCell align="right">Sessions</TableCell>
-                  <TableCell>Dernière connexion</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id} hover>
-                    <TableCell>
-                      <Typography sx={{ fontWeight: 600 }}>
-                        {user.fullName}
+            <Card>
+              <CardContent sx={{ p: 3 }}>
+                <Stack
+                  direction="row"
+                  sx={{
+                    mb: 2.5,
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Box>
+                    <Typography variant="h3">À surveiller</Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mt: 0.4 }}
+                    >
+                      Anomalies nécessitant une action.
+                    </Typography>
+                  </Box>
+                  <Chip
+                    icon={<WarningAmberRounded />}
+                    label={alertCount}
+                    size="small"
+                    color={alertCount ? "warning" : "success"}
+                    variant="outlined"
+                  />
+                </Stack>
+                {!overview.isLoading && !overview.data?.alerts.length && (
+                  <Box
+                    sx={{
+                      minHeight: 190,
+                      display: "grid",
+                      placeItems: "center",
+                      textAlign: "center",
+                      p: 2,
+                      borderRadius: 2.5,
+                      bgcolor: "#f5faf7",
+                      border: "1px solid #dcece4",
+                    }}
+                  >
+                    <Box>
+                      <CheckCircleOutlineRounded
+                        sx={{ fontSize: 36, color: "success.main", mb: 1 }}
+                      />
+                      <Typography sx={{ fontWeight: 700 }}>
+                        Tout est sous contrôle
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mt: 0.4 }}
+                      >
+                        Aucune alerte opérationnelle active.
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+                <Stack spacing={1.2}>
+                  {overview.data?.alerts.map((item) => (
+                    <Alert
+                      key={item.code}
+                      severity={item.severity}
+                      variant="outlined"
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {item.label}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {user.email}
+                        {item.count} élément{item.count === 1 ? "" : "s"}{" "}
+                        concerné
+                        {item.count === 1 ? "" : "s"}
                       </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Stack spacing={0.5} sx={{ alignItems: "flex-start" }}>
-                        <Stack direction="row" spacing={0.8}>
+                    </Alert>
+                  ))}
+                </Stack>
+              </CardContent>
+            </Card>
+          </Box>
+        </>
+      )}
+
+      {section.key !== "overview" && (
+        <Card sx={{ overflow: "hidden", minWidth: 0 }}>
+          {activeQuery?.isFetching && (
+            <LinearProgress aria-label="Chargement de la section" />
+          )}
+          {(tab === 0 || tab === 1) && (
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              sx={{
+                px: 2,
+                bgcolor: "#fbfcfb",
+                borderBottom: "1px solid",
+                borderColor: "divider",
+                justifyContent: "space-between",
+                alignItems: { xs: "stretch", md: "center" },
+                py: 1,
+                gap: 1,
+              }}
+            >
+              <Typography variant="subtitle2" color="text.secondary">
+                {tab === 0
+                  ? `${filteredOrganizations.length} cabinet(s)`
+                  : `${filteredUsers.length} utilisateur(s)`}
+              </Typography>
+              {(tab === 0 || tab === 1) && (
+                <TextField
+                  size="small"
+                  value={search}
+                  onChange={(event) =>
+                    setSearches((current) => ({
+                      ...current,
+                      [section.key]: event.target.value,
+                    }))
+                  }
+                  label={
+                    tab === 0 ? "Rechercher un cabinet" : "Rechercher un compte"
+                  }
+                  placeholder={
+                    tab === 0 ? "Rechercher un cabinet" : "Rechercher un compte"
+                  }
+                  sx={{ minWidth: { md: 260 }, my: 1 }}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchRounded fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+              )}
+            </Stack>
+          )}
+
+          {tab === 0 && (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Cabinet</TableCell>
+                    <TableCell>Statut</TableCell>
+                    <TableCell align="right">Membres</TableCell>
+                    <TableCell align="right">Dossiers</TableCell>
+                    <TableCell align="right">Documents</TableCell>
+                    <TableCell>Dernière activité</TableCell>
+                    <TableCell align="right">Action</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredOrganizations.map((organization) => (
+                    <TableRow key={organization.id} hover>
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 600 }}>
+                          {organization.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {organization.slug} ·{" "}
+                          {formatBytes(organization.storageBytes)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Stack spacing={0.5} sx={{ alignItems: "flex-start" }}>
                           <Chip
-                            label={user.isActive ? "Actif" : "Désactivé"}
+                            label={organization.isActive ? "Actif" : "Suspendu"}
                             size="small"
-                            color={user.isActive ? "success" : "default"}
+                            color={
+                              organization.isActive ? "success" : "default"
+                            }
                           />
-                          {user.isPlatformAdmin && (
-                            <Chip
-                              icon={<AdminPanelSettingsOutlined />}
-                              label="Admin Fiscora"
-                              size="small"
-                              sx={{ color: "#4d58b8", bgcolor: "#eef0ff" }}
-                            />
-                          )}
+                          {!organization.isActive &&
+                            organization.suspensionReason && (
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                {organization.suspensionReason}
+                              </Typography>
+                            )}
                         </Stack>
-                        {!user.isActive && user.disabledReason && (
-                          <Typography variant="caption" color="text.secondary">
-                            {user.disabledReason}
-                          </Typography>
-                        )}
-                      </Stack>
-                    </TableCell>
-                    <TableCell align="right">{user.membershipsCount}</TableCell>
-                    <TableCell align="right">
-                      {user.activeSessionsCount}
-                    </TableCell>
-                    <TableCell>{formatDate(user.lastLoginAtUtc)}</TableCell>
-                    <TableCell align="right">
-                      <Stack
-                        direction="row"
-                        spacing={0.5}
-                        sx={{ justifyContent: "flex-end" }}
-                      >
+                      </TableCell>
+                      <TableCell align="right">
+                        {organization.membersCount}
+                      </TableCell>
+                      <TableCell align="right">
+                        {organization.dossiersCount}
+                      </TableCell>
+                      <TableCell align="right">
+                        {organization.documentsCount}
+                      </TableCell>
+                      <TableCell>
+                        {formatDate(organization.lastActivityAtUtc)}
+                      </TableCell>
+                      <TableCell align="right">
                         <Button
                           size="small"
-                          disabled={
-                            user.id === currentUserId ||
-                            user.activeSessionsCount === 0
-                          }
-                          startIcon={<DevicesOutlined />}
-                          onClick={() => {
-                            setReason("");
-                            setAction({
-                              kind: "revoke-sessions",
-                              id: user.id,
-                              name: user.fullName,
-                              activeSessions: user.activeSessionsCount,
-                            });
-                          }}
-                        >
-                          Sessions
-                        </Button>
-                        <Button
-                          size="small"
-                          disabled={user.id === currentUserId}
-                          color={user.isActive ? "error" : "success"}
+                          color={organization.isActive ? "error" : "success"}
                           startIcon={
-                            user.isActive ? (
+                            organization.isActive ? (
                               <BlockOutlined />
                             ) : (
-                              <ManageAccountsOutlined />
+                              <RestartAltRounded />
                             )
                           }
                           onClick={() => {
                             setReason("");
                             setAction({
-                              kind: "user-status",
-                              id: user.id,
-                              name: user.fullName,
-                              isActive: user.isActive,
+                              kind: "organization-status",
+                              id: organization.id,
+                              name: organization.name,
+                              isActive: organization.isActive,
                             });
                           }}
                         >
-                          {user.id === currentUserId
-                            ? "Votre compte"
-                            : user.isActive
-                              ? "Désactiver"
-                              : "Réactiver"}
+                          {organization.isActive ? "Suspendre" : "Réactiver"}
                         </Button>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {!filteredUsers.length && (
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {!organizations.isLoading &&
+                    !organizations.isError &&
+                    !filteredOrganizations.length && (
+                      <TableRow>
+                        <TableCell colSpan={7} align="center">
+                          Aucun cabinet trouvé.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+
+          {tab === 1 && (
+            <TableContainer>
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      Aucun utilisateur trouvé.
-                    </TableCell>
+                    <TableCell>Utilisateur</TableCell>
+                    <TableCell>Accès</TableCell>
+                    <TableCell align="right">Cabinets</TableCell>
+                    <TableCell align="right">Sessions</TableCell>
+                    <TableCell>Dernière connexion</TableCell>
+                    <TableCell align="right">Actions</TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-
-        {tab === 2 && <PlatformSubscriptionsPanel />}
-
-        {tab === 3 && <PlatformSaasAnalyticsPanel />}
-
-        {tab === 4 && (
-          <Box sx={{ p: 3 }}>
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={1}
-              sx={{ mb: 2.5, justifyContent: "space-between" }}
-            >
-              <Box>
-                <Typography variant="h3">Traitements de fond</Typography>
-                <Typography color="text.secondary">
-                  Suivi technique des extractions, invitations et transmissions.
-                </Typography>
-              </Box>
-              <Chip
-                icon={<SyncRounded />}
-                label={`Mis à jour ${formatDate(jobs.data?.generatedAtUtc ?? null)}`}
-                variant="outlined"
-              />
-            </Stack>
-            {jobs.isLoading && <CircularProgress size={28} />}
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  md: "repeat(3, minmax(0, 1fr))",
-                },
-                gap: 2,
-              }}
-            >
-              {jobs.data?.pipelines.map((pipeline) => (
-                <Card key={pipeline.code} variant="outlined">
-                  <CardContent>
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      sx={{ justifyContent: "space-between", mb: 2 }}
-                    >
-                      <Typography sx={{ fontWeight: 700 }}>
-                        {pipeline.label}
-                      </Typography>
-                      <Chip
-                        size="small"
-                        label={pipeline.status.replace("_", " ")}
-                        color={
-                          pipeline.status === "ERREUR"
-                            ? "error"
-                            : pipeline.status === "EN_COURS"
-                              ? "info"
-                              : "success"
-                        }
-                      />
-                    </Stack>
-                    <Stack direction="row" spacing={3}>
-                      <Box>
-                        <Typography variant="h4">{pipeline.pending}</Typography>
-                        <Typography variant="caption">En attente</Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="h4">
-                          {pipeline.processing}
+                </TableHead>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id} hover>
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 600 }}>
+                          {user.fullName}
                         </Typography>
-                        <Typography variant="caption">En cours</Typography>
-                      </Box>
-                      <Box>
-                        <Typography variant="h4" color="error.main">
-                          {pipeline.failed}
+                        <Typography variant="caption" color="text.secondary">
+                          {user.email}
                         </Typography>
-                        <Typography variant="caption">Échecs</Typography>
-                      </Box>
-                    </Stack>
-                    <Divider sx={{ my: 1.5 }} />
-                    <Typography variant="caption" color="text.secondary">
-                      Dernier échec : {formatDate(pipeline.lastFailureAtUtc)}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              ))}
-            </Box>
-            <Alert severity="info" sx={{ mt: 2 }}>
-              Les relances automatiques seront activées après branchement des
-              files de production. Cette vue ne permet pas de modifier les
-              données métier.
-            </Alert>
-          </Box>
-        )}
+                      </TableCell>
+                      <TableCell>
+                        <Stack spacing={0.5} sx={{ alignItems: "flex-start" }}>
+                          <Stack direction="row" spacing={0.8}>
+                            <Chip
+                              label={user.isActive ? "Actif" : "Désactivé"}
+                              size="small"
+                              color={user.isActive ? "success" : "default"}
+                            />
+                            {user.isPlatformAdmin && (
+                              <Chip
+                                icon={<AdminPanelSettingsOutlined />}
+                                label="Admin Fiscora"
+                                size="small"
+                                sx={{ color: "#4d58b8", bgcolor: "#eef0ff" }}
+                              />
+                            )}
+                          </Stack>
+                          {!user.isActive && user.disabledReason && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {user.disabledReason}
+                            </Typography>
+                          )}
+                        </Stack>
+                      </TableCell>
+                      <TableCell align="right">
+                        {user.membershipsCount}
+                      </TableCell>
+                      <TableCell align="right">
+                        {user.activeSessionsCount}
+                      </TableCell>
+                      <TableCell>{formatDate(user.lastLoginAtUtc)}</TableCell>
+                      <TableCell align="right">
+                        <Stack
+                          direction="row"
+                          spacing={0.5}
+                          sx={{ justifyContent: "flex-end" }}
+                        >
+                          <Button
+                            size="small"
+                            disabled={
+                              user.id === currentUserId ||
+                              user.activeSessionsCount === 0
+                            }
+                            startIcon={<DevicesOutlined />}
+                            onClick={() => {
+                              setReason("");
+                              setAction({
+                                kind: "revoke-sessions",
+                                id: user.id,
+                                name: user.fullName,
+                                activeSessions: user.activeSessionsCount,
+                              });
+                            }}
+                          >
+                            Sessions
+                          </Button>
+                          <Button
+                            size="small"
+                            disabled={user.id === currentUserId}
+                            color={user.isActive ? "error" : "success"}
+                            startIcon={
+                              user.isActive ? (
+                                <BlockOutlined />
+                              ) : (
+                                <ManageAccountsOutlined />
+                              )
+                            }
+                            onClick={() => {
+                              setReason("");
+                              setAction({
+                                kind: "user-status",
+                                id: user.id,
+                                name: user.fullName,
+                                isActive: user.isActive,
+                              });
+                            }}
+                          >
+                            {user.id === currentUserId
+                              ? "Votre compte"
+                              : user.isActive
+                                ? "Désactiver"
+                                : "Réactiver"}
+                          </Button>
+                        </Stack>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {!users.isLoading &&
+                    !users.isError &&
+                    !filteredUsers.length && (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center">
+                          Aucun utilisateur trouvé.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
 
-        {tab === 5 && <PlatformEmailPanel />}
+          {tab === 2 && <PlatformSubscriptionsPanel />}
 
-        {tab === 6 && <PlatformMonitoringPanel />}
+          {tab === 3 && <PlatformSaasAnalyticsPanel />}
 
-        {tab === 7 && (
-          <TableContainer>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Action</TableCell>
-                  <TableCell>Acteur</TableCell>
-                  <TableCell>Cabinet</TableCell>
-                  <TableCell>Objet</TableCell>
-                  <TableCell>Justification</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {audit.data?.map((item) => (
-                  <TableRow key={item.id} hover>
-                    <TableCell>{formatDate(item.createdAtUtc)}</TableCell>
-                    <TableCell>
-                      <Typography component="code" variant="body2">
-                        {item.action}
+          {tab === 4 && (
+            <Box sx={{ p: 3 }}>
+              <Stack
+                direction={{ xs: "column", md: "row" }}
+                spacing={1}
+                sx={{ mb: 2.5, justifyContent: "space-between" }}
+              >
+                <Box>
+                  <Typography variant="h3">Traitements de fond</Typography>
+                  <Typography color="text.secondary">
+                    Suivi technique des extractions, invitations et
+                    transmissions.
+                  </Typography>
+                </Box>
+                <Chip
+                  icon={<SyncRounded />}
+                  label={`Mis à jour ${formatDate(jobs.data?.generatedAtUtc ?? null)}`}
+                  variant="outlined"
+                />
+              </Stack>
+              {jobs.isLoading && <CircularProgress size={28} />}
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "1fr",
+                    md: "repeat(3, minmax(0, 1fr))",
+                  },
+                  gap: 2,
+                }}
+              >
+                {jobs.data?.pipelines.map((pipeline) => (
+                  <Card key={pipeline.code} variant="outlined">
+                    <CardContent>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{ justifyContent: "space-between", mb: 2 }}
+                      >
+                        <Typography sx={{ fontWeight: 700 }}>
+                          {pipeline.label}
+                        </Typography>
+                        <Chip
+                          size="small"
+                          label={pipeline.status.replace("_", " ")}
+                          color={
+                            pipeline.status === "ERREUR"
+                              ? "error"
+                              : pipeline.status === "EN_COURS"
+                                ? "info"
+                                : "success"
+                          }
+                        />
+                      </Stack>
+                      <Stack direction="row" spacing={3}>
+                        <Box>
+                          <Typography variant="h4">
+                            {pipeline.pending}
+                          </Typography>
+                          <Typography variant="caption">En attente</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="h4">
+                            {pipeline.processing}
+                          </Typography>
+                          <Typography variant="caption">En cours</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="h4" color="error.main">
+                            {pipeline.failed}
+                          </Typography>
+                          <Typography variant="caption">Échecs</Typography>
+                        </Box>
+                      </Stack>
+                      <Divider sx={{ my: 1.5 }} />
+                      <Typography variant="caption" color="text.secondary">
+                        Dernier échec : {formatDate(pipeline.lastFailureAtUtc)}
                       </Typography>
-                    </TableCell>
-                    <TableCell>{item.actorName ?? "Système"}</TableCell>
-                    <TableCell>
-                      {item.organizationName ?? "Plateforme"}
-                    </TableCell>
-                    <TableCell>
-                      {item.entityType} · {item.entityId.slice(0, 8)}
-                    </TableCell>
-                    <TableCell>{item.reason ?? "—"}</TableCell>
-                  </TableRow>
+                    </CardContent>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Card>
+              </Box>
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Les relances automatiques seront activées après branchement des
+                files de production. Cette vue ne permet pas de modifier les
+                données métier.
+              </Alert>
+            </Box>
+          )}
+
+          {tab === 5 && <PlatformEmailPanel />}
+
+          {tab === 6 && <PlatformMonitoringPanel />}
+
+          {tab === 7 && (
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Action</TableCell>
+                    <TableCell>Acteur</TableCell>
+                    <TableCell>Cabinet</TableCell>
+                    <TableCell>Objet</TableCell>
+                    <TableCell>Justification</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {audit.data?.map((item) => (
+                    <TableRow key={item.id} hover>
+                      <TableCell>{formatDate(item.createdAtUtc)}</TableCell>
+                      <TableCell>
+                        <Typography component="code" variant="body2">
+                          {item.action}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{item.actorName ?? "Système"}</TableCell>
+                      <TableCell>
+                        {item.organizationName ?? "Plateforme"}
+                      </TableCell>
+                      <TableCell>
+                        {item.entityType} · {item.entityId.slice(0, 8)}
+                      </TableCell>
+                      <TableCell>{item.reason ?? "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </Card>
+      )}
 
       <Dialog
         open={Boolean(action)}
