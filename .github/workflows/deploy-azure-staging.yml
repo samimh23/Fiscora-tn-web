@@ -45,7 +45,7 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Read the short-lived deployment token
+      - name: Retrieve and mask the deployment token for this upload
         id: swa-token
         shell: bash
         run: |
