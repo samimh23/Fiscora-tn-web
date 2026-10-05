@@ -45,6 +45,9 @@ jobs:
       - name: Test invoice imports and tax identities
         run: npm run test:workflows
 
+      - name: Test document extraction eligibility
+        run: node --test scripts/document-extraction.test.mjs
+
       - name: Build application
         run: npm run build
 

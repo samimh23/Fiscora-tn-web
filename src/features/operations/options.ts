@@ -37,6 +37,11 @@ export const documentCategories = [
 export const documentCategoryLabel = (value: string) =>
   documentCategories.find((item) => item.value === value)?.label ?? value;
 
+export const supportsDocumentExtraction = (category: string) =>
+  ["FACTURES_ACHATS", "FACTURES_VENTES", "RELEVES_BANCAIRES"].includes(
+    category,
+  );
+
 export const formatDate = (value: string) =>
   new Intl.DateTimeFormat("fr-TN", {
     day: "2-digit",

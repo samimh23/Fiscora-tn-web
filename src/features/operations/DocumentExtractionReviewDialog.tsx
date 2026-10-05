@@ -24,6 +24,7 @@ import {
 import { api, ApiError } from "../../api/client";
 import { SearchableSelect } from "../../components/SearchableSelect";
 import { PdfDocumentViewer } from "../../components/PdfDocumentViewer";
+import { supportsDocumentExtraction } from "./options";
 import type {
   BankAccount,
   DocumentExtractionReviewItem,
@@ -1160,7 +1161,11 @@ export function DocumentExtractionReviewDialog({
         <DialogActions sx={{ p: 2 }}>
           <Button
             variant="outlined"
-            disabled={requestExtraction.isPending || reviewExtraction.isPending}
+            disabled={
+              requestExtraction.isPending ||
+              reviewExtraction.isPending ||
+              !supportsDocumentExtraction(reviewTarget.document.category)
+            }
             onClick={() =>
               reviewTarget && requestExtraction.mutate(reviewTarget.documentId)
             }

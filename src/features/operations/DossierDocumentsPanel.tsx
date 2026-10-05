@@ -44,7 +44,11 @@ import type {
   MissingDocumentExpectation,
 } from "../../types/api";
 import { DocumentExtractionReviewDialog } from "./DocumentExtractionReviewDialog";
-import { documentCategories, documentCategoryLabel } from "./options";
+import {
+  documentCategories,
+  documentCategoryLabel,
+  supportsDocumentExtraction,
+} from "./options";
 
 const current = new Date();
 const currentYear = current.getFullYear();
@@ -156,7 +160,10 @@ const documentOrigin = (document: AccountingDocument) => {
 const extractionStatus = (status: string) => {
   const values: Record<
     string,
-    { label: string; color: "default" | "info" | "warning" | "success" | "error" }
+    {
+      label: string;
+      color: "default" | "info" | "warning" | "success" | "error";
+    }
   > = {
     NON_DEMANDEE: { label: "Non extraite", color: "default" },
     EN_ATTENTE: { label: "Extraction planifiée", color: "info" },
@@ -215,9 +222,7 @@ export function DossierDocumentsPanel({
   const [previewSheet, setPreviewSheet] = useState(0);
   const [files, setFiles] = useState<File[]>([]);
   const [uploadCategory, setUploadCategory] = useState("BOITE_RECEPTION");
-  const [scanIntent, setScanIntent] = useState<"invoice" | "bank" | null>(
-    null,
-  );
+  const [scanIntent, setScanIntent] = useState<"invoice" | "bank" | null>(null);
   const [shareWithClient, setShareWithClient] = useState(false);
   const [expectationId, setExpectationId] = useState("");
   const [expectationLabel, setExpectationLabel] = useState("");
@@ -305,6 +310,10 @@ export function DossierDocumentsPanel({
   const upload = useMutation({
     mutationFn: async () => {
       if (!files.length) throw new Error("Sélectionnez au moins un fichier.");
+      if (scanIntent && !supportsDocumentExtraction(uploadCategory))
+        throw new Error(
+          "Choisissez Factures d’achats, Factures de ventes ou Relevés bancaires pour l’extraction IA.",
+        );
       if (files.some((item) => item.size > 20 * 1024 * 1024))
         throw new Error("Chaque fichier doit respecter la limite de 20 Mo.");
       if (expectationId && files.length > 1)
@@ -532,8 +541,14 @@ export function DossierDocumentsPanel({
             }}
           >
             <Box>
-              <Typography variant="h3">Collecter et préparer les pièces</Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              <Typography variant="h3">
+                Collecter et préparer les pièces
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mt: 0.5 }}
+              >
                 Retrouvez ce que le client a envoyé, vérifiez les données lues
                 par l’IA, puis classez la pièce lorsqu’elle est prête.
               </Typography>
@@ -572,7 +587,11 @@ export function DossierDocumentsPanel({
             {[
               ["1", "Recevoir", "Client ou cabinet dépose une pièce"],
               ["2", "Vérifier", "Contrôler les valeurs proposées par l’IA"],
-              ["3", "Classer", "La pièce devient prête pour le traitement comptable"],
+              [
+                "3",
+                "Classer",
+                "La pièce devient prête pour le traitement comptable",
+              ],
             ].map(([number, title, description], index) => (
               <Box
                 key={number}
@@ -625,7 +644,9 @@ export function DossierDocumentsPanel({
               }}
             >
               <Box>
-                <Typography variant="h3">À vérifier avant comptabilisation</Typography>
+                <Typography variant="h3">
+                  À vérifier avant comptabilisation
+                </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Comparez la pièce originale avec les valeurs lues par l’IA.
                   Rien n’est validé sans votre accord.
@@ -680,7 +701,8 @@ export function DossierDocumentsPanel({
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     {documentCategoryLabel(item.document.category)} ·{" "}
-                    {item.modelName ?? "NuExtract3"} · tentative {item.attemptCount}
+                    {item.modelName ?? "NuExtract3"} · tentative{" "}
+                    {item.attemptCount}
                   </Typography>
                 </Box>
                 <Chip
@@ -722,7 +744,8 @@ export function DossierDocumentsPanel({
             <Box>
               <Typography variant="h3">Documents reçus</Typography>
               <Typography variant="body2" color="text.secondary">
-                Tous les fichiers déposés par le client ou ajoutés par le cabinet.
+                Tous les fichiers déposés par le client ou ajoutés par le
+                cabinet.
               </Typography>
             </Box>
             {canUpload && !archived && (
@@ -853,11 +876,17 @@ export function DossierDocumentsPanel({
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {documentCategoryLabel(document.category)} ·{" "}
-                  {fileSize(document.sizeBytes)} · version {document.version} · reçu le{" "}
-                  {formatDateTime(document.createdAtUtc)}
+                  {fileSize(document.sizeBytes)} · version {document.version} ·
+                  reçu le {formatDateTime(document.createdAtUtc)}
                 </Typography>
                 <Box
-                  sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}
+                  sx={{
+                    mt: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    flexWrap: "wrap",
+                  }}
                 >
                   <Chip
                     icon={documentOrigin(document).icon}
@@ -887,7 +916,9 @@ export function DossierDocumentsPanel({
                       : "Classement à terminer"
                   }
                   color={
-                    document.processingStatus === "TRAITE" ? "success" : "warning"
+                    document.processingStatus === "TRAITE"
+                      ? "success"
+                      : "warning"
                   }
                   size="small"
                   variant="outlined"
@@ -924,6 +955,7 @@ export function DossierDocumentsPanel({
               >
                 {canValidate &&
                   !archived &&
+                  supportsDocumentExtraction(document.category) &&
                   document.malwareScanStatus === "SAIN" &&
                   ["image/jpeg", "image/png", "application/pdf"].includes(
                     document.mimeType,
@@ -946,7 +978,9 @@ export function DossierDocumentsPanel({
                     size="small"
                     color="warning"
                     variant="contained"
-                    onClick={() => openReview(reviewByDocument.get(document.id)!)}
+                    onClick={() =>
+                      openReview(reviewByDocument.get(document.id)!)
+                    }
                   >
                     Vérifier les données
                   </Button>
@@ -1033,7 +1067,8 @@ export function DossierDocumentsPanel({
             <Box>
               <Typography variant="h3">Documents demandés au client</Typography>
               <Typography variant="body2" color="text.secondary">
-                Suivi des pièces manquantes · {String(month).padStart(2, "0")}/{year}
+                Suivi des pièces manquantes · {String(month).padStart(2, "0")}/
+                {year}
               </Typography>
             </Box>
             {canUpload && !archived && (
@@ -1525,12 +1560,23 @@ export function DossierDocumentsPanel({
             value={uploadCategory}
             onChange={(event) => setUploadCategory(event.target.value)}
           >
-            {documentCategories.map((item) => (
-              <MenuItem key={item.value} value={item.value}>
-                {item.label}
-              </MenuItem>
-            ))}
+            {documentCategories
+              .filter(
+                (item) => !scanIntent || supportsDocumentExtraction(item.value),
+              )
+              .map((item) => (
+                <MenuItem key={item.value} value={item.value}>
+                  {item.label}
+                </MenuItem>
+              ))}
           </TextField>
+          {!supportsDocumentExtraction(uploadCategory) && (
+            <Alert severity="info">
+              Ce document sera conservé sans extraction IA. Pour extraire une
+              facture ou un relevé, choisissez Factures d’achats, Factures de
+              ventes ou Relevés bancaires.
+            </Alert>
+          )}
           {missing.length > 0 && (
             <SearchableSelect
               label="Document attendu correspondant"
