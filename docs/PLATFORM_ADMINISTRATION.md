@@ -7,7 +7,7 @@ cabinets. Elle n'est accessible que lorsque l'utilisateur authentifié possède
 La première version permet au propriétaire de Fiscora de consulter :
 
 - les indicateurs globaux de cabinets, utilisateurs, dossiers et stockage ;
-- l'état de PostgreSQL, du stockage documentaire, des e-mails et de TTN ;
+- l'état de PostgreSQL, du stockage documentaire, des e-mails et des sauvegardes ;
 - les alertes opérationnelles ;
 - la liste agrégée des cabinets ;
 - les comptes utilisateurs et leurs accès ;
@@ -16,8 +16,12 @@ La première version permet au propriétaire de Fiscora de consulter :
 - la suspension et la réactivation motivées des cabinets ;
 - la désactivation et la réactivation motivées des utilisateurs ;
 - la révocation des sessions renouvelables ;
-- le suivi des traitements OCR, e-mail et TTN ;
-- les dernières actions du journal d'audit.
+- le suivi des traitements OCR et e-mail ;
+- les abonnements et la supervision technique.
+
+Analytics SaaS, le journal d'audit de plateforme et la facturation TTN ont été
+retirés de l'interface et des API dédiées. Les traces internes des actions
+sensibles restent conservées ; les factures ordinaires restent disponibles.
 
 Le menu « Administration Fiscora » est affiché dans le menu du compte. Un
 utilisateur non autorisé qui saisit directement l'URL est redirigé.
@@ -37,7 +41,7 @@ inconnue affiche la vue d'ensemble. Les recherches des cabinets et utilisateurs
 sont indépendantes et conservées lors des changements de section dans la page.
 
 La navigation ne modifie aucune donnée. Les listes de cabinets, utilisateurs,
-traitements et audit sont chargées quand leur section est ouverte.
+et traitements sont chargées quand leur section est ouverte.
 
 La liste des utilisateurs propose une recherche et des filtres par cabinet,
 rôle et statut du compte. Le rôle est lié au cabinet : les filtres combinés

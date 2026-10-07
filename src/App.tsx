@@ -114,11 +114,6 @@ const ForeignTradePage = lazy(() =>
     default: module.ForeignTradePage,
   })),
 );
-const ElectronicInvoicesPage = lazy(() =>
-  import("./pages/ElectronicInvoicesPage").then((module) => ({
-    default: module.ElectronicInvoicesPage,
-  })),
-);
 const AcceptInvitationPage = lazy(() =>
   import("./pages/AcceptInvitationPage").then((module) => ({
     default: module.AcceptInvitationPage,
@@ -387,10 +382,6 @@ const router = createBrowserRouter([
               {
                 path: "/commerce-exterieur",
                 element: lazyPage(<ForeignTradePage />),
-              },
-              {
-                path: "/facturation-electronique",
-                element: lazyPage(<ElectronicInvoicesPage />),
               },
               {
                 path: "/declarations",

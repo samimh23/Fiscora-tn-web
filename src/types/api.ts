@@ -60,8 +60,6 @@ export interface PlatformOverview {
     storageBytes: number;
     extractionsFailed: number;
     invitationsFailed: number;
-    ttnFailed: number;
-    ttnProductionConnections: number;
     subscriptionsPastDue: number;
     subscriptionInvoicesOverdue: number;
   };
@@ -118,7 +116,7 @@ export interface PlatformUser {
 export interface PlatformJobsOverview {
   generatedAtUtc: string;
   pipelines: Array<{
-    code: "DOCUMENT_EXTRACTION" | "INVITATION_EMAIL" | "TTN_TRANSMISSION";
+    code: "DOCUMENT_EXTRACTION" | "INVITATION_EMAIL";
     label: string;
     pending: number;
     processing: number;
@@ -168,19 +166,6 @@ export interface PlatformMonitoring {
   };
 }
 
-export interface PlatformAuditLog {
-  id: string;
-  action: string;
-  entityType: string;
-  entityId: string;
-  createdAtUtc: string;
-  actorUserId: string | null;
-  actorName: string | null;
-  organizationId: string | null;
-  organizationName: string | null;
-  reason: string | null;
-}
-
 export interface PlatformEmailStatus {
   configured: boolean;
   provider: string;
@@ -224,7 +209,6 @@ export interface SaasPlan {
   maxStorageBytes: number;
   maxStorageGb: number;
   monthlyOcrDocuments: number;
-  monthlyTtnSubmissions: number;
   features: Record<string, boolean>;
   isActive: boolean;
   isPublic: boolean;
@@ -257,7 +241,6 @@ export interface OrganizationSubscription {
     activeDossiers: SaasUsageMetric;
     storageBytes: SaasUsageMetric;
     ocrDocuments: SaasUsageMetric;
-    ttnSubmissions: SaasUsageMetric;
   };
   invoices?: SaasSubscriptionInvoice[];
 }
@@ -275,25 +258,6 @@ export interface SaasSubscriptionInvoice {
   paidAtUtc: string | null;
   paymentReference: string | null;
   createdAtUtc: string;
-}
-
-export interface SaasAnalytics {
-  generatedAtUtc: string;
-  subscriptions: {
-    trialing: number;
-    active: number;
-    pastDue: number;
-    suspended: number;
-    cancelled: number;
-  };
-  mrrTnd: number;
-  arrTnd: number;
-  averageRevenuePerActiveCabinetTnd: number;
-  trialConversionRate: number;
-  churnRate: number;
-  collectedThisMonthTnd: number;
-  overdueInvoices: number;
-  overdueAmountTnd: number;
 }
 
 export interface PagedResponse<T> {

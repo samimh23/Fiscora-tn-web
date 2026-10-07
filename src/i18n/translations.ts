@@ -11,7 +11,6 @@ export const arabicTranslations: Record<string, string> = {
   Comptabilité: "المحاسبة",
   Banque: "البنك",
   "Commerce extérieur": "التجارة الخارجية",
-  "Facturation TTN": "الفوترة الإلكترونية TTN",
   Immobilisations: "الأصول الثابتة",
   "États financiers": "القوائم المالية",
   "Fiscal & social": "الجباية والشؤون الاجتماعية",
@@ -296,8 +295,6 @@ export const arabicTranslations: Record<string, string> = {
   Fournisseur: "مزود",
   "Client et fournisseur": "حريف ومزود",
   "Nom / raison sociale": "الاسم / الاسم القانوني",
-  "Requise pour préparer une facture électronique TTN.":
-    "مطلوب لإعداد فاتورة إلكترونية TTN.",
   "Compte client (facultatif)": "حساب الحريف (اختياري)",
   "Compte fournisseur (facultatif)": "حساب المزود (اختياري)",
   "Non défini": "غير محدد",
@@ -519,7 +516,6 @@ export const arabicTranslations: Record<string, string> = {
   "Référence de paiement": "مرجع الدفع",
   "Référence de télédéclaration / quittance": "مرجع التصريح عن بعد / الوصل",
   "Référence du certificat/cachet": "مرجع الشهادة / الختم",
-  "Référence du raccordement TTN": "مرجع الربط مع TTN",
   "Référence du texte officiel": "مرجع النص الرسمي",
   "Référence pièce": "مرجع الوثيقة",
   "Régime fiscal": "النظام الجبائي",
@@ -560,6 +556,5 @@ export const arabicTranslations: Record<string, string> = {
   "TVA déductible": "الأداء القابل للطرح",
   "TVA, paie, export…": "الأداء والأجور والتصدير…",
   "Valeur résiduelle": "القيمة المتبقية",
-  "Version du schéma officiel TTN": "نسخة مخطط TTN الرسمي",
   WhatsApp: "واتساب",
 };

@@ -659,11 +659,7 @@ function InvoiceDialog({
                 ? "Choisissez la nature d’après la facture originale"
                 : draftSeed?.nature && form.nature === draftSeed.nature
                   ? "Proposition IA — vérifiez-la ; vous pouvez la modifier"
-                  : form.type === "VENTE" &&
-                      form.invoiceDate >= "2026-01-01" &&
-                      form.nature !== "BIENS"
-                    ? "Services inclus dans le champ e-facture depuis 2026 (art. 53)"
-                    : "Détermine les contrôles fiscaux et TTN"
+                  : "Détermine les contrôles fiscaux"
             }
           >
             <MenuItem value="" disabled>

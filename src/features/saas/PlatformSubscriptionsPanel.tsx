@@ -202,8 +202,7 @@ export function PlatformSubscriptionsPanel() {
                 {plan.maxActiveDossiers} dossiers · {plan.maxStorageGb} Go
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {plan.monthlyOcrDocuments} OCR · {plan.monthlyTtnSubmissions}{" "}
-                TTN par mois
+                {plan.monthlyOcrDocuments} documents OCR par mois
               </Typography>
             </CardContent>
           </Card>
@@ -234,7 +233,6 @@ export function PlatformSubscriptionsPanel() {
                 subscription.usage.activeDossiers.percentage,
                 subscription.usage.storageBytes.percentage,
                 subscription.usage.ocrDocuments.percentage,
-                subscription.usage.ttnSubmissions.percentage,
               );
               return (
                 <TableRow key={subscription.id} hover>

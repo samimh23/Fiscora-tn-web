@@ -64,11 +64,11 @@ export function PlatformAdminShell() {
         </IconButton>
       </Stack>
       <List disablePadding>
-        {platformAdminSections.map((item, index) => {
+        {platformAdminSections.map((item) => {
           const Icon = item.icon;
           return (
             <Box key={item.key}>
-              {(index === 1 || index === 5) && (
+              {(item.key === "cabinets" || item.key === "traitements") && (
                 <Typography
                   variant="overline"
                   sx={{
@@ -79,7 +79,7 @@ export function PlatformAdminShell() {
                     color: "rgba(255,255,255,.5)",
                   }}
                 >
-                  {index === 1 ? "Gestion" : "Opérations"}
+                  {item.key === "cabinets" ? "Gestion" : "Opérations"}
                 </Typography>
               )}
               <ListItemButton

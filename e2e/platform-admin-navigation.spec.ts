@@ -200,37 +200,6 @@ async function setup(page: Page) {
           },
         ],
       };
-    else if (path.endsWith("/audit-logs"))
-      body = [
-        {
-          id: "audit-1",
-          createdAtUtc: date,
-          action: "PLATFORM_ORGANIZATION_STATUS_CHANGED",
-          actorName: "Admin Test",
-          organizationName: "Cabinet Pro",
-          entityType: "Organization",
-          entityId: "cabinet-0",
-          reason: "Contrôle manuel",
-        },
-      ];
-    else if (path.endsWith("/saas-analytics"))
-      body = {
-        subscriptions: {
-          trialing: 1,
-          active: 1,
-          pastDue: 0,
-          suspended: 0,
-          cancelled: 0,
-        },
-        mrrTnd: 50,
-        arrTnd: 600,
-        averageRevenuePerActiveCabinetTnd: 50,
-        overdueAmountTnd: 0,
-        overdueInvoices: 0,
-        trialConversionRate: 50,
-        churnRate: 0,
-        collectedThisMonthTnd: 50,
-      };
     else if (path.endsWith("/email/status"))
       body = {
         configured: true,
@@ -318,11 +287,9 @@ test("sidebar opens every admin section directly with no stacked dashboard or ac
     ["Cabinets", "cabinets"],
     ["Utilisateurs", "utilisateurs"],
     ["Abonnements", "abonnements"],
-    ["Analytics SaaS", "analytics"],
     ["Traitements", "traitements"],
     ["E-mails", "emails"],
     ["Supervision", "supervision"],
-    ["Journal d’audit", "audit"],
   ];
   for (const [label, key] of sections) {
     await selectSection(page, label);
@@ -355,6 +322,17 @@ test("sidebar opens every admin section directly with no stacked dashboard or ac
       ).toHaveAttribute("aria-current", "page");
     }
   }
+  expect(
+    reads.some((path) =>
+      /saas-analytics|audit-logs|electronic-invoices/.test(path),
+    ),
+  ).toBe(false);
+  await expect(
+    page.getByRole("link", { name: "Analytics SaaS", includeHidden: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Journal d’audit", includeHidden: true }),
+  ).toHaveCount(0);
   expect(writes).toEqual([]);
   expect(errors).toEqual([]);
 });
@@ -385,6 +363,23 @@ test("deep links, refresh, back navigation and independent searches preserve sec
   await expect(
     page.getByRole("heading", { name: "Centre de contrôle Fiscora" }),
   ).toBeVisible();
+});
+
+test("retired admin sections fall back to overview without loading removed APIs", async ({
+  page,
+}) => {
+  const { reads } = await setup(page);
+  for (const section of ["analytics", "audit"]) {
+    await page.goto(`/administration-plateforme?section=${section}`);
+    await expect(
+      page.getByRole("heading", { name: "Centre de contrôle Fiscora" }),
+    ).toBeVisible();
+  }
+  expect(
+    reads.some((path) =>
+      /saas-analytics|audit-logs|electronic-invoices/.test(path),
+    ),
+  ).toBe(false);
 });
 
 test("destructive actions still require explicit confirmation and an audited reason", async ({

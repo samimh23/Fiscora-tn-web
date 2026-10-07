@@ -3,9 +3,7 @@ import {
   DashboardOutlined,
   EmailOutlined,
   GroupsOutlined,
-  HistoryOutlined,
   MonitorHeartOutlined,
-  QueryStatsOutlined,
   ReceiptLongOutlined,
   SyncRounded,
 } from "@mui/icons-material";
@@ -37,13 +35,6 @@ export const platformAdminSections = [
     description: "Suivez les offres, les abonnements et leur facturation.",
   },
   {
-    key: "analytics",
-    label: "Analytics SaaS",
-    icon: QueryStatsOutlined,
-    description:
-      "Consultez les revenus et les indicateurs d’activité des cabinets.",
-  },
-  {
     key: "traitements",
     label: "Traitements",
     icon: SyncRounded,
@@ -61,13 +52,6 @@ export const platformAdminSections = [
     icon: MonitorHeartOutlined,
     description:
       "Surveillez la santé de l’API, les performances et les erreurs.",
-  },
-  {
-    key: "audit",
-    label: "Journal d’audit",
-    icon: HistoryOutlined,
-    description:
-      "Retrouvez les actions administratives et leurs justifications.",
   },
 ] as const;
 

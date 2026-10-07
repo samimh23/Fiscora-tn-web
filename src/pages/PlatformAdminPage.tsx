@@ -11,7 +11,6 @@ import {
   DescriptionOutlined,
   EmailOutlined,
   GroupsOutlined,
-  ReceiptLongOutlined,
   RefreshRounded,
   RestartAltRounded,
   SearchRounded,
@@ -52,14 +51,9 @@ import { MetricCard } from "../components/MetricCard";
 import { PlatformEmailPanel } from "../features/platform-admin/PlatformEmailPanel";
 import { PlatformMonitoringPanel } from "../features/platform-admin/PlatformMonitoringPanel";
 import { PlatformUsersPanel } from "../features/platform-admin/PlatformUsersPanel";
-import {
-  getPlatformAdminSection,
-  platformAdminSections,
-} from "../features/platform-admin/navigation";
-import { PlatformSaasAnalyticsPanel } from "../features/saas/PlatformSaasAnalyticsPanel";
+import { getPlatformAdminSection } from "../features/platform-admin/navigation";
 import { PlatformSubscriptionsPanel } from "../features/saas/PlatformSubscriptionsPanel";
 import type {
-  PlatformAuditLog,
   PlatformJobsOverview,
   PlatformOrganization,
   PlatformOverview,
@@ -99,16 +93,10 @@ const serviceMeta = {
     color: "#a4612f",
     background: "#fbf1e8",
   },
-  TTN: {
-    icon: ReceiptLongOutlined,
-    color: "#2f7d5d",
-    background: "#eaf4ef",
-  },
 } as const;
 
 const serviceColor = (status: string) => {
   if (status === "NON_CONFIGURE") return "warning" as const;
-  if (status === "SIMULATION") return "info" as const;
   return "success" as const;
 };
 
@@ -170,8 +158,6 @@ export function PlatformAdminPage() {
   const currentUserId = readSession()?.user.id;
   const [params] = useSearchParams();
   const section = getPlatformAdminSection(params.get("section"));
-  const tab =
-    platformAdminSections.findIndex((item) => item.key === section.key) - 1;
   const titleRef = useRef<HTMLHeadingElement>(null);
   const [searches, setSearches] = useState<Record<string, string>>({});
   const search = searches[section.key] ?? "";
@@ -203,12 +189,6 @@ export function PlatformAdminPage() {
     enabled: section.key === "traitements",
     queryKey: ["platform-admin", "jobs"],
     queryFn: () => api.get<PlatformJobsOverview>("/api/platform-admin/jobs"),
-  });
-  const audit = useQuery({
-    enabled: section.key === "audit",
-    queryKey: ["platform-admin", "audit"],
-    queryFn: () =>
-      api.get<PlatformAuditLog[]>("/api/platform-admin/audit-logs"),
   });
 
   const actionMutation = useMutation({
@@ -249,15 +229,13 @@ export function PlatformAdminPage() {
   const activeQuery =
     section.key === "overview"
       ? overview
-      : tab === 0
+      : section.key === "cabinets"
         ? organizations
-        : tab === 1
+        : section.key === "utilisateurs"
           ? users
-          : tab === 4
+          : section.key === "traitements"
             ? jobs
-            : tab === 7
-              ? audit
-              : undefined;
+            : undefined;
   const hasError = activeQuery?.isError ?? false;
   const normalizedSearch = search.trim().toLocaleLowerCase("fr");
   const filteredOrganizations = useMemo(
@@ -714,7 +692,7 @@ export function PlatformAdminPage() {
           {activeQuery?.isFetching && (
             <LinearProgress aria-label="Chargement de la section" />
           )}
-          {tab === 0 && (
+          {section.key === "cabinets" && (
             <Stack
               direction={{ xs: "column", md: "row" }}
               sx={{
@@ -731,38 +709,32 @@ export function PlatformAdminPage() {
               <Typography variant="subtitle2" color="text.secondary">
                 {filteredOrganizations.length} cabinet(s)
               </Typography>
-              {(tab === 0 || tab === 1) && (
-                <TextField
-                  size="small"
-                  value={search}
-                  onChange={(event) =>
-                    setSearches((current) => ({
-                      ...current,
-                      [section.key]: event.target.value,
-                    }))
-                  }
-                  label={
-                    tab === 0 ? "Rechercher un cabinet" : "Rechercher un compte"
-                  }
-                  placeholder={
-                    tab === 0 ? "Rechercher un cabinet" : "Rechercher un compte"
-                  }
-                  sx={{ minWidth: { md: 260 }, my: 1 }}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchRounded fontSize="small" />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                />
-              )}
+              <TextField
+                size="small"
+                value={search}
+                onChange={(event) =>
+                  setSearches((current) => ({
+                    ...current,
+                    [section.key]: event.target.value,
+                  }))
+                }
+                label="Rechercher un cabinet"
+                placeholder="Rechercher un cabinet"
+                sx={{ minWidth: { md: 260 }, my: 1 }}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchRounded fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
             </Stack>
           )}
 
-          {tab === 0 && (
+          {section.key === "cabinets" && (
             <TableContainer>
               <Table>
                 <TableHead>
@@ -860,7 +832,7 @@ export function PlatformAdminPage() {
             </TableContainer>
           )}
 
-          {tab === 1 && (
+          {section.key === "utilisateurs" && (
             <PlatformUsersPanel
               users={users.data ?? []}
               currentUserId={currentUserId}
@@ -891,11 +863,9 @@ export function PlatformAdminPage() {
             />
           )}
 
-          {tab === 2 && <PlatformSubscriptionsPanel />}
+          {section.key === "abonnements" && <PlatformSubscriptionsPanel />}
 
-          {tab === 3 && <PlatformSaasAnalyticsPanel />}
-
-          {tab === 4 && (
+          {section.key === "traitements" && (
             <Box sx={{ p: 3 }}>
               <Stack
                 direction={{ xs: "column", md: "row" }}
@@ -985,46 +955,9 @@ export function PlatformAdminPage() {
             </Box>
           )}
 
-          {tab === 5 && <PlatformEmailPanel />}
+          {section.key === "emails" && <PlatformEmailPanel />}
 
-          {tab === 6 && <PlatformMonitoringPanel />}
-
-          {tab === 7 && (
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Date</TableCell>
-                    <TableCell>Action</TableCell>
-                    <TableCell>Acteur</TableCell>
-                    <TableCell>Cabinet</TableCell>
-                    <TableCell>Objet</TableCell>
-                    <TableCell>Justification</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {audit.data?.map((item) => (
-                    <TableRow key={item.id} hover>
-                      <TableCell>{formatDate(item.createdAtUtc)}</TableCell>
-                      <TableCell>
-                        <Typography component="code" variant="body2">
-                          {item.action}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>{item.actorName ?? "Système"}</TableCell>
-                      <TableCell>
-                        {item.organizationName ?? "Plateforme"}
-                      </TableCell>
-                      <TableCell>
-                        {item.entityType} · {item.entityId.slice(0, 8)}
-                      </TableCell>
-                      <TableCell>{item.reason ?? "—"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
+          {section.key === "supervision" && <PlatformMonitoringPanel />}
         </Card>
       )}
 

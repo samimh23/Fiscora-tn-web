@@ -364,9 +364,6 @@ export function ThirdPartiesPanel({
             value={form.address}
             onChange={(event) => set("address", event.target.value)}
             sx={{ gridColumn: "1 / -1" }}
-            helperText={t(
-              "Requise pour préparer une facture électronique TTN.",
-            )}
           />
           {(form.type === "CLIENT" ||
             form.type === "CLIENT_ET_FOURNISSEUR") && (

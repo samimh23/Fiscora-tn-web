@@ -3,7 +3,6 @@ import {
   CloudOutlined,
   DescriptionOutlined,
   GroupsOutlined,
-  ReceiptLongOutlined,
   SmartToyOutlined,
 } from "@mui/icons-material";
 import {
@@ -222,11 +221,6 @@ export function SubscriptionPage() {
               label="Documents OCR"
               metric={item.usage.ocrDocuments}
               icon={SmartToyOutlined}
-            />
-            <UsageCard
-              label="Transmissions TTN"
-              metric={item.usage.ttnSubmissions}
-              icon={ReceiptLongOutlined}
             />
           </Box>
         </>
