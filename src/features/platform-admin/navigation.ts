@@ -1,5 +1,6 @@
 import {
   ApartmentOutlined,
+  AutoAwesomeOutlined,
   DashboardOutlined,
   EmailOutlined,
   GroupsOutlined,
@@ -45,6 +46,13 @@ export const platformAdminSections = [
     label: "E-mails",
     icon: EmailOutlined,
     description: "Contrôlez la configuration et les envois transactionnels.",
+  },
+  {
+    key: "training",
+    label: "Jeux de données IA",
+    icon: AutoAwesomeOutlined,
+    description:
+      "Collectez les exemples autorisés et exportez un dataset pour LoRA.",
   },
   {
     key: "supervision",

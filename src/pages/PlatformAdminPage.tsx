@@ -50,6 +50,7 @@ import { api, readSession } from "../api/client";
 import { MetricCard } from "../components/MetricCard";
 import { PlatformEmailPanel } from "../features/platform-admin/PlatformEmailPanel";
 import { PlatformMonitoringPanel } from "../features/platform-admin/PlatformMonitoringPanel";
+import { PlatformTrainingPanel } from "../features/platform-admin/PlatformTrainingPanel";
 import { PlatformUsersPanel } from "../features/platform-admin/PlatformUsersPanel";
 import { getPlatformAdminSection } from "../features/platform-admin/navigation";
 import { PlatformSubscriptionsPanel } from "../features/saas/PlatformSubscriptionsPanel";
@@ -958,6 +959,7 @@ export function PlatformAdminPage() {
           {section.key === "emails" && <PlatformEmailPanel />}
 
           {section.key === "supervision" && <PlatformMonitoringPanel />}
+          {section.key === "training" && <PlatformTrainingPanel />}
         </Card>
       )}
 

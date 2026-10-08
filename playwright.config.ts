@@ -14,6 +14,7 @@ export default defineConfig({
     : [["list"], ["html", { open: "never" }]],
   expect: { timeout: 10_000 },
   use: {
+    channel: process.env.E2E_BROWSER_CHANNEL,
     baseURL,
     locale: "fr-FR",
     screenshot: "only-on-failure",

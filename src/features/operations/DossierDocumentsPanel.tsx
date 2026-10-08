@@ -44,6 +44,7 @@ import type {
   MissingDocumentExpectation,
 } from "../../types/api";
 import { DocumentExtractionReviewDialog } from "./DocumentExtractionReviewDialog";
+import { TrainingConsentPanel } from "./TrainingConsentPanel";
 import {
   documentCategories,
   documentCategoryLabel,
@@ -530,6 +531,12 @@ export function DossierDocumentsPanel({
   return (
     <>
       <Box className="documents-layout">
+        {!archived && (
+          <TrainingConsentPanel
+            organizationId={organizationId}
+            dossierId={dossierId}
+          />
+        )}
         <Card sx={{ gridColumn: "1 / -1", p: 2.5 }}>
           <Box
             sx={{

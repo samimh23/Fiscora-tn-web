@@ -200,6 +200,15 @@ async function setup(page: Page) {
           },
         ],
       };
+    else if (path.endsWith("/training-datasets"))
+      body = {
+        schemaVersion: "fiscora-nuextract-v1",
+        counts: [
+          { kind: "invoice", status: "READY", count: "800" },
+          { kind: "bank_statement", status: "READY", count: "200" },
+        ],
+        exports: [],
+      };
     else if (path.endsWith("/email/status"))
       body = {
         configured: true,
@@ -255,6 +264,48 @@ async function selectSection(page: Page, name: string) {
     .click();
 }
 
+test("training dataset export requires explicit confirmation and creates only one background request", async ({
+  page,
+}, testInfo) => {
+  await setup(page);
+  await page.goto("/administration-plateforme?section=training");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Jeux de données IA" }),
+  ).toBeVisible();
+  const button = page.getByRole("button", {
+    name: "Exporter le jeu de données",
+    exact: true,
+  });
+  await expect(button).toBeDisabled();
+  await page
+    .getByLabel(
+      "Je confirme que cet export est destiné à un entraînement autorisé et restera confidentiel.",
+    )
+    .check();
+  await expect(button).toBeEnabled();
+  const request = page.waitForRequest(
+    (item) =>
+      item.url().endsWith("/training-datasets/exports") &&
+      item.method() === "POST",
+  );
+  await button.click();
+  expect((await request).postDataJSON()).toEqual({
+    documentKind: "all",
+    limit: 1000,
+    offset: 0,
+  });
+  await expect(
+    page.getByText(
+      "Export demandé. Les images et le ZIP sont préparés en arrière-plan.",
+    ),
+  ).toBeVisible();
+  await expectNoPageOverflow(page);
+  await page.screenshot({
+    path: testInfo.outputPath("training-datasets.png"),
+    fullPage: true,
+  });
+});
+
 async function expectNoPageOverflow(page: Page) {
   expect(
     await page.evaluate(
@@ -289,6 +340,7 @@ test("sidebar opens every admin section directly with no stacked dashboard or ac
     ["Abonnements", "abonnements"],
     ["Traitements", "traitements"],
     ["E-mails", "emails"],
+    ["Jeux de données IA", "training"],
     ["Supervision", "supervision"],
   ];
   for (const [label, key] of sections) {
