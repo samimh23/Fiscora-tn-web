@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Link as RouterLink,
   useNavigate,
@@ -12,6 +12,12 @@ import {
   Card,
   CardContent,
   Chip,
+  Checkbox,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControlLabel,
   InputAdornment,
   Pagination,
   Skeleton,
@@ -22,6 +28,7 @@ import {
   AddRounded,
   ArrowForwardRounded,
   SearchRounded,
+  DeleteOutlineRounded,
 } from "@mui/icons-material";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
@@ -33,9 +40,77 @@ import {
   taxRegimeLabel,
 } from "../features/dossiers/options";
 import type { DossierSummary, PagedResponse } from "../types/api";
+import { useCurrentDossier } from "../hooks/useDossierSelection";
 
 export function DossiersPage() {
   const { organization, can } = useAuth();
+  const current = useCurrentDossier();
+  const currentRef = useRef({ organizationId: organization?.id, ...current });
+  currentRef.current = { organizationId: organization?.id, ...current };
+  const queryClient = useQueryClient();
+  const [deletion, setDeletion] = useState<{
+    organizationId: string;
+    dossier: DossierSummary;
+  } | null>(null);
+  const [confirmationName, setConfirmationName] = useState("");
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [deletedMessage, setDeletedMessage] = useState<{
+    organizationId: string;
+    name: string;
+  } | null>(null);
+  const deleteMutation = useMutation({
+    mutationFn: (input: {
+      organizationId: string;
+      dossier: DossierSummary;
+      confirmationName: string;
+      acknowledged: boolean;
+    }) =>
+      api.delete(
+        `/api/organizations/${input.organizationId}/dossiers/${input.dossier.id}`,
+        {
+          confirmationName: input.confirmationName,
+          acknowledgePermanentDeletion: input.acknowledged,
+        },
+      ),
+    onSuccess: async (_, input) => {
+      // Evict the deleted dossier from both lists before changing the global selection.
+      queryClient.setQueriesData<PagedResponse<DossierSummary>>(
+        {
+          predicate: (q) =>
+            ["dossiers", "dossier-options"].includes(String(q.queryKey[0])) &&
+            q.queryKey[1] === input.organizationId,
+        },
+        (data) =>
+          data?.items.some((row) => row.id === input.dossier.id)
+            ? {
+                ...data,
+                items: data.items.filter((row) => row.id !== input.dossier.id),
+                total: Math.max(0, data.total - 1),
+              }
+            : data,
+      );
+      queryClient.removeQueries({
+        predicate: (q) => q.queryKey.includes(input.dossier.id),
+      });
+      const active = currentRef.current;
+      if (active.organizationId === input.organizationId) {
+        if (active.dossierId === input.dossier.id) {
+          active.selectDossier(
+            active.dossiers.data?.items.find(
+              (row) => row.id !== input.dossier.id,
+            )?.id ?? "",
+          );
+        }
+        setDeletion(null);
+        setDeletedMessage({
+          organizationId: input.organizationId,
+          name: input.dossier.legalName,
+        });
+        setPage(1);
+      }
+      await queryClient.invalidateQueries();
+    },
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [page, setPage] = useState(1);
@@ -69,6 +144,16 @@ export function DossiersPage() {
           </Button>
         }
       />
+      {deletedMessage?.organizationId === organization?.id && (
+        <Alert
+          severity="success"
+          sx={{ mb: 2 }}
+          onClose={() => setDeletedMessage(null)}
+        >
+          Le dossier {deletedMessage?.name} et ses données ont été supprimés. Le
+          nettoyage des fichiers se poursuit en arrière-plan.
+        </Alert>
+      )}
       <Card>
         <CardContent sx={{ p: 0 }}>
           <Box
@@ -192,6 +277,27 @@ export function DossiersPage() {
                 >
                   Ouvrir
                 </Button>
+                {organization?.role === "Propriétaire" &&
+                  can("dossiers.delete") && (
+                    <Button
+                      color="error"
+                      size="small"
+                      startIcon={<DeleteOutlineRounded />}
+                      aria-label={`Supprimer ${item.legalName}`}
+                      disabled={deleteMutation.isPending}
+                      onClick={() => {
+                        deleteMutation.reset();
+                        setConfirmationName("");
+                        setAcknowledged(false);
+                        setDeletion({
+                          organizationId: organization.id,
+                          dossier: item,
+                        });
+                      }}
+                    >
+                      Supprimer
+                    </Button>
+                  )}
               </Box>
             </Box>
           ))}
@@ -214,6 +320,84 @@ export function DossiersPage() {
           )}
         </CardContent>
       </Card>
+      <Dialog
+        open={Boolean(deletion && deletion.organizationId === organization?.id)}
+        onClose={() => {
+          if (!deleteMutation.isPending) setDeletion(null);
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Supprimer définitivement ce dossier ?</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Cette action est irréversible. Elle supprime les factures,
+            règlements, écritures, relevés bancaires, documents, tâches,
+            déclarations et autres données liés à {deletion?.dossier.legalName}.
+          </Alert>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Le cabinet et les comptes utilisateurs restent. L’historique
+            d’audit, les sauvegardes et les copies déjà téléchargées sont
+            conservés. Les fichiers et copies des jeux de données sont nettoyés
+            en arrière-plan.
+          </Typography>
+          <TextField
+            fullWidth
+            autoFocus
+            label="Recopiez le nom exact du dossier"
+            helperText={deletion?.dossier.legalName}
+            value={confirmationName}
+            disabled={deleteMutation.isPending}
+            onChange={(event) => setConfirmationName(event.target.value)}
+          />
+          <FormControlLabel
+            sx={{ mt: 2 }}
+            control={
+              <Checkbox
+                checked={acknowledged}
+                disabled={deleteMutation.isPending}
+                onChange={(event) => setAcknowledged(event.target.checked)}
+              />
+            }
+            label="Je confirme la suppression définitive du dossier et de ses données."
+          />
+          {deleteMutation.isError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {deleteMutation.error.message ||
+                "La suppression a échoué. Réessayez."}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            disabled={deleteMutation.isPending}
+            onClick={() => setDeletion(null)}
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={
+              deleteMutation.isPending ||
+              !acknowledged ||
+              confirmationName !== deletion?.dossier.legalName
+            }
+            onClick={() => {
+              if (deletion)
+                deleteMutation.mutate({
+                  ...deletion,
+                  confirmationName,
+                  acknowledged,
+                });
+            }}
+          >
+            {deleteMutation.isPending
+              ? "Suppression…"
+              : "Supprimer définitivement"}
+          </Button>
+        </DialogActions>
+      </Dialog>
       {organization?.id && (
         <DossierFormDialog
           open={createOpen}

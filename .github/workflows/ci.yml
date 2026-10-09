@@ -57,6 +57,9 @@ jobs:
       - name: Run public application smoke tests
         run: npm run test:e2e -- e2e/staging-smoke.spec.ts --project=desktop
 
+      - name: Verify dossier deletion confirmations and permissions
+        run: npm run test:e2e -- e2e/dossier-deletion.spec.ts --project=desktop --project=mobile
+
   deploy-staging:
     name: Deploy validated frontend to staging
     needs: validate
