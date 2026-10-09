@@ -1210,6 +1210,7 @@ export interface BankStatement {
   currentBookClosingBalance?: string;
   currentDifference?: string;
   sourceFileName: string;
+  sourceDocumentId?: string | null;
   rowCount: number;
   matchedCount?: number;
   unmatchedCount?: number;

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -38,6 +39,7 @@ import {
 import { api, ApiError } from "../../api/client";
 import { BankMatchSuggestion } from "./BankMatchSuggestion";
 import { BankStatementAiImports } from "./BankStatementAiImports";
+import { DocumentExtractionViewer } from "../operations/DocumentExtractionViewer";
 import { SearchableSelect } from "../../components/SearchableSelect";
 import type {
   AccountingJournal,
@@ -1103,7 +1105,11 @@ export function DossierBankReconciliationPanel({
   const [scanBankAccountId, setScanBankAccountId] = useState<string | null>(
     null,
   );
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedStatementId, setSelectedId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [resultsDocumentId, setResultsDocumentId] = useState<string | null>(
+    null,
+  );
   const [match, setMatch] = useState<{
     mode: MatchMode;
     transaction: BankTransaction;
@@ -1124,6 +1130,12 @@ export function DossierBankReconciliationPanel({
         `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/statements`,
       ),
   });
+  const selectedId =
+    selectedStatementId ??
+    statements.data?.find(
+      (item) => item.sourceDocumentId === searchParams.get("sourceDocumentId"),
+    )?.id ??
+    null;
   const statement = useQuery({
     queryKey: ["bank-statement", organizationId, dossierId, selectedId],
     queryFn: () =>
@@ -1616,6 +1628,16 @@ export function DossierBankReconciliationPanel({
                         </Typography>
                       </Box>
                       <Stack direction="row" spacing={1}>
+                        {canScanDocuments && selected.sourceDocumentId && (
+                          <Button
+                            variant="outlined"
+                            onClick={() =>
+                              setResultsDocumentId(selected.sourceDocumentId!)
+                            }
+                          >
+                            Original + résultats
+                          </Button>
+                        )}
                         {canManage &&
                           !archived &&
                           selected.status !== "RAPPROCHE" && (
@@ -1988,6 +2010,14 @@ export function DossierBankReconciliationPanel({
             setImportOpen(false);
             setScanBankAccountId(accountId);
           }}
+        />
+      )}
+      {resultsDocumentId && (
+        <DocumentExtractionViewer
+          organizationId={organizationId}
+          dossierId={dossierId}
+          documentId={resultsDocumentId}
+          onClose={() => setResultsDocumentId(null)}
         />
       )}
       {match && selected && (

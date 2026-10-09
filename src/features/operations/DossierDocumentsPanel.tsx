@@ -44,6 +44,7 @@ import type {
   MissingDocumentExpectation,
 } from "../../types/api";
 import { DocumentExtractionReviewDialog } from "./DocumentExtractionReviewDialog";
+import { DocumentExtractionViewer } from "./DocumentExtractionViewer";
 import { TrainingConsentPanel } from "./TrainingConsentPanel";
 import {
   documentCategories,
@@ -244,6 +245,12 @@ export function DossierDocumentsPanel({
   >({});
   const [reviewTarget, setReviewTarget] =
     useState<DocumentExtractionReviewItem | null>(null);
+  const [resultsDocumentId, setResultsDocumentId] = useState<string | null>(
+    null,
+  );
+  const [extractionTarget, setExtractionTarget] =
+    useState<AccountingDocument | null>(null);
+  const [extractionCategory, setExtractionCategory] = useState("");
   const [error, setError] = useState("");
   const documents = useQuery({
     queryKey: [
@@ -381,12 +388,20 @@ export function DossierDocumentsPanel({
     setSearchParams(next, { replace: true });
   }, [archived, canUpload, canValidate, searchParams, setSearchParams]);
   const requestExtraction = useMutation({
-    mutationFn: (documentId: string) =>
+    mutationFn: ({
+      documentId,
+      category,
+    }: {
+      documentId: string;
+      category?: string;
+    }) =>
       api.post(
         `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${documentId}/extraction`,
+        category ? { category } : {},
       ),
     onSuccess: async () => {
       setReviewTarget(null);
+      setExtractionTarget(null);
       setError("");
       await Promise.all([
         refresh(),
@@ -918,12 +933,17 @@ export function DossierDocumentsPanel({
               >
                 <Chip
                   label={
-                    document.processingStatus === "TRAITE"
-                      ? "Dossier classé"
-                      : "Classement à terminer"
+                    document.category === "RELEVES_BANCAIRES" &&
+                    document.extractionStatus === "VALIDEE"
+                      ? "Classé · Importé en banque"
+                      : document.processingStatus === "TRAITE"
+                        ? "Document classé"
+                        : "Classement à terminer"
                   }
                   color={
-                    document.processingStatus === "TRAITE"
+                    document.processingStatus === "TRAITE" ||
+                    (document.category === "RELEVES_BANCAIRES" &&
+                      document.extractionStatus === "VALIDEE")
                       ? "success"
                       : "warning"
                   }
@@ -962,7 +982,12 @@ export function DossierDocumentsPanel({
               >
                 {canValidate &&
                   !archived &&
-                  supportsDocumentExtraction(document.category) &&
+                  (supportsDocumentExtraction(document.category) ||
+                    document.category === "BOITE_RECEPTION") &&
+                  !(
+                    document.category === "RELEVES_BANCAIRES" &&
+                    document.extractionStatus === "VALIDEE"
+                  ) &&
                   document.malwareScanStatus === "SAIN" &&
                   ["image/jpeg", "image/png", "application/pdf"].includes(
                     document.mimeType,
@@ -975,9 +1000,54 @@ export function DossierDocumentsPanel({
                       variant="outlined"
                       startIcon={<AutoAwesomeRounded />}
                       disabled={requestExtraction.isPending}
-                      onClick={() => requestExtraction.mutate(document.id)}
+                      onClick={() => {
+                        if (document.category === "BOITE_RECEPTION") {
+                          setExtractionCategory("");
+                          setExtractionTarget(document);
+                        } else if (
+                          !["VALIDEE", "REJETEE"].includes(
+                            document.extractionStatus,
+                          ) ||
+                          window.confirm(
+                            "Relire cette pièce remplacera ses résultats d’extraction enregistrés. Continuer ?",
+                          )
+                        ) {
+                          requestExtraction.mutate({ documentId: document.id });
+                        }
+                      }}
                     >
-                      Lire avec l’IA
+                      {["VALIDEE", "REJETEE"].includes(
+                        document.extractionStatus,
+                      )
+                        ? "Relire avec l’IA"
+                        : "Lire avec l’IA"}
+                    </Button>
+                  )}
+                {canValidate &&
+                  ["A_REVOIR", "VALIDEE", "REJETEE"].includes(
+                    document.extractionStatus,
+                  ) && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<VisibilityOutlined />}
+                      onClick={() => setResultsDocumentId(document.id)}
+                    >
+                      Original + résultats
+                    </Button>
+                  )}
+                {canValidate &&
+                  document.category === "RELEVES_BANCAIRES" &&
+                  document.extractionStatus === "VALIDEE" && (
+                    <Button
+                      size="small"
+                      onClick={() =>
+                        navigate(
+                          `/banque?${new URLSearchParams({ dossierId, sourceDocumentId: document.id })}`,
+                        )
+                      }
+                    >
+                      Voir dans Banque
                     </Button>
                   )}
                 {canValidate && reviewByDocument.has(document.id) && (
@@ -1014,6 +1084,10 @@ export function DossierDocumentsPanel({
                   )}
                 {canUpload &&
                   !archived &&
+                  !(
+                    document.category === "RELEVES_BANCAIRES" &&
+                    document.extractionStatus === "VALIDEE"
+                  ) &&
                   document.processingStatus !== "TRAITE" && (
                     <Button
                       size="small"
@@ -1499,6 +1573,72 @@ export function DossierDocumentsPanel({
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPreviewTarget(null)}>Fermer</Button>
+        </DialogActions>
+      </Dialog>
+      {resultsDocumentId && (
+        <DocumentExtractionViewer
+          organizationId={organizationId}
+          dossierId={dossierId}
+          documentId={resultsDocumentId}
+          onClose={() => setResultsDocumentId(null)}
+        />
+      )}
+      <Dialog
+        open={Boolean(extractionTarget)}
+        onClose={
+          requestExtraction.isPending
+            ? undefined
+            : () => setExtractionTarget(null)
+        }
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Lire la pièce avec l’IA</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 2 }}>
+            {extractionTarget?.originalName}
+          </Typography>
+          <TextField
+            select
+            fullWidth
+            label="Type de pièce"
+            value={extractionCategory}
+            onChange={(event) => setExtractionCategory(event.target.value)}
+          >
+            {documentCategories
+              .filter((item) => supportsDocumentExtraction(item.value))
+              .map((item) => (
+                <MenuItem key={item.value} value={item.value}>
+                  {item.label}
+                </MenuItem>
+              ))}
+          </TextField>
+          {requestExtraction.isError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            disabled={requestExtraction.isPending}
+            onClick={() => setExtractionTarget(null)}
+          >
+            Annuler
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!extractionCategory || requestExtraction.isPending}
+            onClick={() =>
+              extractionTarget &&
+              requestExtraction.mutate({
+                documentId: extractionTarget.id,
+                category: extractionCategory,
+              })
+            }
+          >
+            {requestExtraction.isPending ? "Démarrage…" : "Lire avec l’IA"}
+          </Button>
         </DialogActions>
       </Dialog>
       {reviewTarget && (

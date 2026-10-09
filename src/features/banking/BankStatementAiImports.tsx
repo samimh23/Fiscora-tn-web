@@ -22,6 +22,7 @@ import type {
   DocumentExtractionReviewItem,
 } from "../../types/api";
 import { DocumentExtractionReviewDialog } from "../operations/DocumentExtractionReviewDialog";
+import { DocumentExtractionViewer } from "../operations/DocumentExtractionViewer";
 
 const statuses = {
   NON_DEMANDEE: { label: "Lecture IA à lancer", color: "warning" },
@@ -29,6 +30,8 @@ const statuses = {
   EN_COURS: { label: "Extraction en cours", color: "info" },
   A_REVOIR: { label: "Prête à vérifier", color: "warning" },
   ECHEC: { label: "Extraction échouée", color: "error" },
+  VALIDEE: { label: "Importé en banque", color: "success" },
+  REJETEE: { label: "Extraction rejetée", color: "default" },
 } as const;
 const message = (error: unknown) =>
   error instanceof ApiError || error instanceof Error
@@ -63,6 +66,9 @@ export function BankStatementAiImports({
   const [bankHints, setBankHints] = useState<Record<string, string>>({});
   const [reviewTarget, setReviewTarget] =
     useState<DocumentExtractionReviewItem | null>(null);
+  const [resultsDocumentId, setResultsDocumentId] = useState<string | null>(
+    null,
+  );
   const documents = useQuery({
     queryKey,
     queryFn: () =>
@@ -256,6 +262,18 @@ export function BankStatementAiImports({
                       color={status.color}
                       label={status.label}
                     />
+                    {can("documents.validate") &&
+                      ["A_REVOIR", "VALIDEE", "REJETEE"].includes(
+                        document.extractionStatus,
+                      ) && (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => setResultsDocumentId(document.id)}
+                        >
+                          Original + résultats
+                        </Button>
+                      )}
                     {canImport && document.extractionStatus === "A_REVOIR" && (
                       <Button
                         size="small"
@@ -397,6 +415,14 @@ export function BankStatementAiImports({
           )}
         </DialogActions>
       </Dialog>
+      {resultsDocumentId && (
+        <DocumentExtractionViewer
+          organizationId={organizationId}
+          dossierId={dossierId}
+          documentId={resultsDocumentId}
+          onClose={() => setResultsDocumentId(null)}
+        />
+      )}
       {reviewTarget && (
         <DocumentExtractionReviewDialog
           key={reviewTarget.id}

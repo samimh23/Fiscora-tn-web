@@ -138,12 +138,14 @@ export function DocumentExtractionReviewDialog({
   target: reviewTarget,
   onClose,
   initialBankAccountId,
+  readOnly = false,
 }: {
   organizationId: string;
   dossierId: string;
   target: DocumentExtractionReviewItem;
   onClose: () => void;
   initialBankAccountId?: string;
+  readOnly?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [reviewSource] = useState<Record<string, unknown>>(() =>
@@ -198,7 +200,7 @@ export function DocumentExtractionReviewDialog({
       api.get<BankAccount[]>(
         `/api/organizations/${organizationId}/dossiers/${dossierId}/bank-reconciliation/accounts`,
       ),
-    enabled: reviewDraft.document_type === "bank_statement",
+    enabled: !readOnly && reviewDraft.document_type === "bank_statement",
   });
   const reviewPreview = useQuery({
     queryKey: [
@@ -519,11 +521,15 @@ export function DocumentExtractionReviewDialog({
       >
         <DialogTitle>
           <Typography variant="h3">
-            Vérifier les données lues par l’IA
+            {readOnly
+              ? "Original et résultats enregistrés"
+              : "Vérifier les données lues par l’IA"}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {reviewTarget?.document.originalName} · comparez chaque valeur avec
-            la pièce originale avant validation.
+            {reviewTarget?.document.originalName} ·{" "}
+            {readOnly
+              ? "Consultation seule : aucune lecture IA ni réimportation."
+              : "comparez chaque valeur avec la pièce originale avant validation."}
           </Typography>
         </DialogTitle>
         <DialogContent dividers sx={{ p: 0 }}>
@@ -638,13 +644,21 @@ export function DocumentExtractionReviewDialog({
                 />
               )}
             </Box>
-            <Box sx={{ p: 2.5, overflowY: "auto", maxHeight: { lg: 720 } }}>
+            <Box
+              sx={{
+                p: 2.5,
+                overflowY: "auto",
+                maxHeight: { lg: 720 },
+                ...(readOnly ? { "& button": { display: "none" } } : {}),
+              }}
+            >
               <Typography variant="h4" sx={{ mb: 0.5 }}>
-                Données à confirmer
+                {readOnly ? "Données enregistrées" : "Données à confirmer"}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Corrigez les champs inexacts. Les contrôles comptables seront
-                relancés lors de l’approbation.
+                {readOnly
+                  ? `Statut : ${reviewTarget.status === "VALIDEE" ? "Extraction validée" : reviewTarget.status === "REJETEE" ? "Extraction rejetée" : "À vérifier"}. Les valeurs affichées sont les résultats sauvegardés après les éventuelles corrections.`
+                  : "Corrigez les champs inexacts. Les contrôles comptables seront relancés lors de l’approbation."}
               </Typography>
               {evidenceCount > 0 ? (
                 <Alert severity="info" sx={{ mb: 2 }}>
@@ -653,9 +667,10 @@ export function DocumentExtractionReviewDialog({
                 </Alert>
               ) : (
                 <Alert severity="warning" sx={{ mb: 2 }}>
-                  Aucune source OCR suffisamment sûre n’a été localisée. Les
-                  champs restent modifiables et aucune zone incertaine ne sera
-                  surlignée.
+                  Aucune source OCR suffisamment sûre n’a été localisée.{" "}
+                  {readOnly
+                    ? "Aucune zone incertaine ne sera surlignée."
+                    : "Les champs restent modifiables et aucune zone incertaine ne sera surlignée."}
                 </Alert>
               )}
               {reviewTarget?.validationIssues.map((issue) => (
@@ -673,7 +688,7 @@ export function DocumentExtractionReviewDialog({
                   visuelle reste obligatoire.
                 </Alert>
               )}
-              {isBankReview && (
+              {isBankReview && !readOnly && (
                 <SearchableSelect
                   label="Compte bancaire de destination"
                   value={reviewBankAccountId}
@@ -702,6 +717,7 @@ export function DocumentExtractionReviewDialog({
                   (field) => (
                     <TextField
                       key={field.path}
+                      slotProps={{ input: { readOnly } }}
                       size="small"
                       label={field.label}
                       value={readPath(reviewDraft, field.path)}
@@ -796,6 +812,7 @@ export function DocumentExtractionReviewDialog({
                               <td key={field}>
                                 <TextField
                                   size="small"
+                                  slotProps={{ input: { readOnly } }}
                                   value={String(transaction[field] ?? "")}
                                   onFocus={() =>
                                     focusEvidence(
@@ -892,6 +909,7 @@ export function DocumentExtractionReviewDialog({
                       >
                         <TextField
                           size="small"
+                          slotProps={{ input: { readOnly } }}
                           label="Libellé"
                           value={tax.label == null ? "" : String(tax.label)}
                           onFocus={() =>
@@ -906,6 +924,7 @@ export function DocumentExtractionReviewDialog({
                         />
                         <TextField
                           size="small"
+                          slotProps={{ input: { readOnly } }}
                           label="Montant"
                           value={tax.amount == null ? "" : String(tax.amount)}
                           onFocus={() =>
@@ -1014,6 +1033,7 @@ export function DocumentExtractionReviewDialog({
                               <td key={field}>
                                 <TextField
                                   size="small"
+                                  slotProps={{ input: { readOnly } }}
                                   value={String(line[field] ?? "")}
                                   onFocus={() =>
                                     focusEvidence(
@@ -1108,6 +1128,7 @@ export function DocumentExtractionReviewDialog({
                       >
                         <TextField
                           size="small"
+                          slotProps={{ input: { readOnly } }}
                           label="Nom du champ"
                           value={String(field.label ?? "")}
                           onChange={(event) =>
@@ -1120,6 +1141,7 @@ export function DocumentExtractionReviewDialog({
                         />
                         <TextField
                           size="small"
+                          slotProps={{ input: { readOnly } }}
                           label="Valeur"
                           value={String(field.value ?? "")}
                           onChange={(event) =>
@@ -1147,8 +1169,11 @@ export function DocumentExtractionReviewDialog({
               )}
               <TextField
                 label="Note de contrôle"
+                slotProps={{ input: { readOnly } }}
                 placeholder="Obligatoire en cas de rejet"
-                value={reviewComment}
+                value={
+                  readOnly ? (reviewTarget.reviewComment ?? "") : reviewComment
+                }
                 onChange={(event) => setReviewComment(event.target.value)}
                 multiline
                 minRows={3}
@@ -1159,57 +1184,66 @@ export function DocumentExtractionReviewDialog({
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button
-            variant="outlined"
-            disabled={
-              requestExtraction.isPending ||
-              reviewExtraction.isPending ||
-              !supportsDocumentExtraction(reviewTarget.document.category)
-            }
-            onClick={() =>
-              reviewTarget && requestExtraction.mutate(reviewTarget.documentId)
-            }
-          >
-            {requestExtraction.isPending
-              ? "Relance en cours…"
-              : "Relire avec l’IA"}
-          </Button>
+          {!readOnly && (
+            <>
+              <Button
+                variant="outlined"
+                disabled={
+                  requestExtraction.isPending ||
+                  reviewExtraction.isPending ||
+                  !supportsDocumentExtraction(reviewTarget.document.category)
+                }
+                onClick={() =>
+                  reviewTarget &&
+                  requestExtraction.mutate(reviewTarget.documentId)
+                }
+              >
+                {requestExtraction.isPending
+                  ? "Relance en cours…"
+                  : "Relire avec l’IA"}
+              </Button>
+            </>
+          )}
           <Button
             onClick={onClose}
             disabled={requestExtraction.isPending || reviewExtraction.isPending}
           >
             Fermer
           </Button>
-          <Button
-            color="error"
-            variant="outlined"
-            disabled={
-              !reviewComment.trim() ||
-              reviewExtraction.isPending ||
-              requestExtraction.isPending
-            }
-            onClick={() =>
-              reviewTarget &&
-              reviewExtraction.mutate({
-                documentId: reviewTarget.documentId,
-                decision: "REJETER",
-              })
-            }
-          >
-            Rejeter
-          </Button>
-          <Button
-            color="success"
-            variant="contained"
-            disabled={
-              reviewExtraction.isPending ||
-              requestExtraction.isPending ||
-              (isBankReview && !reviewBankAccountId)
-            }
-            onClick={approveExtraction}
-          >
-            Confirmer ces données
-          </Button>
+          {!readOnly && (
+            <>
+              <Button
+                color="error"
+                variant="outlined"
+                disabled={
+                  !reviewComment.trim() ||
+                  reviewExtraction.isPending ||
+                  requestExtraction.isPending
+                }
+                onClick={() =>
+                  reviewTarget &&
+                  reviewExtraction.mutate({
+                    documentId: reviewTarget.documentId,
+                    decision: "REJETER",
+                  })
+                }
+              >
+                Rejeter
+              </Button>
+              <Button
+                color="success"
+                variant="contained"
+                disabled={
+                  reviewExtraction.isPending ||
+                  requestExtraction.isPending ||
+                  (isBankReview && !reviewBankAccountId)
+                }
+                onClick={approveExtraction}
+              >
+                Confirmer ces données
+              </Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
       <Dialog

@@ -134,6 +134,7 @@ async function mockWorkspace(
     normalizedData: extraction,
     sourceData: extraction,
     validationIssues: [],
+    document: document(),
   });
   const statements: Record<string, unknown>[] = [];
   let undoCount = 0;
@@ -211,7 +212,8 @@ async function mockWorkspace(
     else if (path.endsWith("/bank-reconciliation/statements"))
       body = path.includes("/alpha/") ? statements : [];
     else if (path.endsWith("/bank-reconciliation/statements/statement"))
-      body = matchedStatement;
+      body =
+        statements.find((item) => item.id === "statement") ?? matchedStatement;
     else if (
       path.endsWith("/bank-reconciliation/transactions/transaction/unmatch")
     ) {
@@ -261,10 +263,13 @@ async function mockWorkspace(
     else if (path.endsWith("/extraction/review")) {
       reviewPayload = request.postDataJSON();
       status = reviewPayload?.decision === "REJETER" ? "REJETEE" : "VALIDEE";
+      if (reviewPayload?.correctedData)
+        Object.assign(extraction, reviewPayload.correctedData);
       if (status === "VALIDEE")
         statements.push({
           id: "statement",
           sourceFileName: image.name,
+          sourceDocumentId: "source",
           bankAccountId: reviewPayload?.bankAccountId,
           bankAccount: accounts.find(
             (account) => account.id === reviewPayload?.bankAccountId,
@@ -471,7 +476,9 @@ test("scan survives closing and refresh, then review imports once without leavin
   await review.getByLabel("Solde final", { exact: true }).fill("5224.800");
   await review.getByRole("button", { name: "Confirmer ces données" }).click();
   await expect(review).toBeHidden();
-  await expect(imports).toHaveCount(0);
+  await expect(
+    imports.getByText("Importé en banque", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByText("5 224,800", { exact: false }).first(),
   ).toBeVisible();
@@ -484,6 +491,38 @@ test("scan survives closing and refresh, then review imports once without leavin
   expect(mock.review()).toMatchObject({
     bankAccountId: "b",
     correctedData: { bank_statement: { closing_balance: "5224.800" } },
+  });
+  await imports
+    .getByRole("button", { name: "Original + résultats", exact: true })
+    .click();
+  const saved = page.getByRole("dialog", {
+    name: /Original et résultats enregistrés/,
+  });
+  await expect(saved.getByRole("img", { name: image.name })).toBeVisible();
+  await expect(saved.getByLabel("Solde final", { exact: true })).toHaveValue(
+    "5224.800",
+  );
+  await expect(
+    saved.getByLabel("Solde final", { exact: true }),
+  ).toHaveAttribute("readonly", "");
+  await expect(
+    saved.getByRole("button", { name: "Confirmer ces données" }),
+  ).toHaveCount(0);
+  await expect(
+    saved.getByRole("button", { name: "Relire avec l’IA" }),
+  ).toHaveCount(0);
+  await saved.getByRole("button", { name: "Fermer", exact: true }).click();
+  await page.getByRole("button", { name: /^Compte B .*Solde final/ }).click();
+  await page
+    .getByRole("button", { name: "Original + résultats", exact: true })
+    .last()
+    .click();
+  await expect(saved.getByRole("img", { name: image.name })).toBeVisible();
+  await saved.getByRole("button", { name: "Fermer", exact: true }).click();
+  expect(mock.counts()).toEqual({
+    uploadCount: 1,
+    extractionCount: 1,
+    imported: 1,
   });
 });
 

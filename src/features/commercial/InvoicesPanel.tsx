@@ -33,6 +33,7 @@ import { api, ApiError, downloadApiFile } from "../../api/client";
 import { SearchableSelect } from "../../components/SearchableSelect";
 import { InvoiceAiImports } from "./InvoiceAiImports";
 import { DocumentExtractionReviewDialog } from "../operations/DocumentExtractionReviewDialog";
+import { DocumentExtractionViewer } from "../operations/DocumentExtractionViewer";
 import type {
   AccountingJournal,
   AccountingDocument,
@@ -1197,6 +1198,9 @@ export function InvoicesPanel({
     null,
   );
   const [scanError, setScanError] = useState("");
+  const [resultsDocumentId, setResultsDocumentId] = useState<string | null>(
+    null,
+  );
   const [reviewTarget, setReviewTarget] =
     useState<DocumentExtractionReviewItem | null>(null);
   const [filter, setFilter] = useState("TOUTES");
@@ -1712,6 +1716,17 @@ export function InvoicesPanel({
               spacing={0.5}
               sx={{ justifyContent: { lg: "flex-end" }, flexWrap: "wrap" }}
             >
+              {canScan && invoice.sourceDocumentId && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() =>
+                    setResultsDocumentId(invoice.sourceDocumentId!)
+                  }
+                >
+                  Original + résultats
+                </Button>
+              )}
               {canManage && !archived && invoice.status === "BROUILLON" && (
                 <>
                   <Tooltip title="Modifier">
@@ -1797,6 +1812,14 @@ export function InvoicesPanel({
           </Box>
         ))}
       </Card>
+      {resultsDocumentId && (
+        <DocumentExtractionViewer
+          organizationId={organizationId}
+          dossierId={dossierId}
+          documentId={resultsDocumentId}
+          onClose={() => setResultsDocumentId(null)}
+        />
+      )}
       {dialogOpen && (
         <InvoiceDialog
           key={
