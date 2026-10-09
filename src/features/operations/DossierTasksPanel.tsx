@@ -576,7 +576,13 @@ function TaskDetailDialog({
                       sx={{ mt: 2 }}
                     >
                       {assignments
-                        .filter((entry) => entry.isActive)
+                        .filter(
+                          (entry) =>
+                            entry.isActive &&
+                            entry.assignmentRole !== "CLIENT" &&
+                            entry.cabinetRole.trim().toLowerCase() !==
+                              "portail client",
+                        )
                         .map((entry) => (
                           <MenuItem
                             key={entry.membershipId}
