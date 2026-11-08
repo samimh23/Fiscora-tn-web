@@ -21,7 +21,6 @@ import {
 import {
   AutoAwesomeOutlined,
   CloseRounded,
-  DescriptionOutlined,
   LaunchRounded,
   RestartAltRounded,
   SendRounded,
@@ -33,6 +32,12 @@ import { api, ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { useOptionalWorkSession } from "../time-tracking/WorkSessionContext";
 import { useCurrentDossier } from "../hooks/useDossierSelection";
+import { useAssistantRequest } from "../features/assistant/useAssistantRequest";
+import {
+  AssistantAnswerDetails,
+  AssistantRequestStatus,
+  AssistantStopButton,
+} from "../features/assistant/AssistantAnswerDetails";
 import {
   conversationStorageKey,
   fetchAssistantHistory,
@@ -50,6 +55,8 @@ interface WidgetAnswer {
   answer: string;
   citations: AssistantCitation[];
   actions?: AssistantAction[];
+  scope?: string;
+  model?: string;
 }
 
 function requestError(error: unknown) {
@@ -86,35 +93,37 @@ export function AssistantWidget() {
     dossierId,
     session?.user.id ?? "anonymous",
   );
-  const activeConversation = useRef(conversationKey);
-  useEffect(() => {
-    activeConversation.current = conversationKey;
-  }, [conversationKey]);
+  const historyEpoch = useRef(0);
   useEffect(() => {
     setMessages([]);
+    setQuestion("");
     setError("");
   }, [organizationId]);
 
   useEffect(() => {
+    const epoch = ++historyEpoch.current;
+    setHistoryLoading(false);
     if (!open || !organizationId || !dossierId) return;
     let active = true;
     const startedAt = readConversationStartedAt(conversationKey);
     setConversationStartedAt(startedAt);
     setMessages([]);
+    setQuestion("");
     setError("");
     setHistoryCursor(null);
     setHistoryLoading(true);
     fetchAssistantHistory(organizationId, dossierId, startedAt)
       .then((page) => {
-        if (!active) return;
+        if (!active || epoch !== historyEpoch.current) return;
         setMessages(turnsToMessages(page.items));
         setHistoryCursor(page.nextCursor);
       })
       .catch((reason) => {
-        if (active) setError(requestError(reason));
+        if (active && epoch === historyEpoch.current)
+          setError(requestError(reason));
       })
       .finally(() => {
-        if (active) setHistoryLoading(false);
+        if (active && epoch === historyEpoch.current) setHistoryLoading(false);
       });
     return () => {
       active = false;
@@ -126,8 +135,12 @@ export function AssistantWidget() {
   }, [messages]);
 
   const accountingEndpoint = `/api/organizations/${organizationId}/dossiers/${dossierId}/assistant`;
-  const ask = useMutation({
-    mutationFn: ({ text }: { text: string; conversationKey: string }) =>
+  const ask = useAssistantRequest<
+    WidgetAnswer,
+    { text: string; messageId: string }
+  >({
+    scope: `${conversationKey}:${conversationStartedAt}`,
+    request: ({ text }, signal) =>
       api.post<WidgetAnswer>(
         `/api/organizations/${organizationId}/assistant/ask`,
         {
@@ -136,24 +149,51 @@ export function AssistantWidget() {
           dossierId: dossierId || undefined,
           conversationStartedAt: conversationStartedAt || undefined,
         },
+        { signal },
       ),
     onSuccess: (result, request) => {
-      if (request.conversationKey !== activeConversation.current) return;
       setError("");
       setMessages((current) => [
-        ...current,
+        ...current.map((message) =>
+          message.id === request.messageId
+            ? { ...message, status: undefined, error: undefined }
+            : message,
+        ),
         {
           id: result.id,
           role: "assistant",
           text: result.answer,
           citations: result.citations,
           actions: result.actions,
+          scope: result.scope,
+          model: result.model,
         },
       ]);
     },
     onError: (reason, request) => {
-      if (request.conversationKey === activeConversation.current)
-        setError(requestError(reason));
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === request.messageId
+            ? { ...item, status: "failed", error: requestError(reason) }
+            : item,
+        ),
+      );
+      setQuestion(request.text);
+    },
+    onCancel: (request) => {
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === request.messageId
+            ? {
+                ...item,
+                status: "stopped",
+                error:
+                  "Attente arrêtée. Le traitement envoyé peut encore se terminer sur le serveur.",
+              }
+            : item,
+        ),
+      );
+      setQuestion(request.text);
     },
   });
 
@@ -170,9 +210,13 @@ export function AssistantWidget() {
   };
 
   const newConversation = () => {
+    ask.reset();
+    historyEpoch.current++;
+    setHistoryLoading(false);
     const startedAt = startNewConversation(conversationKey);
     setConversationStartedAt(startedAt);
     setMessages([]);
+    setQuestion("");
     setHistoryCursor(null);
     setError("");
   };
@@ -180,6 +224,7 @@ export function AssistantWidget() {
   const loadOlder = async () => {
     if (!historyCursor || historyLoading) return;
     setHistoryLoading(true);
+    const epoch = historyEpoch.current;
     try {
       const page = await fetchAssistantHistory(
         organizationId,
@@ -187,25 +232,40 @@ export function AssistantWidget() {
         conversationStartedAt,
         historyCursor,
       );
+      if (epoch !== historyEpoch.current) return;
       setMessages((current) => [...turnsToMessages(page.items), ...current]);
       setHistoryCursor(page.nextCursor);
     } catch (reason) {
-      setError(requestError(reason));
+      if (epoch === historyEpoch.current) setError(requestError(reason));
     } finally {
-      setHistoryLoading(false);
+      if (epoch === historyEpoch.current) setHistoryLoading(false);
     }
   };
 
   const send = () => {
     const clean = question.trim();
     if (!clean || !organizationId || ask.isPending || historyLoading) return;
+    const messageId = `user-${crypto.randomUUID()}`;
     setMessages((current) => [
       ...current,
-      { id: `user-${Date.now()}`, role: "user", text: clean },
+      { id: messageId, role: "user", text: clean },
     ]);
     setQuestion("");
     setError("");
-    ask.mutate({ text: clean, conversationKey });
+    ask.mutate({ text: clean, messageId });
+  };
+
+  const retryQuestion = (message: AssistantMessage) => {
+    if (ask.isPending || historyLoading) return;
+    setMessages((current) =>
+      current.map((item) =>
+        item.id === message.id
+          ? { ...item, status: undefined, error: undefined }
+          : item,
+      ),
+    );
+    setQuestion("");
+    ask.mutate({ text: message.text, messageId: message.id });
   };
 
   const launcherBottom = workSession ? 112 : 20;
@@ -412,28 +472,18 @@ export function AssistantWidget() {
                     <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
                       {message.text}
                     </Typography>
-                    {message.citations?.length ? (
-                      <Stack sx={{ mt: 1, gap: 0.5 }}>
-                        {message.citations.slice(0, 3).map((citation) => (
-                          <Chip
-                            key={citation.chunkId}
-                            size="small"
-                            icon={<DescriptionOutlined />}
-                            label={citation.sourceName}
-                            variant="outlined"
-                            onClick={
-                              citation.path
-                                ? () => navigate(citation.path!)
-                                : undefined
-                            }
-                            sx={{
-                              bgcolor: "white",
-                              justifyContent: "flex-start",
-                            }}
-                          />
-                        ))}
-                      </Stack>
-                    ) : null}
+                    {message.role === "assistant" && (
+                      <AssistantAnswerDetails
+                        message={message}
+                        organizationId={organizationId}
+                        dossierId={dossierId}
+                        compact
+                      />
+                    )}
+                    <AssistantRequestStatus
+                      message={message}
+                      onRetry={() => retryQuestion(message)}
+                    />
                     {message.actions?.length ? (
                       <Stack
                         direction="row"
@@ -459,12 +509,13 @@ export function AssistantWidget() {
                   <Stack
                     direction="row"
                     spacing={1}
-                    sx={{ alignItems: "center" }}
+                    sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
                   >
                     <CircularProgress size={16} />
                     <Typography variant="caption" color="text.secondary">
                       Recherche dans les guides et sources…
                     </Typography>
+                    <AssistantStopButton onStop={ask.cancel} />
                   </Stack>
                 )}
                 <div ref={endRef} />

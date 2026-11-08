@@ -1,0 +1,10 @@
+@layer theme, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+@plugin "daisyui" {
+  include: button, badge, properties, rootcolor;
+  prefix: chat-;
+  root: ".fiscora-chat-tools";
+  themes: light --default;
+  logs: false;
+}

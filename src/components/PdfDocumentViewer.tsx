@@ -28,12 +28,14 @@ export function PdfDocumentViewer({
   sourcePath,
   originalName,
   highlight,
+  initialPage = 1,
   minHeight = 500,
   maxHeight = 720,
 }: {
   sourcePath: string;
   originalName: string;
   highlight?: PdfEvidenceHighlight | null;
+  initialPage?: number;
   minHeight?: number;
   maxHeight?: number;
 }) {
@@ -80,8 +82,7 @@ export function PdfDocumentViewer({
         setDocument(pdf);
       })
       .catch(() => {
-        if (active)
-          setError("Le PDF ne peut pas être affiché dans Fiscora.");
+        if (active) setError("Le PDF ne peut pas être affiché dans Fiscora.");
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -94,13 +95,13 @@ export function PdfDocumentViewer({
   }, [sourcePath]);
 
   useEffect(() => {
-    if (!document || !highlight) return;
+    if (!document) return;
     const targetPage = Math.min(
       document.numPages,
-      Math.max(1, Math.trunc(highlight.page || 1)),
+      Math.max(1, Math.trunc(highlight?.page || initialPage || 1)),
     );
     setPageNumber(targetPage);
-  }, [document, highlight]);
+  }, [document, highlight, initialPage]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -224,7 +225,10 @@ export function PdfDocumentViewer({
             </IconButton>
           </span>
         </Tooltip>
-        <Typography variant="caption" sx={{ minWidth: 42, textAlign: "center" }}>
+        <Typography
+          variant="caption"
+          sx={{ minWidth: 42, textAlign: "center" }}
+        >
           {Math.round(zoom * 100)} %
         </Typography>
         <Tooltip title="Agrandir">

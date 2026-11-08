@@ -14,6 +14,8 @@ export interface AssistantCitation {
     | "FINANCIAL_REPORT"
     | "PARTY_BALANCE";
   path?: string;
+  excerpt?: string;
+  pages?: number[];
 }
 
 export interface AssistantAction {
@@ -27,6 +29,10 @@ export interface AssistantMessage {
   text: string;
   citations?: AssistantCitation[];
   actions?: AssistantAction[];
+  scope?: string;
+  model?: string;
+  status?: "failed" | "stopped";
+  error?: string;
 }
 
 interface AssistantHistoryTurn {
@@ -36,6 +42,8 @@ interface AssistantHistoryTurn {
   answer: string;
   citations: AssistantCitation[];
   actions?: AssistantAction[];
+  scope?: string;
+  model?: string;
 }
 
 export interface AssistantHistoryCursor {
@@ -81,6 +89,12 @@ export function turnsToMessages(
       text: turn.answer,
       citations: turn.citations,
       actions: turn.actions,
+      scope:
+        turn.scope ??
+        (turn.citations.some((c) => c.kind === "PRODUCT_HELP")
+          ? "PRODUCT_HELP"
+          : undefined),
+      model: turn.model,
     },
   ]);
 }

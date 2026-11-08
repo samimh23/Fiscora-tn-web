@@ -42,7 +42,7 @@ jobs:
       - name: Test session renewal
         run: npm run test:session
 
-      - name: Test invoice imports and tax identities
+      - name: Test invoice workflows and assistant request safety
         run: npm run test:workflows
 
       - name: Test document extraction eligibility
@@ -59,6 +59,9 @@ jobs:
 
       - name: Verify dossier deletion confirmations and permissions
         run: npm run test:e2e -- e2e/dossier-deletion.spec.ts --project=desktop --project=mobile
+
+      - name: Verify assistant sources, retry and stale-response protection
+        run: npm run test:e2e -- e2e/assistant-reliability.spec.ts e2e/assistant-live-finance.spec.ts --project=desktop --project=mobile
 
   deploy-staging:
     name: Deploy validated frontend to staging

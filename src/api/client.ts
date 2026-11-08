@@ -169,8 +169,13 @@ export async function fetchApiFile(path: string): Promise<Blob> {
 
 export const api = {
   get: <T>(path: string) => apiRequest<T>(path),
-  post: <T>(path: string, body?: unknown) =>
+  post: <T>(
+    path: string,
+    body?: unknown,
+    options: Pick<RequestInit, "signal"> = {},
+  ) =>
     apiRequest<T>(path, {
+      ...options,
       method: "POST",
       body: body === undefined ? undefined : JSON.stringify(body),
     }),

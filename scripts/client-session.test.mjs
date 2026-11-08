@@ -31,6 +31,16 @@ function load(fetch) {
   return api;
 }
 
+test('POST forwards AbortSignal so stopping the assistant cancels the browser wait', async () => {
+  const controller = new AbortController();
+  const api = load(async (_url, options) => {
+    assert.equal(options.signal, controller.signal);
+    assert.equal(options.method, 'POST');
+    return json({ ok: true });
+  });
+  await api.api.post('/ask', { question: 'hello' }, { signal: controller.signal });
+});
+
 test('JSON and file requests share one token rotation', async () => {
   let calls = 0;
   const api = load(async (url, options) => {
