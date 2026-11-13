@@ -785,6 +785,12 @@ export interface BusinessInvoice {
   withholdingBase: string;
   withholdingRate: string | null;
   withholdingAmount: string;
+  taxSnapshot?: {
+    withholding?: {
+      natureCode?: string;
+      baseMode?: "MANUAL" | "TTC_EXCLUDING_STAMP";
+    } | null;
+  } | null;
   grossAmount: string;
   netPayable: string;
   paidAmount: string;

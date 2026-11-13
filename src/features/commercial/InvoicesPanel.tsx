@@ -171,6 +171,7 @@ function InvoiceDialog({
   withholdingRates: FiscalWithholdingRate[];
 }) {
   const queryClient = useQueryClient();
+  const savedWithholding = invoice?.taxSnapshot?.withholding;
   const [form, setForm] = useState<Form>(() =>
     invoice
       ? {
@@ -198,8 +199,12 @@ function InvoiceDialog({
               ? invoice.exchangeRate
               : "",
           stampDuty: invoice.stampDuty,
-          withholdingNature: "",
-          withholdingBase: invoice.withholdingBase,
+          withholdingNature: savedWithholding?.natureCode ?? "",
+          withholdingBase:
+            savedWithholding?.natureCode &&
+            savedWithholding.baseMode !== "TTC_EXCLUDING_STAMP"
+              ? invoice.withholdingBase
+              : "",
           sourceCommercialDocumentId: invoice.sourceCommercialDocumentId ?? "",
           sourceDocumentId: invoice.sourceDocumentId ?? "",
           notes: invoice.notes ?? "",
@@ -432,7 +437,8 @@ function InvoiceDialog({
             : undefined,
         stampDuty: form.stampDuty || undefined,
         withholdingNature: form.withholdingNature.trim() || undefined,
-        withholdingBase: form.withholdingBase || undefined,
+        withholdingBase:
+          (form.withholdingNature && form.withholdingBase) || undefined,
         sourceCommercialDocumentId:
           form.sourceCommercialDocumentId || undefined,
         sourceDocumentId: form.sourceDocumentId || undefined,
@@ -1016,7 +1022,12 @@ function InvoiceDialog({
             label="Nature de retenue"
             value={form.withholdingNature}
             onChange={(event) => set("withholdingNature", event.target.value)}
-            helperText="Taux officiel applicable à la date"
+            helperText={
+              form.withholdingNature === "RS_1_5_ACHATS" &&
+              form.kind === "FACTURE"
+                ? "Seuil de 1 000 TND TTC pour une facture isolée. Vérifiez la retenue en cas de règlement groupé."
+                : "Taux officiel applicable à la date"
+            }
           >
             <MenuItem value="">Aucune retenue</MenuItem>
             {applicableWithholdingRates.map((rate) => (
@@ -1032,7 +1043,11 @@ function InvoiceDialog({
                 label="Base de retenue"
                 value={form.withholdingBase}
                 onChange={(event) => set("withholdingBase", event.target.value)}
-                helperText="Vide = total HT"
+                helperText={
+                  savedWithholding && !savedWithholding.baseMode
+                    ? "Ancienne base conservée. Effacez-la pour utiliser le total TTC hors timbre."
+                    : "Vide = total TTC hors timbre."
+                }
               />
               <SearchableSelect
                 label="Compte retenue"
