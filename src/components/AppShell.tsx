@@ -43,6 +43,7 @@ import {
   AssessmentOutlined,
   BusinessCenterOutlined,
   CalendarMonthOutlined,
+  CalculateOutlined,
   CreditCardOutlined,
   DashboardOutlined,
   DescriptionOutlined,
@@ -51,6 +52,8 @@ import {
   ExpandMoreRounded,
   FolderOutlined,
   GroupsOutlined,
+  Inventory2Outlined,
+  LanguageOutlined,
   MenuRounded,
   NotificationsNoneOutlined,
   PaidOutlined,
@@ -132,6 +135,18 @@ const navSections: Array<{
         icon: AssessmentOutlined,
         permission: "financial_statements.view",
       },
+      {
+        label: "Immobilisations",
+        path: "/immobilisations",
+        icon: Inventory2Outlined,
+        permission: "fixed_assets.view",
+      },
+      {
+        label: "Commerce extérieur",
+        path: "/commerce-exterieur",
+        icon: LanguageOutlined,
+        permission: "foreign_trade.view",
+      },
     ],
   },
   {
@@ -150,6 +165,18 @@ const navSections: Array<{
         path: "/declarations",
         icon: TimelineOutlined,
         permission: "declarations.view",
+      },
+      {
+        label: "Fiscal annuel",
+        path: "/fiscal-annuel",
+        icon: CalculateOutlined,
+        permission: "declarations.view",
+      },
+      {
+        label: "Paie & CNSS",
+        path: "/paie",
+        icon: PaidOutlined,
+        permission: "payroll.view",
       },
       {
         label: "Paramètres fiscaux",
@@ -187,6 +214,12 @@ const navSections: Array<{
         path: "/rentabilite",
         icon: QueryStatsOutlined,
         permission: "profitability.view",
+      },
+      {
+        label: "Assurance qualité",
+        path: "/qualite",
+        icon: TaskAltOutlined,
+        permission: "quality_assurance.view",
       },
       {
         label: "Équipe & accès",

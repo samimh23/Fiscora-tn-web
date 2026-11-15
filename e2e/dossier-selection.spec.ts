@@ -48,7 +48,21 @@ const dossier = (id: string, legalName: string) => ({
 });
 const items = [dossier("alpha", "Alpha SARL"), dossier("beta", "Beta SARL")];
 
-async function mockWorkspace(page: Page) {
+async function mockWorkspace(
+  page: Page,
+  { extraPermissions = [], sharedPermissions = [] }: {
+    extraPermissions?: string[];
+    sharedPermissions?: string[];
+  } = {},
+) {
+  const workspaceOrganizations = organizations.map((organization) => ({
+    ...organization,
+    permissions: [
+      ...organization.permissions,
+      ...sharedPermissions,
+      ...(organization.id === "org-a" ? extraPermissions : []),
+    ],
+  }));
   page.on("pageerror", (error) =>
     console.error("Browser error:", error.message),
   );
@@ -70,7 +84,7 @@ async function mockWorkspace(page: Page) {
       if (!localStorage.getItem("compta-tn.organization"))
         localStorage.setItem("compta-tn.organization", "org-a");
     },
-    { organizations, user },
+    { organizations: workspaceOrganizations, user },
   );
   await page.route("**/api/**", async (route) => {
     const url = new URL(route.request().url());
@@ -81,7 +95,8 @@ async function mockWorkspace(page: Page) {
     }
     requests.push(path);
     let body: unknown = [];
-    if (path === "/api/auth/me") body = { ...user, organizations };
+    if (path === "/api/auth/me")
+      body = { ...user, organizations: workspaceOrganizations };
     else if (/\/dossiers$/.test(path))
       body = {
         items: path.includes("org-b")
@@ -100,6 +115,17 @@ async function mockWorkspace(page: Page) {
     else if (path.endsWith("/assistant/index-status"))
       body = { pending: 0, processing: 0, ready: 0, failed: 0 };
     else if (path.endsWith("/work-sessions/active")) body = null;
+    else if (path.endsWith("/quality-assurance"))
+      body = {
+        totals: {
+          dossiersChecked: 0,
+          averageScore: 0,
+          BLOCKER: 0,
+          WARNING: 0,
+          INFO: 0,
+        },
+        dossiers: [],
+      };
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -143,6 +169,53 @@ test.describe("shared dossier selection (mocked API)", () => {
     await expect(
       page.getByRole("heading", { name: "Beta SARL", exact: true }),
     ).toBeVisible();
+  });
+
+  test("module links are permission-aware and keep the active dossier", async ({
+    page,
+  }) => {
+    await mockWorkspace(page, {
+      extraPermissions: [
+        "payroll.view",
+        "declarations.view",
+        "fixed_assets.view",
+        "foreign_trade.view",
+        "quality_assurance.view",
+      ],
+      sharedPermissions: ["fiscal_settings.view", "billing.view"],
+    });
+    await page.goto("/documents?dossierId=alpha");
+    const sidebar = page.getByRole("navigation");
+    await sidebar.getByRole("button", { name: "Fiscal & social" }).click();
+    await sidebar.getByRole("button", { name: "Travail du cabinet" }).click();
+    const modules = [
+      ["Immobilisations", "/immobilisations", "Immobilisations"],
+      [
+        "Commerce extérieur",
+        "/commerce-exterieur",
+        "Devises & commerce extérieur",
+      ],
+      ["Fiscal annuel", "/fiscal-annuel", "Fiscal annuel"],
+      ["Paie & CNSS", "/paie", "Paie & CNSS"],
+      ["Assurance qualité", "/qualite", "Assurance qualité"],
+    ];
+    for (const [label, path, heading] of modules) {
+      const link = sidebar.getByRole("link", { name: label, exact: true });
+      await expect(link).toHaveAttribute("href", `${path}?dossierId=alpha`);
+      await link.click();
+      await expect(page).toHaveURL(`${path}?dossierId=alpha`);
+      await expect(
+        page.getByRole("heading", { name: heading, exact: true }),
+      ).toBeVisible();
+    }
+    await page.getByRole("combobox", { name: "Cabinet", exact: true }).click();
+    await page.getByRole("option", { name: "Cabinet B", exact: true }).click();
+    await expect(sidebar.getByRole("link", { name: "Honoraires" })).toBeVisible();
+    for (const [label] of modules) {
+      await expect(
+        sidebar.getByRole("link", { name: label, exact: true }),
+      ).toHaveCount(0);
+    }
   });
 
   test("assistant uses the global selection and one cached dossier list", async ({
