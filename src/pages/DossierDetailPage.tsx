@@ -98,11 +98,22 @@ export function DossierDetailPage() {
   const { organization, can } = useAuth();
   const organizationId = organization?.id ?? "";
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState(
+  const [selectedTab, setSelectedTab] = useState(
     searchParams.get("espace") === "suivi" ? "tasks" : "overview",
   );
+  const openConversation =
+    searchParams.get("espace") === "messages" && can("client_portal.view");
+  const tab = openConversation ? "client-messages" : selectedTab;
+  const setTab = (value: string) => {
+    setSelectedTab(value);
+    if (openConversation) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("espace");
+      setSearchParams(next, { replace: true });
+    }
+  };
   const [editOpen, setEditOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<DossierContact | null>(

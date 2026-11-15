@@ -39,6 +39,7 @@ import {
 import {
   AccountBalanceOutlined,
   AddRounded,
+  ArrowForwardOutlined,
   AdminPanelSettingsOutlined,
   AssessmentOutlined,
   BusinessCenterOutlined,
@@ -76,6 +77,27 @@ import { useClientPortalRealtimeNotifications } from "../realtime/clientPortal";
 import { useCurrentDossier } from "../hooks/useDossierSelection";
 
 const drawerWidth = 248;
+
+function notificationHref(target: NotificationItem["target"]) {
+  if (!target) return null;
+  if (target.kind === "conversation")
+    return `/dossiers/${encodeURIComponent(target.dossierId)}?espace=messages`;
+  const params = new URLSearchParams({ dossierId: target.dossierId });
+  if (target.kind === "obligation") {
+    params.set("obligationId", target.id);
+    params.set("year", String(target.year));
+    return `/obligations?${params}`;
+  }
+  if (target.kind === "document") {
+    params.set("documentId", target.id);
+    return `/documents?${params}`;
+  }
+  if (target.kind === "task") {
+    params.set("taskId", target.id);
+    return `/taches?${params}`;
+  }
+  return null;
+}
 
 type NavItem = {
   label: string;
@@ -674,6 +696,7 @@ export function AppShell() {
             <>
               <Tooltip title={t("Notifications")}>
                 <IconButton
+                  aria-label={t("Notifications")}
                   onClick={(event) =>
                     setNotificationsAnchor(event.currentTarget)
                   }
@@ -720,66 +743,92 @@ export function AppShell() {
                     </Typography>
                   </Box>
                 )}
-                {!notifications.isLoading && !notifications.data?.length && (
-                  <Box sx={{ p: 4, textAlign: "center" }}>
-                    <NotificationsNoneOutlined
-                      sx={{ fontSize: 32, color: "text.disabled" }}
-                    />
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mt: 1 }}
-                    >
-                      Aucune notification
-                    </Typography>
-                  </Box>
+                {notifications.isError && (
+                  <Typography variant="body2" color="error" sx={{ p: 2 }}>
+                    {t("Impossible de charger les notifications.")}
+                  </Typography>
                 )}
-                {notifications.data?.slice(0, 20).map((item) => (
-                  <MenuItem
-                    key={item.id}
-                    onClick={() => {
-                      if (!item.readAtUtc) markNotificationRead.mutate(item.id);
-                    }}
-                    sx={{
-                      whiteSpace: "normal",
-                      alignItems: "flex-start",
-                      gap: 1,
-                      bgcolor: item.readAtUtc ? "transparent" : "#fff9ec",
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        width: 8,
-                        height: 8,
-                        mt: 0.7,
-                        borderRadius: "50%",
-                        flexShrink: 0,
-                        bgcolor: item.readAtUtc ? "grey.300" : "secondary.main",
-                      }}
-                    />
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{ alignItems: "center" }}
+                {!notifications.isLoading &&
+                  !notifications.isError &&
+                  !notifications.data?.length && (
+                    <Box sx={{ p: 4, textAlign: "center" }}>
+                      <NotificationsNoneOutlined
+                        sx={{ fontSize: 32, color: "text.disabled" }}
+                      />
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mt: 1 }}
                       >
-                        <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
-                          {item.title}
-                        </Typography>
-                        {!item.readAtUtc && (
-                          <Chip
-                            label="Nouveau"
-                            size="small"
-                            color="secondary"
-                          />
-                        )}
-                      </Stack>
-                      <Typography variant="body2" color="text.secondary">
-                        {item.message}
+                        Aucune notification
                       </Typography>
                     </Box>
-                  </MenuItem>
-                ))}
+                  )}
+                {notifications.data?.map((item) => {
+                  const href = notificationHref(item.target);
+                  return (
+                    <MenuItem
+                      key={item.id}
+                      {...(href ? { component: RouterLink, to: href } : {})}
+                      onClick={() => {
+                        if (!item.readAtUtc)
+                          markNotificationRead.mutate(item.id);
+                        if (href) setNotificationsAnchor(null);
+                      }}
+                      sx={{
+                        whiteSpace: "normal",
+                        alignItems: "flex-start",
+                        gap: 1,
+                        bgcolor: item.readAtUtc ? "transparent" : "#fff9ec",
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          mt: 0.7,
+                          borderRadius: "50%",
+                          flexShrink: 0,
+                          bgcolor: item.readAtUtc
+                            ? "grey.300"
+                            : "secondary.main",
+                        }}
+                      />
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          sx={{ alignItems: "center" }}
+                        >
+                          <Typography sx={{ fontWeight: 700, fontSize: 14 }}>
+                            {item.title}
+                          </Typography>
+                          {!item.readAtUtc && (
+                            <Chip
+                              label="Nouveau"
+                              size="small"
+                              color="secondary"
+                            />
+                          )}
+                        </Stack>
+                        <Typography variant="body2" color="text.secondary">
+                          {item.body ?? item.message}
+                        </Typography>
+                      </Box>
+                      {href && (
+                        <ArrowForwardOutlined
+                          fontSize="small"
+                          sx={{
+                            mt: 0.25,
+                            color: "primary.main",
+                            transform:
+                              direction === "rtl" ? "scaleX(-1)" : undefined,
+                          }}
+                        />
+                      )}
+                    </MenuItem>
+                  );
+                })}
               </Menu>
             </>
           )}

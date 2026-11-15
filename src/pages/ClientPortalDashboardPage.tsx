@@ -265,7 +265,7 @@ export function ClientPortalDashboardPage() {
           kind: "messages",
           urgent: false,
           title: notification.title,
-          detail: notification.message,
+          detail: notification.body ?? notification.message ?? "",
           link: "/portail/notifications",
         });
       }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -759,6 +760,23 @@ export function DossierTasksPanel({
   const [search, setSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linkedTaskId = searchParams.get("taskId");
+  const linkedTask = useQuery({
+    queryKey: [
+      "dossier-tasks",
+      organizationId,
+      dossierId,
+      "notification",
+      linkedTaskId,
+    ],
+    queryFn: () =>
+      api.get<WorkTask>(
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/tasks/${encodeURIComponent(linkedTaskId!)}`,
+      ),
+    enabled: Boolean(linkedTaskId),
+    retry: false,
+  });
 
   const query = useQuery({
     queryKey: ["dossier-tasks", organizationId, dossierId, status],
@@ -768,11 +786,16 @@ export function DossierTasksPanel({
       ),
   });
 
-  const tasks = query.data?.items ?? [];
+  const tasks = useMemo(() => query.data?.items ?? [], [query.data?.items]);
   const selected = useMemo(
     () => tasks.find((item) => item.id === selectedId) ?? null,
     [tasks, selectedId],
   );
+  const detailTask = linkedTaskId
+    ? (tasks.find((task) => task.id === linkedTaskId) ??
+      linkedTask.data ??
+      null)
+    : selected;
   const visibleTasks = useMemo(() => {
     const needle = search.trim().toLocaleLowerCase("fr");
     if (!needle) return tasks;
@@ -1088,9 +1111,16 @@ export function DossierTasksPanel({
         dossierId={dossierId}
       />
       <TaskDetailDialog
-        task={selected}
-        open={Boolean(selected)}
-        onClose={() => setSelectedId(null)}
+        task={detailTask}
+        open={Boolean(detailTask)}
+        onClose={() => {
+          setSelectedId(null);
+          if (linkedTaskId) {
+            const next = new URLSearchParams(searchParams);
+            next.delete("taskId");
+            setSearchParams(next, { replace: true });
+          }
+        }}
         organizationId={organizationId}
         dossierId={dossierId}
         assignments={assignments}
@@ -1098,6 +1128,9 @@ export function DossierTasksPanel({
         canAssign={canAssign && !archived}
         canValidate={canValidate && !archived}
       />
+      {linkedTaskId && linkedTask.isError && (
+        <Alert severity="warning">Cette tâche n’est plus accessible.</Alert>
+      )}
     </>
   );
 }

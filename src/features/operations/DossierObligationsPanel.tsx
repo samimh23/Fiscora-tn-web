@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Alert,
@@ -70,7 +71,14 @@ export function DossierObligationsPanel({
   canFile: boolean;
 }) {
   const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState(currentYear);
+  const [selectedYear, setYear] = useState(currentYear);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linkedObligationId = searchParams.get("obligationId");
+  const linkedYear = searchParams.get("year");
+  const year =
+    linkedObligationId && linkedYear && /^\d{4}$/.test(linkedYear)
+      ? Number(linkedYear)
+      : selectedYear;
   const [selected, setSelected] = useState<FiscalObligation | null>(null);
   const [actionType, setActionType] = useState<ActionType | null>(null);
   const [comment, setComment] = useState("");
@@ -85,6 +93,15 @@ export function DossierObligationsPanel({
         `/api/organizations/${organizationId}/dossiers/${dossierId}/obligations?year=${year}`,
       ),
   });
+  const hasLinkedObligation = Boolean(
+    query.data?.some((item) => item.id === linkedObligationId),
+  );
+  useEffect(() => {
+    if (!linkedObligationId || !hasLinkedObligation) return;
+    const row = document.getElementById(`obligation-${linkedObligationId}`);
+    row?.focus({ preventScroll: true });
+    row?.scrollIntoView({ block: "center" });
+  }, [dossierId, linkedObligationId, hasLinkedObligation]);
   const refresh = async () => {
     await queryClient.invalidateQueries({
       queryKey: ["dossier-obligations", organizationId, dossierId],
@@ -175,13 +192,30 @@ export function DossierObligationsPanel({
               size="small"
               label="Année"
               value={year}
-              onChange={(event) => setYear(Number(event.target.value))}
+              onChange={(event) => {
+                setYear(Number(event.target.value));
+                if (linkedObligationId) {
+                  const next = new URLSearchParams(searchParams);
+                  next.delete("obligationId");
+                  next.delete("year");
+                  setSearchParams(next, { replace: true });
+                }
+              }}
             >
-              {[currentYear - 1, currentYear, currentYear + 1].map((value) => (
-                <MenuItem key={value} value={value}>
-                  {value}
-                </MenuItem>
-              ))}
+              {[
+                ...new Set([
+                  currentYear - 1,
+                  currentYear,
+                  currentYear + 1,
+                  year,
+                ]),
+              ]
+                .sort()
+                .map((value) => (
+                  <MenuItem key={value} value={value}>
+                    {value}
+                  </MenuItem>
+                ))}
             </TextField>
             {canManage && !archived && (
               <Button
@@ -212,6 +246,11 @@ export function DossierObligationsPanel({
             Impossible de charger le calendrier fiscal.
           </Alert>
         )}
+        {linkedObligationId && query.isSuccess && !hasLinkedObligation && (
+          <Alert severity="warning" sx={{ mx: 2.5, mb: 2 }}>
+            Cette obligation n’est plus accessible.
+          </Alert>
+        )}
         {!query.isLoading && !query.data?.length && (
           <Box sx={{ p: 6, textAlign: "center" }}>
             <CalendarMonthOutlined
@@ -228,6 +267,8 @@ export function DossierObligationsPanel({
         {query.data?.map((item) => (
           <Box
             key={item.id}
+            id={`obligation-${item.id}`}
+            tabIndex={linkedObligationId === item.id ? -1 : undefined}
             sx={{
               px: 3,
               py: 2.2,
@@ -240,7 +281,12 @@ export function DossierObligationsPanel({
               },
               gap: 2,
               alignItems: "center",
-              bgcolor: item.isLate ? "#fff8f6" : "transparent",
+              bgcolor:
+                linkedObligationId === item.id
+                  ? "action.selected"
+                  : item.isLate
+                    ? "#fff8f6"
+                    : "transparent",
             }}
           >
             <Box>

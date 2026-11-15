@@ -112,7 +112,7 @@ export function ClientPortalNotificationsPage() {
                     )}
                   </Stack>
                   <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                    {item.message}
+                    {item.body ?? item.message}
                   </Typography>
                   <Typography variant="caption" color="text.disabled">
                     {new Intl.DateTimeFormat("fr-TN", {

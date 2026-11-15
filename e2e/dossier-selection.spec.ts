@@ -218,6 +218,133 @@ test.describe("shared dossier selection (mocked API)", () => {
     }
   });
 
+  test("notification clicks open the exact fiscal obligation, document, conversation, and task", async ({
+    page,
+  }) => {
+    await mockWorkspace(page, {
+      extraPermissions: [
+        "notifications.view",
+        "obligations.view",
+        "client_portal.view",
+        "tasks.view",
+      ],
+    });
+    const dossierId = "beta";
+    const notices = [
+      {
+        id: "n1",
+        title: "Obligation en retard",
+        body: "Beta SARL · Déclaration mensuelle · Échéance : 19/12/2024",
+        target: { kind: "obligation", dossierId, id: "deadline", year: 2024 },
+        readAtUtc: null,
+      },
+      {
+        id: "n2",
+        title: "Pièce client reçue",
+        body: "Le document de novembre est disponible.",
+        target: { kind: "document", dossierId, id: "document" },
+        readAtUtc: null,
+      },
+      {
+        id: "n3",
+        title: "Nouveau message de Beta SARL",
+        target: { kind: "conversation", dossierId },
+        readAtUtc: null,
+      },
+      {
+        id: "n4",
+        title: "Nouvelle tâche affectée",
+        target: { kind: "task", dossierId, id: "task" },
+        readAtUtc: null,
+      },
+    ];
+    const apiBase = "**/api/organizations/org-a";
+    await page.route(`${apiBase}/notifications`, (route) =>
+      route.fulfill({ json: notices }),
+    );
+    await page.route(`${apiBase}/notifications/*/read`, (route) =>
+      route.fulfill({ json: {} }),
+    );
+    await page.route(
+      `${apiBase}/dossiers/beta/obligations?year=2024`,
+      (route) =>
+        route.fulfill({
+          json: [
+            {
+              id: "deadline",
+              code: "MONTHLY",
+              name: "Déclaration mensuelle",
+              periodYear: 2024,
+              periodMonth: 12,
+              dueOn: "2024-12-19",
+              isLate: true,
+              status: "NON_COMMENCEE",
+            },
+          ],
+        }),
+    );
+    await page.route(
+      `${apiBase}/dossiers/beta/documents/document/preview`,
+      (route) =>
+        route.fulfill({
+          json: {
+            kind: "text",
+            originalName: "novembre.txt",
+            content: "Pièce de novembre",
+          },
+        }),
+    );
+    await page.route(`${apiBase}/dossiers/beta/tasks/task`, (route) =>
+      route.fulfill({
+        json: {
+          id: "task",
+          dossierId,
+          title: "Vérifier novembre",
+          status: "A_FAIRE",
+          priority: "NORMALE",
+          dueOn: "2024-12-19",
+          checklist: [],
+          checklistCompleted: 0,
+          checklistTotal: 0,
+        },
+      }),
+    );
+    await page.goto("/documents?dossierId=alpha");
+    const open = async (title: string, id: string) => {
+      await page
+        .getByRole("button", { name: "Notifications", exact: true })
+        .click();
+      const notice = page.getByRole("menuitem", { name: new RegExp(title) });
+      const read = page.waitForRequest(
+        (req) =>
+          req.url().endsWith(`/notifications/${id}/read`) &&
+          req.method() === "PATCH",
+      );
+      await notice.click();
+      await read;
+      await expect(
+        page.getByRole("menuitem", { name: new RegExp(title) }),
+      ).not.toBeVisible();
+    };
+    await open("Obligation en retard", "n1");
+    await expect(page).toHaveURL(
+      /obligations\?dossierId=beta&obligationId=deadline&year=2024/,
+    );
+    await expect(page.locator("#obligation-deadline")).toContainText(
+      "Déclaration mensuelle",
+    );
+    await open("Pièce client reçue", "n2");
+    await expect(page.getByRole("dialog")).toContainText("Pièce de novembre");
+    await page.getByRole("button", { name: "Fermer", exact: true }).click();
+    await open("Nouveau message de Beta SARL", "n3");
+    await expect(page).toHaveURL(/dossiers\/beta\?espace=messages/);
+    await expect(
+      page.getByText("Messages du portail client", { exact: true }),
+    ).toBeVisible();
+    await open("Nouvelle tâche affectée", "n4");
+    await expect(page.getByRole("dialog")).toContainText("Vérifier novembre");
+  });
+
   test("assistant uses the global selection and one cached dossier list", async ({
     page,
   }) => {

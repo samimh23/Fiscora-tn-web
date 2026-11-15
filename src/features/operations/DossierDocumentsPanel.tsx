@@ -218,9 +218,23 @@ export function DossierDocumentsPanel({
   const [deleteTarget, setDeleteTarget] = useState<AccountingDocument | null>(
     null,
   );
-  const [previewTarget, setPreviewTarget] = useState<AccountingDocument | null>(
-    null,
-  );
+  const [manualPreviewTarget, setPreviewTarget] = useState<Pick<
+    AccountingDocument,
+    "id" | "originalName"
+  > | null>(null);
+  const notificationDocumentId = searchParams.get("documentId");
+  const previewTarget = notificationDocumentId
+    ? { id: notificationDocumentId, originalName: "" }
+    : manualPreviewTarget;
+  const closePreview = () => {
+    setPreviewTarget(null);
+    setPreviewSheet(0);
+    if (notificationDocumentId) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("documentId");
+      setSearchParams(next, { replace: true });
+    }
+  };
   const [previewSheet, setPreviewSheet] = useState(0);
   const [files, setFiles] = useState<File[]>([]);
   const [uploadCategory, setUploadCategory] = useState("BOITE_RECEPTION");
@@ -288,7 +302,7 @@ export function DossierDocumentsPanel({
     ],
     queryFn: async () => {
       const result = await api.get<DocumentPreview>(
-        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${previewTarget!.id}/preview`,
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${encodeURIComponent(previewTarget!.id)}/preview`,
       );
       void queryClient.invalidateQueries({
         queryKey: ["dossier-documents", organizationId, dossierId],
@@ -509,10 +523,10 @@ export function DossierDocumentsPanel({
         reason instanceof ApiError ? reason.message : "Action impossible.",
       ),
   });
-  const download = async (document: AccountingDocument) => {
+  const download = async (document: Pick<AccountingDocument, "id">) => {
     try {
       const response = await api.get<{ url: string }>(
-        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${document.id}/download`,
+        `/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${encodeURIComponent(document.id)}/download`,
       );
       void queryClient.invalidateQueries({
         queryKey: ["dossier-documents", organizationId, dossierId],
@@ -1362,7 +1376,7 @@ export function DossierDocumentsPanel({
       </Box>
       <Dialog
         open={Boolean(previewTarget)}
-        onClose={() => setPreviewTarget(null)}
+        onClose={closePreview}
         fullWidth
         maxWidth="xl"
         slotProps={{ paper: { sx: { height: { xs: "94vh", md: "88vh" } } } }}
@@ -1380,7 +1394,7 @@ export function DossierDocumentsPanel({
               Aperçu du document
             </Typography>
             <Typography variant="body2" color="text.secondary" noWrap>
-              {previewTarget?.originalName}
+              {preview.data?.originalName || previewTarget?.originalName || "Document"}
             </Typography>
           </Box>
           {previewTarget && (
@@ -1432,7 +1446,7 @@ export function DossierDocumentsPanel({
           )}
           {preview.data?.kind === "pdf" && previewTarget && (
             <PdfDocumentViewer
-              sourcePath={`/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${previewTarget.id}/content`}
+              sourcePath={`/api/organizations/${organizationId}/dossiers/${dossierId}/documents/${encodeURIComponent(previewTarget.id)}/content`}
               originalName={preview.data.originalName}
               minHeight={500}
               maxHeight={760}
@@ -1572,7 +1586,7 @@ export function DossierDocumentsPanel({
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPreviewTarget(null)}>Fermer</Button>
+          <Button onClick={closePreview}>Fermer</Button>
         </DialogActions>
       </Dialog>
       {resultsDocumentId && (

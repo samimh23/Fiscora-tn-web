@@ -589,10 +589,16 @@ export interface BillingSummary {
 export interface NotificationItem {
   id: string;
   title: string;
-  message: string;
+  body?: string;
+  message?: string;
   type: string;
   readAtUtc: string | null;
   createdAtUtc: string;
+  target?:
+    | { kind: "obligation"; dossierId: string; id: string; year: number }
+    | { kind: "conversation"; dossierId: string }
+    | { kind: "document" | "task"; dossierId: string; id: string }
+    | null;
 }
 
 export interface ProfitabilitySummary {
