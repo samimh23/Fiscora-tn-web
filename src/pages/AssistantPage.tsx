@@ -198,6 +198,7 @@ export function AssistantPage() {
         ),
         {
           id: result.id,
+          turnId: result.id,
           role: "assistant",
           text: result.answer,
           citations: result.citations,

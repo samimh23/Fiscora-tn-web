@@ -18,6 +18,11 @@ export interface AssistantCitation {
   pages?: number[];
 }
 
+export interface AssistantFeedback {
+  rating: 1 | -1;
+  comment: string | null;
+}
+
 export interface AssistantAction {
   label: string;
   path: string;
@@ -33,6 +38,9 @@ export interface AssistantMessage {
   model?: string;
   status?: "failed" | "stopped";
   error?: string;
+  /** Server id of the stored answer, used to rate it. */
+  turnId?: string;
+  feedback?: AssistantFeedback | null;
 }
 
 interface AssistantHistoryTurn {
@@ -44,6 +52,7 @@ interface AssistantHistoryTurn {
   actions?: AssistantAction[];
   scope?: string;
   model?: string;
+  feedback?: AssistantFeedback | null;
 }
 
 export interface AssistantHistoryCursor {
@@ -95,6 +104,8 @@ export function turnsToMessages(
           ? "PRODUCT_HELP"
           : undefined),
       model: turn.model,
+      turnId: turn.id,
+      feedback: turn.feedback ?? null,
     },
   ]);
 }
@@ -114,4 +125,22 @@ export function fetchAssistantHistory(
   return api.get<AssistantHistoryPage>(
     `/api/organizations/${organizationId}/dossiers/${dossierId}/assistant/history?${params.toString()}`,
   );
+}
+
+/** Rates one of my own answers: 1 = useful, -1 = wrong, 0 = remove. */
+export function sendAssistantFeedback(
+  organizationId: string,
+  turnId: string,
+  rating: 1 | -1 | 0,
+  comment?: string,
+) {
+  return api.post<{ id: string; feedback: AssistantFeedback | null }>(
+    `/api/organizations/${organizationId}/assistant/turns/${turnId}/feedback`,
+    { rating, ...(comment ? { comment } : {}) },
+  );
+}
+
+/** Labels such as "S4" that the answer text actually cites. */
+export function citedLabels(text: string) {
+  return new Set([...text.matchAll(/\[(S\d+)\]/g)].map((match) => match[1]));
 }

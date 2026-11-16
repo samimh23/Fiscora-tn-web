@@ -3,7 +3,7 @@ import { Box, Typography } from "@mui/material";
 export function Brand({ dark = false }: { dark?: boolean }) {
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1.4 }}>
-      <span className="brand-mark">CT</span>
+      <span className="brand-mark">F</span>
       <Box>
         <Typography
           sx={{
@@ -12,7 +12,7 @@ export function Brand({ dark = false }: { dark?: boolean }) {
             lineHeight: 1.05,
           }}
         >
-          Compta TN
+          Fiscora
         </Typography>
         <Typography
           variant="caption"

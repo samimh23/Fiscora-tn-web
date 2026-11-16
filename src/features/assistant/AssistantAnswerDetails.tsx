@@ -8,12 +8,19 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import { api, fetchApiFile } from "../../api/client";
 import type { DocumentPreview } from "../../types/api";
 import { PdfDocumentViewer } from "../../components/PdfDocumentViewer";
-import type { AssistantCitation, AssistantMessage } from "./history";
+import {
+  citedLabels,
+  sendAssistantFeedback,
+  type AssistantCitation,
+  type AssistantFeedback,
+  type AssistantMessage,
+} from "./history";
 import {
   assistantMode,
   isDocumentCitation,
@@ -160,7 +167,17 @@ export function AssistantAnswerDetails({
   const navigate = useNavigate();
   const [source, setSource] = useState<AssistantCitation | null>(null);
   const [showAll, setShowAll] = useState(false);
-  const citations = message.citations ?? [];
+  const allCitations = message.citations ?? [];
+  // Show the sources the answer actually cites ([S4]); the others the model
+  // read stay one click away instead of crowding the answer.
+  const labels = citedLabels(message.text);
+  const cited = labels.size
+    ? allCitations.filter((citation) => labels.has(citation.label))
+    : allCitations;
+  const others = allCitations.filter((citation) => !cited.includes(citation));
+  const visible = showAll ? allCitations : cited;
+  const citations = compact && !showAll ? visible.slice(0, 3) : visible;
+  const hidden = allCitations.length - citations.length;
   return (
     <Stack spacing={1} sx={{ mt: 1 }} className="fiscora-chat-tools">
       <div>
@@ -168,38 +185,35 @@ export function AssistantAnswerDetails({
           {assistantMode(message)}
         </span>
       </div>
-      {(showAll || !compact ? citations : citations.slice(0, 3)).map(
-        (citation) => (
-          <div key={citation.chunkId}>
-            <button
-              type="button"
-              className="chat-btn chat-btn-xs"
-              style={{
-                height: "auto",
-                minHeight: "1.6rem",
-                maxWidth: "100%",
-                whiteSpace: "normal",
-                textAlign: "start",
-              }}
-              disabled={
-                !isDocumentCitation(citation) &&
-                !safeAssistantPath(citation.path)
+      {citations.map((citation) => (
+        <div key={citation.chunkId}>
+          <button
+            type="button"
+            className="chat-btn chat-btn-xs"
+            style={{
+              height: "auto",
+              minHeight: "1.6rem",
+              maxWidth: "100%",
+              whiteSpace: "normal",
+              textAlign: "start",
+            }}
+            disabled={
+              !isDocumentCitation(citation) && !safeAssistantPath(citation.path)
+            }
+            onClick={() => {
+              if (isDocumentCitation(citation)) setSource(citation);
+              else {
+                const path = safeAssistantPath(citation.path);
+                if (path) navigate(path);
               }
-              onClick={() => {
-                if (isDocumentCitation(citation)) setSource(citation);
-                else {
-                  const path = safeAssistantPath(citation.path);
-                  if (path) navigate(path);
-                }
-              }}
-            >
-              [{citation.label}] {citation.sourceName}
-              {citation.pageNumber ? ` · p. ${citation.pageNumber}` : ""}
-            </button>
-          </div>
-        ),
-      )}
-      {compact && citations.length > 3 && (
+            }}
+          >
+            [{citation.label}] {citation.sourceName}
+            {citation.pageNumber ? ` · p. ${citation.pageNumber}` : ""}
+          </button>
+        </div>
+      ))}
+      {(hidden > 0 || (showAll && (others.length > 0 || compact))) && (
         <div>
           <button
             type="button"
@@ -208,9 +222,16 @@ export function AssistantAnswerDetails({
           >
             {showAll
               ? "Réduire les sources"
-              : `Voir les ${citations.length} sources`}
+              : `+ ${hidden} autre(s) source(s) consultée(s)`}
           </button>
         </div>
+      )}
+      {message.turnId && organizationId && (
+        <AnswerFeedback
+          organizationId={organizationId}
+          turnId={message.turnId}
+          initial={message.feedback ?? null}
+        />
       )}
       {source && organizationId && dossierId && (
         <SourcePreview
@@ -220,6 +241,128 @@ export function AssistantAnswerDetails({
           dossierId={dossierId}
           onClose={() => setSource(null)}
         />
+      )}
+    </Stack>
+  );
+}
+
+/** 👍 / 👎 on an answer, with an optional comment on 👎. */
+function AnswerFeedback({
+  organizationId,
+  turnId,
+  initial,
+}: {
+  organizationId: string;
+  turnId: string;
+  initial: AssistantFeedback | null;
+}) {
+  const [rating, setRating] = useState<1 | -1 | null>(initial?.rating ?? null);
+  const [comment, setComment] = useState(initial?.comment ?? "");
+  const [askComment, setAskComment] = useState(false);
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">(
+    "idle",
+  );
+
+  const save = async (next: 1 | -1 | 0, text?: string) => {
+    setState("saving");
+    try {
+      await sendAssistantFeedback(organizationId, turnId, next, text);
+      setRating(next === 0 ? null : next);
+      setState("saved");
+    } catch {
+      setState("error");
+    }
+  };
+
+  const vote = (next: 1 | -1) => {
+    if (rating === next) {
+      setAskComment(false);
+      void save(0);
+      return;
+    }
+    setAskComment(next === -1);
+    void save(next, next === -1 ? comment.trim() || undefined : undefined);
+  };
+
+  return (
+    <Stack spacing={0.75}>
+      <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
+        <Typography variant="caption" sx={{ color: "text.secondary" }}>
+          Cette réponse est-elle utile ?
+        </Typography>
+        <button
+          type="button"
+          className="chat-btn chat-btn-xs"
+          aria-pressed={rating === 1}
+          aria-label="Réponse utile"
+          title="Réponse utile"
+          disabled={state === "saving"}
+          onClick={() => vote(1)}
+          style={
+            rating === 1 ? { borderColor: "#1f7a5c", fontWeight: 700 } : {}
+          }
+        >
+          👍
+        </button>
+        <button
+          type="button"
+          className="chat-btn chat-btn-xs"
+          aria-pressed={rating === -1}
+          aria-label="Réponse incorrecte ou inutile"
+          title="Réponse incorrecte ou inutile"
+          disabled={state === "saving"}
+          onClick={() => vote(-1)}
+          style={
+            rating === -1 ? { borderColor: "#b42318", fontWeight: 700 } : {}
+          }
+        >
+          👎
+        </button>
+        {state === "saved" && rating !== null && (
+          <Typography variant="caption" role="status">
+            Merci, avis enregistré.
+          </Typography>
+        )}
+        {state === "error" && (
+          <Typography
+            variant="caption"
+            role="alert"
+            sx={{ color: "error.main" }}
+          >
+            Avis non enregistré, réessayez.
+          </Typography>
+        )}
+      </Stack>
+      {askComment && rating === -1 && (
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: "center" }}>
+          <TextField
+            size="small"
+            fullWidth
+            slotProps={{ htmlInput: { maxLength: 1000 } }}
+            placeholder="Qu’est-ce qui ne va pas ? (facultatif)"
+            aria-label="Qu’est-ce qui ne va pas ?"
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                void save(-1, comment.trim() || undefined);
+                setAskComment(false);
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="chat-btn chat-btn-xs"
+            disabled={state === "saving"}
+            onClick={() => {
+              void save(-1, comment.trim() || undefined);
+              setAskComment(false);
+            }}
+          >
+            Envoyer
+          </button>
+        </Stack>
       )}
     </Stack>
   );

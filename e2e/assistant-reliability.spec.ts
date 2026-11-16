@@ -132,7 +132,7 @@ async function prepare(
     [];
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
-    if (!path.startsWith('/api/')) return route.continue();
+    if (!path.startsWith("/api/")) return route.continue();
     if (path.endsWith("/assistant/ask") && options.ask)
       return options.ask(route);
     if (path.includes("/documents/")) {
@@ -203,6 +203,10 @@ test("citations open the authenticated original at its known page, without guess
     fullPage: true,
   });
   await source.getByRole("button", { name: "Fermer la source" }).click();
+  // The answer cites [S1]; the other sources it read are one click away.
+  await page
+    .getByRole("button", { name: "+ 3 autre(s) source(s) consultée(s)" })
+    .click();
   await page
     .getByRole("button", { name: "[S2] Statement.svg", exact: true })
     .click();
@@ -300,11 +304,11 @@ test("stopped requests and reset conversations cannot append a late answer", asy
   ).toHaveCount(0);
 });
 
-test("the compact widget exposes every source and the same original viewer", async ({
+test("the compact widget shows cited sources first, every source on demand, and the same original viewer", async ({
   page,
 }) => {
   await prepare(page, { history: [turn] });
-  await page.goto('/dossiers?dossierId=dossier');
+  await page.goto("/dossiers?dossierId=dossier");
   await page
     .getByRole("button", { name: /Ouvrir l’Assistant Fiscora/ })
     .click();
@@ -312,13 +316,19 @@ test("the compact widget exposes every source and the same original viewer", asy
     name: "Assistant Fiscora",
     exact: true,
   });
+  // Only the cited source shows first; the others are one click away.
   await expect(
-    widget.getByRole("button", { name: "Voir les 4 sources" }),
+    widget.getByRole("button", { name: "[S1] Invoice.pdf" }),
+  ).toBeVisible();
+  await expect(
+    widget.getByRole("button", { name: "+ 3 autre(s) source(s) consultée(s)" }),
   ).toBeVisible();
   await expect(
     widget.getByRole("button", { name: "[S4] Fourth.pdf" }),
   ).toHaveCount(0);
-  await widget.getByRole("button", { name: "Voir les 4 sources" }).click();
+  await widget
+    .getByRole("button", { name: "+ 3 autre(s) source(s) consultée(s)" })
+    .click();
   await expect(
     widget.getByRole("button", { name: "[S4] Fourth.pdf" }),
   ).toBeVisible();

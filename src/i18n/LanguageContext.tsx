@@ -9,8 +9,16 @@ import {
   type ReactNode,
 } from "react";
 import { arabicTranslations } from "./translations";
+import { arabicAdditions, englishTranslations } from "./translations-en";
 
-export type Language = "fr" | "ar";
+export type Language = "fr" | "ar" | "en";
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const LANGUAGES: Array<{ code: Language; label: string }> = [
+  { code: "fr", label: "Français" },
+  { code: "ar", label: "العربية" },
+  { code: "en", label: "English" },
+];
 
 type LanguageContextValue = {
   language: Language;
@@ -22,9 +30,51 @@ type LanguageContextValue = {
 
 const STORAGE_KEY = "compta-tn-language";
 const LanguageContext = createContext<LanguageContextValue | null>(null);
-const frenchTranslations = Object.fromEntries(
-  Object.entries(arabicTranslations).map(([fr, ar]) => [ar, fr]),
-);
+
+/** The interface is written in French; these map French to the others. */
+const DICTIONARIES: Record<Exclude<Language, "fr">, Record<string, string>> = {
+  ar: { ...arabicTranslations, ...arabicAdditions },
+  en: englishTranslations,
+};
+
+/** Texts built from a fixed French start, e.g. "Bonjour Sami". */
+const PREFIXES: Array<{ fr: string; ar: string; en: string }> = [
+  { fr: "Bonjour ", ar: "مرحباً ", en: "Hello " },
+  {
+    fr: "E-mail envoyé à ",
+    ar: "تم إرسال البريد الإلكتروني إلى ",
+    en: "Email sent to ",
+  },
+  { fr: "Ma journée, ", ar: "يومي، ", en: "My day, " },
+  {
+    fr: "Un seul écran pour savoir quoi traiter maintenant dans ",
+    ar: "شاشة واحدة لمعرفة ما يجب معالجته الآن في ",
+    en: "One screen to know what to handle now in ",
+  },
+  {
+    fr: "Déclaration mensuelle — ",
+    ar: "التصريح الشهري — ",
+    en: "Monthly return — ",
+  },
+  {
+    fr: "Déclaration CNSS trimestrielle — ",
+    ar: "التصريح الفصلي للصندوق الوطني للضمان الاجتماعي — ",
+    en: "Quarterly CNSS return — ",
+  },
+];
+
+/** Texts with a number inside, e.g. "+ 6 autre(s) source(s) consultée(s)". */
+const PATTERNS: Array<{
+  fr: RegExp;
+  ar: string;
+  en: string;
+}> = [
+  {
+    fr: /^\+ (\d+) autre\(s\) source\(s\) consultée\(s\)$/,
+    ar: "+ $1 مصادر أخرى تمت مراجعتها",
+    en: "+ $1 more source(s) consulted",
+  },
+];
 
 function preserveWhitespace(source: string, translated: string) {
   const leading = source.match(/^\s*/)?.[0] ?? "";
@@ -32,55 +82,70 @@ function preserveWhitespace(source: string, translated: string) {
   return `${leading}${translated}${trailing}`;
 }
 
-function translateValue(value: string, language: Language) {
+/** Translates a French interface text; anything unknown is left as it is. */
+// eslint-disable-next-line react-refresh/only-export-components
+export function translateFrench(value: string, language: Language) {
+  if (language === "fr") return value;
   const text = value.trim();
   if (!text) return value;
-  const dictionary =
-    language === "ar" ? arabicTranslations : frenchTranslations;
-  const translated = dictionary[text];
+  const translated = DICTIONARIES[language][text];
   if (translated) return preserveWhitespace(value, translated);
-
-  if (language === "ar") {
-    if (text.startsWith("Bonjour ")) {
+  for (const prefix of PREFIXES) {
+    if (text.startsWith(prefix.fr)) {
       return preserveWhitespace(
         value,
-        `مرحباً ${text.slice("Bonjour ".length)}`,
+        `${prefix[language]}${text.slice(prefix.fr.length)}`,
       );
     }
-    if (text.startsWith("E-mail envoyé à ")) {
+  }
+  for (const pattern of PATTERNS) {
+    if (pattern.fr.test(text)) {
       return preserveWhitespace(
         value,
-        `تم إرسال البريد الإلكتروني إلى ${text.slice("E-mail envoyé à ".length)}`,
-      );
-    }
-    if (text.startsWith("Ma journée, ")) {
-      return preserveWhitespace(
-        value,
-        `يومي، ${text.slice("Ma journée, ".length)}`,
-      );
-    }
-    if (
-      text.startsWith("Un seul écran pour savoir quoi traiter maintenant dans ")
-    ) {
-      return preserveWhitespace(
-        value,
-        `شاشة واحدة لمعرفة ما يجب معالجته الآن في ${text.slice("Un seul écran pour savoir quoi traiter maintenant dans ".length)}`,
-      );
-    }
-    if (text.startsWith("Déclaration mensuelle — ")) {
-      return preserveWhitespace(
-        value,
-        `التصريح الشهري — ${text.slice("Déclaration mensuelle — ".length)}`,
-      );
-    }
-    if (text.startsWith("Déclaration CNSS trimestrielle — ")) {
-      return preserveWhitespace(
-        value,
-        `التصريح الفصلي للصندوق الوطني للضمان الاجتماعي — ${text.slice("Déclaration CNSS trimestrielle — ".length)}`,
+        text.replace(pattern.fr, pattern[language]),
       );
     }
   }
   return value;
+}
+
+/**
+ * Remembers each text's French original, so switching languages (or a React
+ * re-render) never translates an already translated text a second time:
+ * English "Balance" (for "Solde") must not become "Trial balance".
+ */
+const textSources = new WeakMap<Node, { source: string; output: string }>();
+const attributeSources = new WeakMap<
+  Element,
+  Map<string, { source: string; output: string }>
+>();
+
+function localizeText(node: Text, language: Language) {
+  const known = textSources.get(node);
+  const source = known && known.output === node.data ? known.source : node.data;
+  const next = translateFrench(source, language);
+  if (next !== node.data) node.data = next;
+  textSources.set(node, { source, output: next });
+}
+
+function localizeAttribute(
+  element: Element,
+  attribute: string,
+  language: Language,
+) {
+  const value = element.getAttribute(attribute);
+  if (!value) return;
+  let known = attributeSources.get(element);
+  if (!known) {
+    known = new Map();
+    attributeSources.set(element, known);
+  }
+  const previous = known.get(attribute);
+  const source =
+    previous && previous.output === value ? previous.source : value;
+  const next = translateFrench(source, language);
+  if (next !== value) element.setAttribute(attribute, next);
+  known.set(attribute, { source, output: next });
 }
 
 function localizeElement(root: ParentNode, language: Language) {
@@ -91,8 +156,7 @@ function localizeElement(root: ParentNode, language: Language) {
     const parent = node.parentElement;
     if (!parent || parent.closest("script, style, [data-i18n-ignore='true']"))
       continue;
-    const next = translateValue(node.data, language);
-    if (next !== node.data) node.data = next;
+    localizeText(node, language);
   }
 
   const elements =
@@ -100,36 +164,43 @@ function localizeElement(root: ParentNode, language: Language) {
       ? [root, ...root.querySelectorAll("*")]
       : [...root.querySelectorAll("*")];
   for (const element of elements) {
+    if (element.closest("[data-i18n-ignore='true']")) continue;
     for (const attribute of ["placeholder", "title", "aria-label", "alt"]) {
-      const value = element.getAttribute(attribute);
-      if (!value) continue;
-      const next = translateValue(value, language);
-      if (next !== value) element.setAttribute(attribute, next);
+      localizeAttribute(element, attribute, language);
     }
   }
 }
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => {
+function savedLanguage(): Language {
+  try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return saved === "ar" ? "ar" : "fr";
-  });
+    return saved === "ar" || saved === "en" ? saved : "fr";
+  } catch {
+    return "fr";
+  }
+}
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguageState] = useState<Language>(savedLanguage);
   const applying = useRef(false);
   const direction: "ltr" | "rtl" = language === "ar" ? "rtl" : "ltr";
 
   const setLanguage = useCallback((next: Language) => {
-    localStorage.setItem(STORAGE_KEY, next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // The choice still applies for this visit.
+    }
     setLanguageState(next);
   }, []);
 
-  const toggleLanguage = useCallback(
-    () => setLanguage(language === "fr" ? "ar" : "fr"),
-    [language, setLanguage],
-  );
+  const toggleLanguage = useCallback(() => {
+    const order: Language[] = ["fr", "ar", "en"];
+    setLanguage(order[(order.indexOf(language) + 1) % order.length]);
+  }, [language, setLanguage]);
 
   const t = useCallback(
-    (text: string) =>
-      language === "ar" ? (arabicTranslations[text] ?? text) : text,
+    (text: string) => translateFrench(text, language),
     [language],
   );
 
