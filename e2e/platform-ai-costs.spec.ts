@@ -17,6 +17,7 @@ const organization = {
 
 const aiUsage = {
   days: 30,
+  trackingSinceUtc: "2026-11-01T08:00:00Z",
   totals: { calls: 412, problems: 9, costUsd: 0.8421 },
   features: [
     {
@@ -124,7 +125,7 @@ const costs = {
   },
 };
 
-async function setup(page: Page, language?: string) {
+async function setup(page: Page, language?: string, usage: unknown = aiUsage) {
   page.on("pageerror", (error) => console.error(`pageerror: ${error.message}`));
   page.on("console", (message) => {
     if (message.type() === "error") console.error(message.text());
@@ -173,7 +174,7 @@ async function setup(page: Page, language?: string) {
         services: [],
         alerts: [],
       };
-    else if (path === "/api/platform-admin/ai-usage") body = aiUsage;
+    else if (path === "/api/platform-admin/ai-usage") body = usage;
     else if (path === "/api/platform-admin/assistant-feedback") {
       feedbackFilters.push(url.searchParams.get("rating") ?? "");
       body = url.searchParams.get("rating") === "down" ? ratedAnswers : [];
@@ -222,13 +223,17 @@ test("platform admin sees Azure spend against the budget and the Google export s
   await page.goto("/administration-plateforme?section=couts");
   await expect(page.getByText("52.83 $", { exact: true })).toBeVisible();
   await expect(
-    page.getByText("Budget mensuel : 132 % / 40.00 $", { exact: true }),
+    page.getByText("Budget mensuel : 40.00 $", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("row").filter({ hasText: "Azure App Service" }),
   ).toContainText("36.05 $");
+  await expect(page.getByText("132 %", { exact: true })).toBeVisible();
   await expect(page.getByText("Export en attente")).toBeVisible();
   await expect(page.getByText(/jeu de données billing_export/)).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: /Ouvrir l’export de facturation/ }),
+  ).toHaveAttribute("href", "https://console.cloud.google.com/billing/export");
 });
 
 test("the AI and cost screens are translated in English", async ({ page }) => {
@@ -238,7 +243,32 @@ test("the AI and cost screens are translated in English", async ({ page }) => {
   await expect(page.getByText("90 % useful", { exact: true })).toBeVisible();
   await page.goto("/administration-plateforme?section=couts");
   await expect(
-    page.getByText("Monthly budget: 132 % / 40.00 $", { exact: true }),
+    page.getByText("Monthly budget: 40.00 $", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("Export pending")).toBeVisible();
+});
+
+test("before the first recorded call, the AI page explains why it is empty", async ({
+  page,
+}) => {
+  await setup(page, undefined, {
+    ...aiUsage,
+    trackingSinceUtc: null,
+    totals: { calls: 0, problems: 0, costUsd: 0 },
+    features: [],
+    daily: [],
+    assistant: { ...aiUsage.assistant, likes: 0, dislikes: 0, weekly: [] },
+  });
+  await page.goto("/administration-plateforme?section=ia");
+  await expect(
+    page.getByText(/Le suivi des appels IA est actif/),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Aucun appel à afficher pour cette période."),
+  ).toBeVisible();
+  await expect(page.getByText(/Aucun avis pour l’instant/)).toBeVisible();
+  await page.getByRole("button", { name: "7 j", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "7 j", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
 });

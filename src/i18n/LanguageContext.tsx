@@ -48,6 +48,12 @@ const PREFIXES: Array<{ fr: string; ar: string; en: string }> = [
     ar: "الميزانية الشهرية: ",
     en: "Monthly budget: ",
   },
+  { fr: "Données de ", ar: "بيانات الساعة ", en: "Data from " },
+  {
+    fr: "Aucun appel IA sur cette période. Suivi actif depuis le ",
+    ar: "لا توجد استدعاءات في هذه الفترة. التتبع مفعّل منذ ",
+    en: "No AI calls in this period. Tracking active since ",
+  },
   {
     fr: "E-mail envoyé à ",
     ar: "تم إرسال البريد الإلكتروني إلى ",

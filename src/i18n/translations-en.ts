@@ -624,6 +624,40 @@ export const englishTranslations: Record<string, string> = {
   "Conditions d’utilisation": "Terms of use",
   Créer: "Create",
   "Saisie sans chronomètre": "Entered without the timer",
+  "Utilisation de l’IA": "AI usage",
+  "Appels, erreurs, temps de réponse, jetons et coût estimé de chaque service d’IA.":
+    "Calls, errors, response time, tokens and estimated cost of each AI service.",
+  "7 j": "7 d",
+  "30 j": "30 d",
+  "90 j": "90 d",
+  "Le suivi des appels IA est actif : les chiffres apparaîtront dès la prochaine question à l’assistant ou la prochaine extraction. Les réponses données avant son activation restent comptées dans la qualité de l’assistant ci-dessous.":
+    "AI call tracking is active: figures appear with the next assistant question or document extraction. Answers given before it started are still counted in the assistant quality below.",
+  "Aucun appel à afficher pour cette période.":
+    "No calls to show for this period.",
+  "Aucun avis pour l’instant : les utilisateurs notent les réponses avec 👍 ou 👎 sous chaque réponse de l’assistant.":
+    "No ratings yet: users rate answers with 👍 or 👎 under each assistant answer.",
+  "Dépenses cloud": "Cloud spending",
+  "Azure et Google Cloud publient leurs coûts avec quelques heures de retard. Les alertes de budget partent par e-mail.":
+    "Azure and Google Cloud publish costs a few hours late. Budget alerts are sent by email.",
+  "Google Cloud n’envoie pas encore ses coûts : l’export de facturation vers BigQuery n’est pas activé, ou il vient de l’être (les premières lignes arrivent sous 24 h).":
+    "Google Cloud is not sending its costs yet: the billing export to BigQuery is not enabled, or was just enabled (the first rows arrive within 24 h).",
+  "La lecture des coûts Google Cloud n’est pas configurée.":
+    "Reading Google Cloud costs is not configured.",
+  "La lecture des coûts Azure n’est pas configurée.":
+    "Reading Azure costs is not configured.",
+  "Activation (une seule fois, par un administrateur de facturation)":
+    "Activation (once, by a billing administrator)",
+  "Ouvrez Facturation › Export de la facturation.":
+    "Open Billing › Billing export.",
+  "Dans « Données de coût d’utilisation standard », cliquez sur Modifier les paramètres.":
+    "Under “Standard usage cost”, click Edit settings.",
+  "Choisissez le projet fiscora-ai et le jeu de données billing_export, puis enregistrez.":
+    "Choose project fiscora-ai and dataset billing_export, then save.",
+  "Ouvrir l’export de facturation": "Open billing export",
+  "· alertes e-mail à 50 %, 80 % et 100 % (déjà actives).":
+    "· email alerts at 50 %, 80 % and 100 % (already active).",
+  "Mois précédent": "Previous month",
+  "Coût par jour (30 jours)": "Cost per day (30 days)",
   "IA & assistant": "AI & assistant",
   "Suivez les appels IA, leurs erreurs, leur coût et les avis sur les réponses.":
     "Track AI calls, their errors, their cost and the ratings of answers.",
@@ -733,6 +767,40 @@ export const arabicAdditions: Record<string, string> = {
   "Conditions d’utilisation": "شروط الاستخدام",
   Créer: "إنشاء",
   "Saisie sans chronomètre": "أُدخل دون المؤقت",
+  "Utilisation de l’IA": "استخدام الذكاء الاصطناعي",
+  "Appels, erreurs, temps de réponse, jetons et coût estimé de chaque service d’IA.":
+    "الاستدعاءات والأخطاء وزمن الاستجابة والرموز والتكلفة التقديرية لكل خدمة ذكاء اصطناعي.",
+  "7 j": "7 أيام",
+  "30 j": "30 يومًا",
+  "90 j": "90 يومًا",
+  "Le suivi des appels IA est actif : les chiffres apparaîtront dès la prochaine question à l’assistant ou la prochaine extraction. Les réponses données avant son activation restent comptées dans la qualité de l’assistant ci-dessous.":
+    "تتبع استدعاءات الذكاء الاصطناعي مفعّل: ستظهر الأرقام مع السؤال التالي للمساعد أو الاستخراج التالي. الإجابات السابقة لتفعيله ما زالت محسوبة في جودة المساعد أدناه.",
+  "Aucun appel à afficher pour cette période.":
+    "لا توجد استدعاءات لعرضها في هذه الفترة.",
+  "Aucun avis pour l’instant : les utilisateurs notent les réponses avec 👍 ou 👎 sous chaque réponse de l’assistant.":
+    "لا توجد تقييمات بعد: يقيّم المستخدمون الإجابات بـ 👍 أو 👎 تحت كل إجابة من المساعد.",
+  "Dépenses cloud": "مصاريف السحابة",
+  "Azure et Google Cloud publient leurs coûts avec quelques heures de retard. Les alertes de budget partent par e-mail.":
+    "تنشر Azure وGoogle Cloud التكاليف بتأخير بضع ساعات. تُرسل تنبيهات الميزانية بالبريد الإلكتروني.",
+  "Google Cloud n’envoie pas encore ses coûts : l’export de facturation vers BigQuery n’est pas activé, ou il vient de l’être (les premières lignes arrivent sous 24 h).":
+    "لا ترسل Google Cloud تكاليفها بعد: تصدير الفوترة إلى BigQuery غير مفعّل، أو فُعّل للتو (تصل أولى البيانات خلال 24 ساعة).",
+  "La lecture des coûts Google Cloud n’est pas configurée.":
+    "قراءة تكاليف Google Cloud غير مُعدّة.",
+  "La lecture des coûts Azure n’est pas configurée.":
+    "قراءة تكاليف Azure غير مُعدّة.",
+  "Activation (une seule fois, par un administrateur de facturation)":
+    "التفعيل (مرة واحدة، من قبل مسؤول الفوترة)",
+  "Ouvrez Facturation › Export de la facturation.":
+    "افتح الفوترة › تصدير الفوترة.",
+  "Dans « Données de coût d’utilisation standard », cliquez sur Modifier les paramètres.":
+    "ضمن «بيانات تكلفة الاستخدام القياسية»، انقر على تعديل الإعدادات.",
+  "Choisissez le projet fiscora-ai et le jeu de données billing_export, puis enregistrez.":
+    "اختر المشروع fiscora-ai ومجموعة البيانات billing_export ثم احفظ.",
+  "Ouvrir l’export de facturation": "فتح تصدير الفوترة",
+  "· alertes e-mail à 50 %, 80 % et 100 % (déjà actives).":
+    "· تنبيهات بالبريد عند 50 % و80 % و100 % (مفعّلة).",
+  "Mois précédent": "الشهر السابق",
+  "Coût par jour (30 jours)": "التكلفة اليومية (30 يومًا)",
   "IA & assistant": "الذكاء الاصطناعي والمساعد",
   "Suivez les appels IA, leurs erreurs, leur coût et les avis sur les réponses.":
     "تابع استدعاءات الذكاء الاصطناعي وأخطاءها وتكلفتها وتقييمات الإجابات.",

@@ -18,6 +18,8 @@ export interface AiFeatureUsage {
 
 export interface AiUsageReport {
   days: number;
+  /** First recorded AI call ever, or null before any call. */
+  trackingSinceUtc: string | null;
   totals: { calls: number; problems: number; costUsd: number };
   features: AiFeatureUsage[];
   daily: Array<{
