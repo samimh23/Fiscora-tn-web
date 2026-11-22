@@ -5,6 +5,8 @@ import {
   EmailOutlined,
   GroupsOutlined,
   MonitorHeartOutlined,
+  PaidOutlined,
+  PsychologyOutlined,
   ReceiptLongOutlined,
   SyncRounded,
 } from "@mui/icons-material";
@@ -53,6 +55,19 @@ export const platformAdminSections = [
     icon: AutoAwesomeOutlined,
     description:
       "Collectez les exemples autorisés et exportez un dataset pour LoRA.",
+  },
+  {
+    key: "ia",
+    label: "IA & assistant",
+    icon: PsychologyOutlined,
+    description:
+      "Suivez les appels IA, leurs erreurs, leur coût et les avis sur les réponses.",
+  },
+  {
+    key: "couts",
+    label: "Coûts cloud",
+    icon: PaidOutlined,
+    description: "Suivez les dépenses Azure et Google Cloud et les budgets.",
   },
   {
     key: "supervision",

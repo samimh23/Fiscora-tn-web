@@ -41,6 +41,13 @@ const DICTIONARIES: Record<Exclude<Language, "fr">, Record<string, string>> = {
 const PREFIXES: Array<{ fr: string; ar: string; en: string }> = [
   { fr: "Bonjour ", ar: "مرحباً ", en: "Hello " },
   { fr: "Motif : ", ar: "السبب: ", en: "Reason: " },
+  { fr: "Mois dernier : ", ar: "الشهر الماضي: ", en: "Last month: " },
+  { fr: "Crédits : ", ar: "الأرصدة: ", en: "Credits: " },
+  {
+    fr: "Budget mensuel : ",
+    ar: "الميزانية الشهرية: ",
+    en: "Monthly budget: ",
+  },
   {
     fr: "E-mail envoyé à ",
     ar: "تم إرسال البريد الإلكتروني إلى ",
@@ -75,6 +82,18 @@ const PATTERNS: Array<{
     ar: "+ $1 مصادر أخرى تمت مراجعتها",
     en: "+ $1 more source(s) consulted",
   },
+  { fr: /^Sur (\d+) jours$/, ar: "خلال $1 يومًا", en: "Over $1 days" },
+  {
+    fr: /^([\d\s]+) appels concernés$/,
+    ar: "$1 استدعاءات معنية",
+    en: "$1 calls affected",
+  },
+  { fr: /^(\d+) % utiles$/, ar: "$1 % مفيدة", en: "$1 % useful" },
+  { fr: /^(\d+) réponses$/, ar: "$1 إجابة", en: "$1 answers" },
+  { fr: /^(\d+) utiles$/, ar: "$1 مفيدة", en: "$1 useful" },
+  { fr: /^(\d+) pas utiles$/, ar: "$1 غير مفيدة", en: "$1 not useful" },
+  { fr: /^(\d+) commentaires$/, ar: "$1 تعليقات", en: "$1 comments" },
+  { fr: /^(\d+) sans source$/, ar: "$1 بدون مصدر", en: "$1 without a source" },
 ];
 
 function preserveWhitespace(source: string, translated: string) {
