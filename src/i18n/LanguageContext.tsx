@@ -40,6 +40,7 @@ const DICTIONARIES: Record<Exclude<Language, "fr">, Record<string, string>> = {
 /** Texts built from a fixed French start, e.g. "Bonjour Sami". */
 const PREFIXES: Array<{ fr: string; ar: string; en: string }> = [
   { fr: "Bonjour ", ar: "مرحباً ", en: "Hello " },
+  { fr: "Motif : ", ar: "السبب: ", en: "Reason: " },
   {
     fr: "E-mail envoyé à ",
     ar: "تم إرسال البريد الإلكتروني إلى ",

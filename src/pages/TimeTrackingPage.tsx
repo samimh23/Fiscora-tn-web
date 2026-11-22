@@ -39,6 +39,7 @@ import { PageHeader } from "../components/PageHeader";
 import { useWorkSession } from "../time-tracking/WorkSessionContext";
 import type { PagedResponse, TimeEntry, WorkTask } from "../types/api";
 import { useDossierSelection } from "../hooks/useDossierSelection";
+import { durationChange, timerSpan } from "../time-tracking/entryTimes";
 
 const today = new Date().toISOString().slice(0, 10);
 
@@ -368,7 +369,43 @@ export function TimeTrackingPage() {
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell>{entry.durationHours} h</TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {entry.durationHours} h
+                    </Typography>
+                    {timerSpan(entry) ? (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: "block", whiteSpace: "nowrap" }}
+                      >
+                        {timerSpan(entry)}
+                      </Typography>
+                    ) : (
+                      entry.source === "MANUEL" && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ display: "block" }}
+                        >
+                          Saisie sans chronomètre
+                        </Typography>
+                      )
+                    )}
+                    {durationChange(entry) && (
+                      <Typography
+                        variant="caption"
+                        color="warning.dark"
+                        sx={{
+                          display: "block",
+                          fontWeight: 700,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {durationChange(entry)}
+                      </Typography>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Chip
                       size="small"
@@ -395,6 +432,15 @@ export function TimeTrackingPage() {
                       />
                     ) : (
                       <Chip size="small" color="success" label="Cohérent" />
+                    )}
+                    {entry.correctionReason && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ display: "block", mt: 0.5, maxWidth: 260 }}
+                      >
+                        {`Motif : ${entry.correctionReason}`}
+                      </Typography>
                     )}
                   </TableCell>
                   <TableCell>
@@ -462,7 +508,9 @@ export function TimeTrackingPage() {
         maxWidth="sm"
       >
         <DialogTitle>
-          {editingEntryId ? "Modifier le temps" : "Saisir un temps exceptionnel"}
+          {editingEntryId
+            ? "Modifier le temps"
+            : "Saisir un temps exceptionnel"}
         </DialogTitle>
         <DialogContent>
           <Alert severity="info" sx={{ mt: 1, mb: 2 }}>

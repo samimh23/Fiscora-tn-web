@@ -623,6 +623,7 @@ export const englishTranslations: Record<string, string> = {
   "Politique de confidentialité": "Privacy policy",
   "Conditions d’utilisation": "Terms of use",
   Créer: "Create",
+  "Saisie sans chronomètre": "Entered without the timer",
 };
 
 /** Arabic for the texts added with the English interface. */
@@ -659,4 +660,5 @@ export const arabicAdditions: Record<string, string> = {
   "Politique de confidentialité": "سياسة الخصوصية",
   "Conditions d’utilisation": "شروط الاستخدام",
   Créer: "إنشاء",
+  "Saisie sans chronomètre": "أُدخل دون المؤقت",
 };
