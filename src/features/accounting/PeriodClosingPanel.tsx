@@ -416,6 +416,11 @@ export function PeriodClosingPanel({
             minRows={3}
             value={note}
             onChange={(event) => setNote(event.target.value)}
+            helperText={
+              periodAction?.type === "reopen"
+                ? "Au moins 3 caractères, conservés dans le journal d’audit."
+                : undefined
+            }
           />
         </DialogContent>
         <DialogActions>
@@ -425,7 +430,7 @@ export function PeriodClosingPanel({
             color={periodAction?.type === "reopen" ? "warning" : "primary"}
             disabled={
               periodMutation.isPending ||
-              (periodAction?.type === "reopen" && !note.trim())
+              (periodAction?.type === "reopen" && note.trim().length < 3)
             }
             onClick={() => periodMutation.mutate()}
           >

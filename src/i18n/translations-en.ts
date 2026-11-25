@@ -624,6 +624,7 @@ export const englishTranslations: Record<string, string> = {
   "Conditions d’utilisation": "Terms of use",
   Créer: "Create",
   "Saisie sans chronomètre": "Entered without the timer",
+  "Au moins 3 caractères, conservés dans le journal d’audit.": "At least 3 characters, kept in the audit log.",
   "Utilisation de l’IA": "AI usage",
   "Appels, erreurs, temps de réponse, jetons et coût estimé de chaque service d’IA.":
     "Calls, errors, response time, tokens and estimated cost of each AI service.",
@@ -767,6 +768,7 @@ export const arabicAdditions: Record<string, string> = {
   "Conditions d’utilisation": "شروط الاستخدام",
   Créer: "إنشاء",
   "Saisie sans chronomètre": "أُدخل دون المؤقت",
+  "Au moins 3 caractères, conservés dans le journal d’audit.": "3 أحرف على الأقل، تُحفظ في سجل التدقيق.",
   "Utilisation de l’IA": "استخدام الذكاء الاصطناعي",
   "Appels, erreurs, temps de réponse, jetons et coût estimé de chaque service d’IA.":
     "الاستدعاءات والأخطاء وزمن الاستجابة والرموز والتكلفة التقديرية لكل خدمة ذكاء اصطناعي.",
