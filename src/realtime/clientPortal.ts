@@ -73,7 +73,21 @@ export function useClientPortalMessageRoom(
     if (!organizationId || !dossierId || !readSession()?.accessToken) return;
     const liveSocket = currentSocket();
     const room = { organizationId, dossierId };
-    const subscribe = () => liveSocket.emit("client_portal.subscribe", room);
+    let connectedBefore = false;
+    const subscribe = () => {
+      liveSocket.emit("client_portal.subscribe", room);
+      // Live events are not replayed after a disconnection: reload the
+      // stored conversation so messages sent meanwhile appear at once.
+      if (connectedBefore) {
+        void queryClient.invalidateQueries({
+          queryKey: ["dossier-client-messages", organizationId, dossierId],
+        });
+        void queryClient.invalidateQueries({
+          queryKey: ["portal-messages", organizationId, dossierId],
+        });
+      }
+      connectedBefore = true;
+    };
     const receive = (event: MessageCreatedEvent) => {
       if (
         event.organizationId !== organizationId ||
