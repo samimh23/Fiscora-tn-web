@@ -42,7 +42,7 @@ import type { AiUsageReport, RatedAnswer } from "./monitoring-types";
 
 const featureLabels: Record<string, string> = {
   assistant_answer: "Réponses de l’assistant",
-  assistant_route: "Questions chiffrées (routage)",
+  assistant_route: "Routage des questions financières",
   product_help: "Guide produit",
   embedding_query: "Vecteurs des questions",
   embedding_document: "Indexation des documents",
@@ -236,7 +236,7 @@ export function PlatformAiPanel() {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Fonction</TableCell>
+                    <TableCell>Fonctionnalité</TableCell>
                     <TableCell align="right">Appels</TableCell>
                     <TableCell align="right">Erreurs</TableCell>
                     <TableCell align="right">Replis</TableCell>
