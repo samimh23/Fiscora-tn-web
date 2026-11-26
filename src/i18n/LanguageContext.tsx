@@ -100,6 +100,80 @@ const PATTERNS: Array<{
   { fr: /^(\d+) pas utiles$/, ar: "$1 غير مفيدة", en: "$1 not useful" },
   { fr: /^(\d+) commentaires$/, ar: "$1 تعليقات", en: "$1 comments" },
   { fr: /^(\d+) sans source$/, ar: "$1 بدون مصدر", en: "$1 without a source" },
+  // Document extraction review
+  {
+    fr: /^Cliquez dans un champ ou une ligne pour afficher sa source OCR confirmée \((\d+) zone\(s\) détectée\(s\)\)\.$/,
+    ar: "انقر على حقل أو سطر لعرض مصدره المؤكَّد بالتعرّف الضوئي ($1 منطقة مكتشفة).",
+    en: "Click a field or a line to show its confirmed OCR source ($1 zone(s) found).",
+  },
+  {
+    fr: /^Lignes détectées \((\d+)\)$/,
+    ar: "الأسطر المكتشفة ($1)",
+    en: "Detected lines ($1)",
+  },
+  {
+    fr: /^Opérations détectées \((\d+)\)$/,
+    ar: "العمليات المكتشفة ($1)",
+    en: "Detected transactions ($1)",
+  },
+  { fr: /^Ligne (\d+)$/, ar: "السطر $1", en: "Line $1" },
+  { fr: /^Opération (\d+)$/, ar: "العملية $1", en: "Transaction $1" },
+  { fr: /^Taxe (\d+)$/, ar: "الضريبة $1", en: "Tax $1" },
+  {
+    fr: /^La ligne (\d+) ne correspond pas à quantité × prix unitaire\.$/,
+    ar: "السطر $1 لا يطابق الكمية × سعر الوحدة.",
+    en: "Line $1 does not match quantity × unit price.",
+  },
+  {
+    fr: /^La taxe complémentaire (\d+) ne peut pas être négative\.$/,
+    ar: "الضريبة الإضافية $1 لا يمكن أن تكون سالبة.",
+    en: "Additional tax $1 cannot be negative.",
+  },
+  {
+    fr: /^Le montant de l’opération (\d+) est absent ou nul\.$/,
+    ar: "مبلغ العملية $1 غائب أو منعدم.",
+    en: "The amount of transaction $1 is missing or zero.",
+  },
+  {
+    fr: /^La date de l’opération (\d+) est absente ou invalide\.$/,
+    ar: "تاريخ العملية $1 غائب أو غير صالح.",
+    en: "The date of transaction $1 is missing or invalid.",
+  },
+  {
+    fr: /^Le libellé de l’opération (\d+) est absent\.$/,
+    ar: "بيان العملية $1 غائب.",
+    en: "The description of transaction $1 is missing.",
+  },
+  {
+    fr: /^L’opération (\d+) contient simultanément un débit et un crédit\.$/,
+    ar: "العملية $1 تحتوي على مدين ودائن في آن واحد.",
+    en: "Transaction $1 has both a debit and a credit.",
+  },
+  {
+    fr: /^L’opération (\d+) est hors de la période du relevé\.$/,
+    ar: "العملية $1 خارج فترة الكشف.",
+    en: "Transaction $1 is outside the statement period.",
+  },
+  {
+    fr: /^Le solde final diffère du solde initial augmenté des opérations de (-?[\d.]+) TND\.$/,
+    ar: "يختلف الرصيد النهائي عن الرصيد الافتتاحي مضافًا إليه العمليات بمقدار $1 دينار.",
+    en: "The closing balance differs from the opening balance plus the transactions by $1 TND.",
+  },
+  {
+    fr: /^La remise globale ne correspond pas à HT brut - base HT de (-?[\d.]+)\.$/,
+    ar: "لا يطابق التخفيض الإجمالي الفرق بين المبلغ الخام والقاعدة دون اعتبار الأداءات بمقدار $1.",
+    en: "The overall discount differs from gross excl. tax minus net excl. tax by $1.",
+  },
+  {
+    fr: /^Le net à payer diffère du TTC après timbre de (-?[\d.]+)\.$/,
+    ar: "يختلف الصافي للدفع عن المبلغ باعتبار الأداءات بعد الطابع بمقدار $1.",
+    en: "The net payable differs from the total incl. tax after stamp duty by $1.",
+  },
+  {
+    fr: /^Le total TTC ne correspond ni à la base HT \+ TVA \+ FODEC \+ autres taxes, ni à ce total avec timbre\. Écart minimal : (-?[\d.]+)\.$/,
+    ar: "لا يطابق المجموع باعتبار الأداءات القاعدة + الأداء على القيمة المضافة + FODEC + الضرائب الأخرى، ولا هذا المجموع مع الطابع. أدنى فرق: $1.",
+    en: "The total incl. tax matches neither net excl. tax + VAT + FODEC + other taxes, nor that total with stamp duty. Smallest gap: $1.",
+  },
 ];
 
 function preserveWhitespace(source: string, translated: string) {

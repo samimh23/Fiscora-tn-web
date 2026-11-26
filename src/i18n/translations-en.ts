@@ -624,7 +624,8 @@ export const englishTranslations: Record<string, string> = {
   "Conditions d’utilisation": "Terms of use",
   Créer: "Create",
   "Saisie sans chronomètre": "Entered without the timer",
-  "Au moins 3 caractères, conservés dans le journal d’audit.": "At least 3 characters, kept in the audit log.",
+  "Au moins 3 caractères, conservés dans le journal d’audit.":
+    "At least 3 characters, kept in the audit log.",
   "Utilisation de l’IA": "AI usage",
   "Appels, erreurs, temps de réponse, jetons et coût estimé de chaque service d’IA.":
     "Calls, errors, response time, tokens and estimated cost of each AI service.",
@@ -731,6 +732,115 @@ export const englishTranslations: Record<string, string> = {
     "Set AZURE_COST_SCOPE and give the API identity the Cost Management Reader role.",
   "Console Google Cloud › Facturation › Export de la facturation › BigQuery : activez les données de coût d’utilisation standard vers le projet fiscora-ai, jeu de données billing_export.":
     "Google Cloud console › Billing › Billing export › BigQuery: enable standard usage cost data to project fiscora-ai, dataset billing_export.",
+  // Document extraction review
+  "Vérifier les données lues par l’IA": "Check the data read by the AI",
+  "comparez chaque valeur avec la pièce originale avant validation.":
+    "compare each value with the original document before validation.",
+  "Original et résultats enregistrés": "Original and saved results",
+  "Original et résultats": "Original and results",
+  "Consultation seule : aucune lecture IA ni réimportation.":
+    "Read-only: no AI reading or re-import.",
+  "Aperçu indisponible. Téléchargez la pièce avant de prendre une décision.":
+    "Preview unavailable. Download the document before making a decision.",
+  "Zone OCR sélectionnée": "Selected OCR zone",
+  Confiance: "Confidence",
+  "Données à confirmer": "Data to confirm",
+  "Données enregistrées": "Saved data",
+  "Statut : Extraction validée. Les valeurs affichées sont les résultats sauvegardés après les éventuelles corrections.":
+    "Status: extraction approved. The values shown are the saved results after any corrections.",
+  "Statut : Extraction rejetée. Les valeurs affichées sont les résultats sauvegardés après les éventuelles corrections.":
+    "Status: extraction rejected. The values shown are the saved results after any corrections.",
+  "Statut : À vérifier. Les valeurs affichées sont les résultats sauvegardés après les éventuelles corrections.":
+    "Status: to be checked. The values shown are the saved results after any corrections.",
+  "Corrigez les champs inexacts. Les contrôles comptables seront relancés lors de l’approbation.":
+    "Correct any inaccurate field. The accounting checks run again on approval.",
+  "Aucune source OCR suffisamment sûre n’a été localisée.":
+    "No sufficiently reliable OCR source was found.",
+  "Aucune zone incertaine ne sera surlignée.":
+    "No uncertain zone will be highlighted.",
+  "Les champs restent modifiables et aucune zone incertaine ne sera surlignée.":
+    "The fields remain editable and no uncertain zone will be highlighted.",
+  "Les contrôles automatiques sont cohérents. Une vérification visuelle reste obligatoire.":
+    "The automatic checks are consistent. A visual check is still required.",
+  "Type de document": "Document type",
+  "Date d’émission": "Issue date",
+  "Total HT avant remise": "Gross excl. tax",
+  "Remise globale": "Overall discount",
+  "Taux de remise": "Discount rate",
+  "Base HT après remise": "Net excl. tax",
+  "Total TTC": "Total incl. tax",
+  "Numéro de compte": "Account number",
+  "Nature biens/services": "Goods/services nature",
+  "Relevé bancaire": "Bank statement",
+  "Opérations bancaires": "Bank transactions",
+  "Compte bancaire de destination": "Destination bank account",
+  "Rechercher un compte bancaire…": "Search for a bank account…",
+  "Vérifiez que ce compte correspond au relevé avant de confirmer l’import.":
+    "Check that this account matches the statement before confirming the import.",
+  "Créez d’abord un compte bancaire dans Production > Banque.":
+    "First create a bank account in Production > Bank.",
+  "Autres taxes et prélèvements": "Other taxes and levies",
+  "Ajouter une taxe": "Add a tax",
+  "Aucune taxe complémentaire détectée.": "No additional tax detected.",
+  "Ajouter une opération": "Add a transaction",
+  "Champs supplémentaires": "Additional fields",
+  "Informations visibles qui ne font pas partie des champs comptables standards.":
+    "Visible information that is not part of the standard accounting fields.",
+  "Ajouter un champ": "Add a field",
+  "Nom du champ": "Field name",
+  Valeur: "Value",
+  "Prix unitaire": "Unit price",
+  "Dupliquer la ligne": "Duplicate the line",
+  "Dupliquer pour scinder la ligne": "Duplicate to split the line",
+  "Supprimer l’opération": "Delete the transaction",
+  "Supprimer la taxe": "Delete the tax",
+  "Supprimer le champ": "Delete the field",
+  "Note de contrôle": "Review note",
+  "Obligatoire en cas de rejet": "Required when rejecting",
+  "Relire avec l’IA": "Read again with the AI",
+  "Relance en cours…": "Restarting…",
+  "Confirmer ces données": "Confirm this data",
+  "Confirmer malgré les erreurs ?": "Confirm despite the errors?",
+  "Les contrôles comptables signalent encore des incohérences. En continuant, les données seront validées telles qu’elles sont affichées et l’approbation forcée sera enregistrée dans le journal d’audit.":
+    "The accounting checks still report inconsistencies. If you continue, the data will be approved as shown and the forced approval will be recorded in the audit log.",
+  "J’ai comparé ces données avec la pièce originale et je souhaite les confirmer malgré les erreurs signalées.":
+    "I compared this data with the original document and want to confirm it despite the reported errors.",
+  "Confirmation…": "Confirming…",
+  "Confirmer quand même": "Confirm anyway",
+  "Impossible de charger les résultats enregistrés. Le document n’a pas été relu ni réimporté.":
+    "The saved results could not be loaded. The document was not read again or re-imported.",
+  "Aucun résultat enregistré n’est disponible pour cette pièce.":
+    "No saved result is available for this document.",
+  "Le solde final est absent ou illisible.":
+    "The closing balance is missing or unreadable.",
+  "Le solde initial est absent ou illisible.":
+    "The opening balance is missing or unreadable.",
+  "La date de fin du relevé est absente ou invalide.":
+    "The statement end date is missing or invalid.",
+  "La période du relevé est inversée.": "The statement period is reversed.",
+  "La date de début du relevé est absente ou invalide.":
+    "The statement start date is missing or invalid.",
+  "Les données du relevé bancaire sont absentes.":
+    "The bank statement data is missing.",
+  "Aucune opération bancaire n’a été détectée.":
+    "No bank transaction was detected.",
+  "Le numéro du document est absent ou illisible.":
+    "The document number is missing or unreadable.",
+  "Le document n’a pas été reconnu avec suffisamment de précision. Confirmez son type avant traitement.":
+    "The document was not recognized precisely enough. Confirm its type before processing.",
+  "Le type de document est invalide ou ambigu. Choisissez un seul type reconnu.":
+    "The document type is invalid or ambiguous. Choose a single recognized type.",
+  "Le type de document est absent.": "The document type is missing.",
+  "Le taux de remise globale doit être compris entre 0 et 100 %.":
+    "The overall discount rate must be between 0 and 100 %.",
+  "La nature biens/services est incertaine. Choisissez-la lors de la création de la facture.":
+    "The goods/services nature is uncertain. Choose it when creating the invoice.",
+  "La date du document est absente ou invalide.":
+    "The document date is missing or invalid.",
+  "Le HT brut diffère de la base HT sans remise globale explicite. Vérifiez les libellés et les frais ; aucune remise n’a été déduite.":
+    "The gross amount excl. tax differs from the net amount excl. tax without an explicit overall discount. Check the labels and fees; no discount was deducted.",
+  "Le fournisseur est absent ou illisible.":
+    "The supplier is missing or unreadable.",
 };
 
 /** Arabic for the texts added with the English interface. */
@@ -768,7 +878,8 @@ export const arabicAdditions: Record<string, string> = {
   "Conditions d’utilisation": "شروط الاستخدام",
   Créer: "إنشاء",
   "Saisie sans chronomètre": "أُدخل دون المؤقت",
-  "Au moins 3 caractères, conservés dans le journal d’audit.": "3 أحرف على الأقل، تُحفظ في سجل التدقيق.",
+  "Au moins 3 caractères, conservés dans le journal d’audit.":
+    "3 أحرف على الأقل، تُحفظ في سجل التدقيق.",
   "Utilisation de l’IA": "استخدام الذكاء الاصطناعي",
   "Appels, erreurs, temps de réponse, jetons et coût estimé de chaque service d’IA.":
     "الاستدعاءات والأخطاء وزمن الاستجابة والرموز والتكلفة التقديرية لكل خدمة ذكاء اصطناعي.",

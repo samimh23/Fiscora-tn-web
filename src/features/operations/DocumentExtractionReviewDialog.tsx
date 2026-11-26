@@ -23,7 +23,10 @@ import {
 } from "@mui/icons-material";
 import { api, ApiError } from "../../api/client";
 import { SearchableSelect } from "../../components/SearchableSelect";
-import { PdfDocumentViewer } from "../../components/PdfDocumentViewer";
+import {
+  EvidenceOutline,
+  PdfDocumentViewer,
+} from "../../components/PdfDocumentViewer";
 import { supportsDocumentExtraction } from "./options";
 import type {
   BankAccount,
@@ -58,6 +61,27 @@ const bankExtractionFields = [
   { path: "bank_statement.closing_balance", label: "Solde final" },
 ] as const;
 
+/** Names the field of a validation issue with its on-screen label, not its JSON path. */
+const issueFieldLabel = (path: string) => {
+  const field = [...extractionFields, ...bankExtractionFields].find(
+    (candidate) => candidate.path === path,
+  );
+  if (field) return field.label;
+  const row = path.match(
+    /^(line_items|bank_statement\.transactions|other_taxes)\.(\d+)/,
+  );
+  if (row) {
+    const number = Number(row[2]) + 1;
+    if (row[1] === "line_items") return `Ligne ${number}`;
+    if (row[1] === "other_taxes") return `Taxe ${number}`;
+    return `Opération ${number}`;
+  }
+  if (path === "invoice_nature") return "Nature biens/services";
+  if (path === "bank_statement") return "Relevé bancaire";
+  if (path === "bank_statement.transactions") return "Opérations bancaires";
+  return path;
+};
+
 const readPath = (record: Record<string, unknown>, path: string) => {
   const value = path.split(".").reduce<unknown>((current, key) => {
     if (!current || typeof current !== "object" || Array.isArray(current))
@@ -90,6 +114,8 @@ type ExtractionEvidence = {
   page: number;
   text: string;
   bbox: [number, number, number, number];
+  /** OCR recognition confidence between 0 and 1, when the service gave one. */
+  confidence: number | null;
 };
 
 const extractionEvidence = (
@@ -127,6 +153,11 @@ const extractionEvidence = (
       page: typeof record.page === "number" ? record.page : 1,
       text: typeof record.text === "string" ? record.text : "",
       bbox: normalized,
+      confidence:
+        typeof record.confidence === "number" &&
+        Number.isFinite(record.confidence)
+          ? record.confidence
+          : null,
     };
   }
   return null;
@@ -550,6 +581,8 @@ export function DocumentExtractionReviewDialog({
                 bgcolor: "grey.100",
                 p: 2.5,
                 display: "flex",
+                flexDirection: "column",
+                gap: 1.5,
                 minHeight: 420,
                 borderRight: { lg: "1px solid" },
                 borderColor: { lg: "divider" },
@@ -591,46 +624,7 @@ export function DocumentExtractionReviewDialog({
                       }}
                     />
                     {highlightedEvidence && highlightedEvidence.page === 1 && (
-                      <>
-                        <Box
-                          aria-label={`Zone extraite ${highlightedEvidence.text}`}
-                          sx={{
-                            position: "absolute",
-                            pointerEvents: "none",
-                            left: `${highlightedEvidence.bbox[0] / 10}%`,
-                            top: `${highlightedEvidence.bbox[1] / 10}%`,
-                            width: `${(highlightedEvidence.bbox[2] - highlightedEvidence.bbox[0]) / 10}%`,
-                            height: `${(highlightedEvidence.bbox[3] - highlightedEvidence.bbox[1]) / 10}%`,
-                            border: "3px solid",
-                            borderColor: "warning.main",
-                            bgcolor: "rgba(255, 193, 7, 0.2)",
-                            boxShadow: "0 0 0 2px rgba(255,255,255,.9)",
-                            zIndex: 2,
-                          }}
-                        />
-                        {highlightedEvidence.text && (
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              pointerEvents: "none",
-                              left: `${highlightedEvidence.bbox[0] / 10}%`,
-                              top: `${highlightedEvidence.bbox[1] / 10}%`,
-                              transform: "translateY(-100%)",
-                              maxWidth: 260,
-                              px: 1,
-                              py: 0.5,
-                              bgcolor: "warning.main",
-                              color: "warning.contrastText",
-                              fontSize: 12,
-                              fontWeight: 700,
-                              lineHeight: 1.2,
-                              zIndex: 3,
-                            }}
-                          >
-                            {highlightedEvidence.text}
-                          </Box>
-                        )}
-                      </>
+                      <EvidenceOutline bbox={highlightedEvidence.bbox} />
                     )}
                   </Box>
                 )}
@@ -642,6 +636,43 @@ export function DocumentExtractionReviewDialog({
                   minHeight={620}
                   maxHeight={720}
                 />
+              )}
+              {highlightedEvidence && (
+                <Box
+                  data-testid="ocr-evidence-caption"
+                  sx={{
+                    alignSelf: "stretch",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    alignItems: "baseline",
+                    gap: 1,
+                    px: 1.5,
+                    py: 1,
+                    border: "1px solid",
+                    borderColor: "warning.main",
+                    borderRadius: 1,
+                    bgcolor: "common.white",
+                    fontSize: 13,
+                  }}
+                >
+                  <Box component="span" sx={{ fontWeight: 700 }}>
+                    Zone OCR sélectionnée
+                  </Box>
+                  {highlightedEvidence.text && (
+                    <Box component="span" translate="no">
+                      « {highlightedEvidence.text} »
+                    </Box>
+                  )}
+                  <Box component="span" sx={{ color: "text.secondary" }}>
+                    Page {highlightedEvidence.page}
+                  </Box>
+                  {highlightedEvidence.confidence != null && (
+                    <Box component="span" sx={{ color: "text.secondary" }}>
+                      Confiance{" "}
+                      {Math.round(highlightedEvidence.confidence * 100)} %
+                    </Box>
+                  )}
+                </Box>
               )}
             </Box>
             <Box
@@ -662,8 +693,7 @@ export function DocumentExtractionReviewDialog({
               </Typography>
               {evidenceCount > 0 ? (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  Cliquez dans un champ ou une ligne pour afficher sa source OCR
-                  confirmée ({evidenceCount} zone(s) détectée(s)).
+                  {`Cliquez dans un champ ou une ligne pour afficher sa source OCR confirmée (${evidenceCount} zone(s) détectée(s)).`}
                 </Alert>
               ) : (
                 <Alert severity="warning" sx={{ mb: 2 }}>
@@ -679,7 +709,9 @@ export function DocumentExtractionReviewDialog({
                   severity={issue.severity === "ERROR" ? "error" : "warning"}
                   sx={{ mb: 1 }}
                 >
-                  <strong>{issue.field}</strong> — {issue.message}
+                  <strong>{issueFieldLabel(issue.field)}</strong>
+                  {" — "}
+                  <span>{issue.message}</span>
                 </Alert>
               ))}
               {!reviewTarget?.validationIssues.length && (
@@ -748,7 +780,7 @@ export function DocumentExtractionReviewDialog({
                     }}
                   >
                     <Typography variant="h4">
-                      Opérations détectées ({reviewTransactions.length})
+                      {`Opérations détectées (${reviewTransactions.length})`}
                     </Typography>
                     <Button
                       size="small"
@@ -964,7 +996,7 @@ export function DocumentExtractionReviewDialog({
                     }}
                   >
                     <Typography variant="h4">
-                      Lignes détectées ({reviewLines.length})
+                      {`Lignes détectées (${reviewLines.length})`}
                     </Typography>
                     <Button
                       size="small"
@@ -1272,7 +1304,9 @@ export function DocumentExtractionReviewDialog({
                 variant="body2"
                 sx={{ mb: 1 }}
               >
-                <strong>{issue.field}</strong> — {issue.message}
+                <strong>{issueFieldLabel(issue.field)}</strong>
+                {" — "}
+                <span>{issue.message}</span>
               </Typography>
             ))}
           {error && (

@@ -50,6 +50,7 @@ async function mockWorkspace(
   page: Page,
   initialStatus?: string,
   canReview = true,
+  validationIssues: Array<Record<string, string>> = [],
 ) {
   page.setDefaultTimeout(30_000);
   page.setDefaultNavigationTimeout(45_000);
@@ -118,10 +119,11 @@ async function mockWorkspace(
           page: 1,
           text: "A-TEST-001",
           bbox: [100, 100, 300, 200],
+          confidence: 0.97,
         },
       },
     },
-    validationIssues: [],
+    validationIssues,
   });
   await page.route("**/api/**", async (route) => {
     const request = route.request();
@@ -290,9 +292,10 @@ test("scan continues in invoice imports after closing and refreshing, then creat
     review.getByRole("img", { name: "facture-test.png" }),
   ).toBeVisible();
   await review.getByLabel("Numéro", { exact: true }).focus();
-  await expect(
-    review.getByLabel("Zone extraite A-TEST-001", { exact: true }),
-  ).toBeVisible();
+  await expect(review.getByTestId("ocr-evidence-outline")).toBeVisible();
+  await expect(review.getByTestId("ocr-evidence-caption")).toContainText(
+    "« A-TEST-001 »",
+  );
   await review.getByLabel("Numéro", { exact: true }).fill("A-CORRECTED-001");
   expect(mock.invoice()).toBeUndefined();
   await review.getByRole("button", { name: "Confirmer ces données" }).click();
@@ -667,4 +670,79 @@ test("shared bank statement review preserves matching account and edited transac
       bank_statement: { transactions: [{ description: "Frais corrigés" }] },
     },
   });
+});
+
+test("source review shows the OCR zone without covering it and reads fully in English", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("compta-tn-language", "en"),
+  );
+  await mockWorkspace(page, "A_REVOIR", true, [
+    {
+      code: "SUBTOTAL_DIFFERENCE_UNEXPLAINED",
+      field: "gross_subtotal_excl_tax",
+      severity: "WARNING",
+      message:
+        "Le HT brut diffère de la base HT sans remise globale explicite. Vérifiez les libellés et les frais ; aucune remise n’a été déduite.",
+    },
+    {
+      code: "LINE_TOTAL_MISMATCH",
+      field: "line_items.0.line_total",
+      severity: "WARNING",
+      message: "La ligne 1 ne correspond pas à quantité × prix unitaire.",
+    },
+  ]);
+  await page.goto("/documents?dossierId=alpha");
+  await page
+    .getByRole("button", { name: /^(Vérifier les données|Check the data)$/ })
+    .first()
+    .click();
+  const review = page.getByRole("dialog");
+  await expect(
+    review.getByRole("img", { name: "facture-test.png" }),
+  ).toBeVisible();
+
+  await review.getByLabel("Number", { exact: true }).click();
+  const outline = review.getByTestId("ocr-evidence-outline");
+  await expect(outline).toBeVisible();
+  // Only a thin frame: nothing opaque is drawn over the original text.
+  const fill = await outline.evaluate(
+    (element) => getComputedStyle(element).backgroundColor,
+  );
+  expect(fill).toMatch(/rgba\(255, 193, 7, 0\.08\)/);
+  const caption = review.getByTestId("ocr-evidence-caption");
+  await expect(caption).toContainText("Selected OCR zone");
+  await expect(caption).toContainText("« A-TEST-001 »");
+  await expect(caption).toContainText("Confidence 97 %");
+  await expect(
+    review.getByRole("alert").filter({ hasText: "Gross excl. tax" }),
+  ).toContainText("The gross amount excl. tax differs");
+  await expect(
+    review.getByRole("alert").filter({ hasText: "Line 1" }),
+  ).toContainText("Line 1 does not match quantity × unit price.");
+
+  const french = await review.evaluate((root) => {
+    const marker =
+      /[éèêàùçôîû’«]|\b(le|la|les|des|du|une|et|ou|pour|dans|aucun|aucune|ligne|champ|données|pièce|vérifiez)\b/i;
+    const found = new Set<string>();
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode as Text;
+      const text = node.data.trim();
+      const parent = node.parentElement;
+      if (!text || !parent || parent.closest("[translate='no']")) continue;
+      if (getComputedStyle(parent).display === "none") continue;
+      if (marker.test(text)) found.add(text);
+    }
+    for (const element of root.querySelectorAll(
+      "[placeholder],[aria-label],[title]",
+    ))
+      for (const attribute of ["placeholder", "aria-label", "title"]) {
+        const value = element.getAttribute(attribute)?.trim();
+        if (value && marker.test(value)) found.add(`@${attribute}: ${value}`);
+      }
+    return [...found];
+  });
+  expect(french).toEqual([]);
 });

@@ -24,6 +24,38 @@ export type PdfEvidenceHighlight = {
   bbox: [number, number, number, number];
 };
 
+/**
+ * Frames an OCR zone (bbox in thousandths of the page) without hiding it:
+ * a thin outline drawn slightly outside the text and an almost clear fill,
+ * so the original characters stay readable under the highlight.
+ */
+export function EvidenceOutline({
+  bbox,
+}: {
+  bbox: [number, number, number, number];
+}) {
+  const [left, top, right, bottom] = bbox.map((value) => value / 10);
+  return (
+    <Box
+      data-testid="ocr-evidence-outline"
+      aria-hidden
+      sx={{
+        position: "absolute",
+        pointerEvents: "none",
+        left: `calc(${left}% - 4px)`,
+        top: `calc(${top}% - 4px)`,
+        width: `calc(${right - left}% + 8px)`,
+        height: `calc(${bottom - top}% + 8px)`,
+        border: "2px solid",
+        borderColor: "warning.main",
+        borderRadius: "3px",
+        bgcolor: "rgba(255, 193, 7, 0.08)",
+        zIndex: 2,
+      }}
+    />
+  );
+}
+
 export function PdfDocumentViewer({
   sourcePath,
   originalName,
@@ -284,46 +316,7 @@ export function PdfDocumentViewer({
           >
             <Box component="canvas" ref={canvasRef} sx={{ display: "block" }} />
             {visibleHighlight && (
-              <>
-                <Box
-                  aria-label={`Zone extraite ${visibleHighlight.text}`}
-                  sx={{
-                    position: "absolute",
-                    pointerEvents: "none",
-                    left: `${visibleHighlight.bbox[0] / 10}%`,
-                    top: `${visibleHighlight.bbox[1] / 10}%`,
-                    width: `${(visibleHighlight.bbox[2] - visibleHighlight.bbox[0]) / 10}%`,
-                    height: `${(visibleHighlight.bbox[3] - visibleHighlight.bbox[1]) / 10}%`,
-                    border: "3px solid",
-                    borderColor: "warning.main",
-                    bgcolor: "rgba(255, 193, 7, 0.2)",
-                    boxShadow: "0 0 0 2px rgba(255,255,255,.9)",
-                    zIndex: 2,
-                  }}
-                />
-                {visibleHighlight.text && (
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      pointerEvents: "none",
-                      left: `${visibleHighlight.bbox[0] / 10}%`,
-                      top: `${visibleHighlight.bbox[1] / 10}%`,
-                      transform: "translateY(-100%)",
-                      maxWidth: 260,
-                      px: 1,
-                      py: 0.5,
-                      bgcolor: "warning.main",
-                      color: "warning.contrastText",
-                      fontSize: 12,
-                      fontWeight: 700,
-                      lineHeight: 1.2,
-                      zIndex: 3,
-                    }}
-                  >
-                    {visibleHighlight.text}
-                  </Box>
-                )}
-              </>
+              <EvidenceOutline bbox={visibleHighlight.bbox} />
             )}
             {rendering && (
               <Box
