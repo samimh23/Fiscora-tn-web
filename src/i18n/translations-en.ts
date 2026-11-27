@@ -872,6 +872,1975 @@ export const englishTranslations: Record<string, string> = {
   "Aucun lettrage enregistré.": "No lettering recorded.",
   "Lettrage impossible.": "Lettering failed.",
   "Délettrage impossible.": "Unlettering failed.",
+  // Interface sweep: remaining French labels and messages
+  "Une erreur inattendue est survenue.": "An unexpected error occurred.",
+  "Le serveur a renvoyé une réponse illisible.":
+    "The server returned an unreadable response.",
+  "useAuth doit être utilisé dans AuthProvider.":
+    "useAuth must be used inside AuthProvider.",
+  "Travail du cabinet": "Firm work",
+  "Abonnement Fiscora": "Fiscora subscription",
+  "Choisir un dossier…": "Choose a client file…",
+  "Déposer un document": "Upload a document",
+  "Saisir une écriture": "Enter a journal entry",
+  "Tout marquer comme lu": "Mark all as read",
+  "Impossible de charger les notifications.": "Unable to load notifications.",
+  "Aucune notification": "No notifications",
+  Nouveau: "New",
+  "Sécurité du compte": "Account security",
+  "Administration Fiscora": "Fiscora administration",
+  "Guides, documents et données financières":
+    "Guides, documents and financial data",
+  "Ouvrir l’espace complet": "Open the full workspace",
+  "Ouvrir l’assistant complet": "Open the full assistant",
+  "Fermer l’assistant": "Close the assistant",
+  "Reconstruire l’index des sources": "Rebuild the source index",
+  "Comment puis-je vous aider ?": "How can I help you?",
+  "Demandez comment réaliser une tâche sur la page actuelle, ou interrogez les documents, soldes, règlements et états financiers du dossier choisi, selon vos permissions.":
+    "Ask how to do something on the current page, or query the documents, balances, settlements and financial statements of the selected client file, according to your permissions.",
+  "Charger les précédents": "Load earlier messages",
+  "Recherche dans les guides et sources…": "Searching the guides and sources…",
+  "Posez votre question…": "Ask your question…",
+  "Envoyer la question": "Send the question",
+  "Fermer l’Assistant Fiscora": "Close the Fiscora Assistant",
+  "Espace client": "Client space",
+  "Vos documents et échéances, au même endroit.":
+    "Your documents and deadlines, in one place.",
+  "Votre cabinet": "Your firm",
+  "Portail client": "Client portal",
+  "Préparation de votre espace…": "Preparing your workspace…",
+  "Double authentification": "Two-factor authentication",
+  Activée: "Enabled",
+  Désactivée: "Disabled",
+  "Protégez votre compte avec Microsoft Authenticator, Google Authenticator, Authy ou toute autre application TOTP compatible.":
+    "Protect your account with Microsoft Authenticator, Google Authenticator, Authy or any other compatible TOTP app.",
+  "La double authentification protège vos prochaines connexions. Il reste":
+    "Two-factor authentication protects your next sign-ins. Remaining:",
+  "code(s) de récupération.": "recovery code(s).",
+  "Renouveler les codes de récupération": "Renew the recovery codes",
+  Désactiver: "Disable",
+  "Sans MFA, le mot de passe reste le seul contrôle protégeant le compte.":
+    "Without MFA, the password is the only control protecting the account.",
+  "Activer la double authentification": "Enable two-factor authentication",
+  "Configurer l’application d’authentification": "Set up the authenticator app",
+  "Scannez ce QR code, puis saisissez le code à six chiffres affiché par l’application.":
+    "Scan this QR code, then enter the six-digit code shown by the app.",
+  "Clé manuelle": "Manual key",
+  "Code à six chiffres": "Six-digit code",
+  "Confirmer l’activation": "Confirm activation",
+  "Enregistrez vos codes de récupération": "Save your recovery codes",
+  "Ces codes ne seront plus affichés. Chaque code ne fonctionne qu’une seule fois. Conservez-les dans un gestionnaire de mots de passe.":
+    "These codes will not be shown again. Each code works only once. Keep them in a password manager.",
+  Copier: "Copy",
+  "J’ai enregistré les codes": "I have saved the codes",
+  "Désactiver la double authentification": "Disable two-factor authentication",
+  "Confirmez cette action avec un code de votre application ou un code de récupération.":
+    "Confirm this action with a code from your app or a recovery code.",
+  "Code d’authentification": "Authentication code",
+  Confirmer: "Confirm",
+  "Le PDF ne peut pas être affiché dans Fiscora.":
+    "The PDF cannot be displayed in Fiscora.",
+  "Cette page du PDF ne peut pas être rendue.":
+    "This PDF page cannot be rendered.",
+  "Page précédente": "Previous page",
+  "Page suivante": "Next page",
+  Réduire: "Zoom out",
+  Agrandir: "Zoom in",
+  "Adapter à la largeur": "Fit to width",
+  "Pilotage détaillé": "Detailed monitoring",
+  "Fermer le menu administrateur": "Close the administrator menu",
+  Opérations: "Operations",
+  "Espace plateforme, distinct des données comptables des cabinets.":
+    "Platform space, separate from the firms’ accounting data.",
+  "Retour au cabinet": "Back to the firm",
+  "Ouvrir le menu administrateur": "Open the administrator menu",
+  "Administration plateforme": "Platform administration",
+  "Pilotage interne du service": "Internal service monitoring",
+  "Page introuvable": "Page not found",
+  "La page demandée n’existe pas ou a été déplacée.":
+    "The requested page does not exist or has been moved.",
+  "Impossible d’afficher cette page": "Unable to display this page",
+  "Une erreur inattendue est survenue. Rechargez la page et réessayez. Si le problème persiste, retournez à l’accueil.":
+    "An unexpected error occurred. Reload the page and try again. If the problem persists, go back to the home page.",
+  "Recharger Fiscora": "Reload Fiscora",
+  "Retour à l’accueil": "Back to home",
+  "Rechercher…": "Search…",
+  "Modifications non enregistrées": "Unsaved changes",
+  "Les informations saisies seront perdues si vous quittez maintenant.":
+    "The information you entered will be lost if you leave now.",
+  "Continuer la saisie": "Keep editing",
+  "Quitter sans enregistrer": "Leave without saving",
+  "Aucune donnée disponible.": "No data available.",
+  "Impossible de charger les données. Vérifiez que l’API est démarrée puis réessayez.":
+    "Unable to load the data. Check that the API is running, then try again.",
+  "Consultez les mouvements validés. Les brouillons et validations se traitent dans l’onglet Saisie & validation.":
+    "Review the posted movements. Drafts and validations are handled in the Entry & validation tab.",
+  "Exporter CSV": "Export CSV",
+  Du: "From",
+  Au: "To",
+  "Tous les journaux": "All journals",
+  "Rechercher un journal…": "Search for a journal…",
+  "Pièce, libellé, compte ou tiers…":
+    "Document, label, account or third party…",
+  Tri: "Sort",
+  "Date croissante": "Date ascending",
+  "Date décroissante": "Date descending",
+  "Libellé / tiers": "Label / third party",
+  Extournée: "Reversed",
+  "Aucun mouvement comptabilisé": "No posted movements",
+  "Modifiez les filtres ou validez une écriture depuis l’onglet Saisie & validation.":
+    "Change the filters or validate an entry in the Entry & validation tab.",
+  "Totaux affichés": "Displayed totals",
+  "Lignes par page": "Rows per page",
+  "L’accès au plan comptable du dossier est requis.":
+    "Access to the client file’s chart of accounts is required.",
+  "Corriger l’écriture": "Correct the entry",
+  "Nouvelle écriture comptable": "New journal entry",
+  "Mouvements débit / crédit": "Debit / credit lines",
+  "Centre de coût": "Cost center",
+  "Total débit": "Total debit",
+  "Total crédit": "Total credit",
+  Écart: "Difference",
+  "Enregistrer les corrections": "Save the corrections",
+  "Écritures comptables": "Journal entries",
+  "Saisie → soumission → validation ou rejet → verrouillage comptable.":
+    "Entry → submission → validation or rejection → accounting lock.",
+  Tous: "All",
+  Brouillons: "Drafts",
+  Rejetées: "Rejected",
+  Comptabilisées: "Posted",
+  Extournées: "Reversed",
+  "Nouvelle écriture": "New entry",
+  "Aucune écriture": "No entries",
+  Corriger: "Correct",
+  Soumettre: "Submit",
+  "Non lettré": "Unlettered",
+  "Rejeter l’écriture": "Reject the entry",
+  "Confirmer le rejet": "Confirm the rejection",
+  "Le journal a été modifié.": "The journal was updated.",
+  "Le journal a été créé.": "The journal was created.",
+  "Impossible de modifier le journal.": "Unable to update the journal.",
+  "Impossible de créer le journal.": "Unable to create the journal.",
+  "Paramétrage des journaux": "Journal settings",
+  "Définissez les codes et les types de journaux utilisés lors de la saisie comptable. Les mouvements eux-mêmes se consultent dans l’onglet Journal comptable.":
+    "Define the journal codes and types used for bookkeeping entries. The movements themselves are reviewed in the Accounting journal tab.",
+  "Nouveau journal": "New journal",
+  "Aucun journal": "No journals",
+  "Modifier le journal": "Edit the journal",
+  "Créer un journal": "Create a journal",
+  Février: "February",
+  Août: "August",
+  Décembre: "December",
+  "Opérations diverses": "Miscellaneous operations",
+  Rejetée: "Rejected",
+  "Prête pour révision": "Ready for review",
+  Déposée: "Filed",
+  "Clôture impossible.": "Closing failed.",
+  "Verrouillage des périodes": "Period locking",
+  "Empêche toute modification après les contrôles mensuels.":
+    "Prevents any change after the monthly checks.",
+  Verrouillée: "Locked",
+  Clôturée: "Closed",
+  Verrouiller: "Lock",
+  Rouvrir: "Reopen",
+  "Clôture de l’exercice": "Financial year closing",
+  "Génère les écritures de solde et les à-nouveaux après verrouillage de toutes les périodes.":
+    "Generates the closing entries and opening balances once every period is locked.",
+  "Clôturer l’exercice": "Close the financial year",
+  "Périodes à verrouiller": "Periods to lock",
+  "Écritures brouillon": "Draft entries",
+  "Dotations non comptabilisées": "Unposted depreciation",
+  "Relevés non rapprochés": "Unreconciled statements",
+  "Verrouiller la période": "Lock the period",
+  "Rouvrir la période": "Reopen the period",
+  "Clôturer définitivement l’exercice": "Permanently close the financial year",
+  "Cette action clôture toutes les périodes et génère automatiquement la clôture et l’ouverture de l’exercice suivant.":
+    "This action closes every period and automatically generates the closing of this year and the opening of the next.",
+  "Clôturer définitivement": "Close permanently",
+  "Impossible de générer l'export.": "Unable to generate the export.",
+  "Uniquement les écritures comptabilisées, avec navigation jusqu’à la pièce.":
+    "Posted entries only, with navigation to the source document.",
+  "Exports comptables": "Accounting exports",
+  "Journal complet (FEC, .txt)": "Full journal (FEC, .txt)",
+  "Odoo — écritures (.csv)": "Odoo — entries (.csv)",
+  "Balance auxiliaire": "Subsidiary trial balance",
+  "Journal des écritures": "Journal of entries",
+  "Impossible de charger un ou plusieurs états.":
+    "Unable to load one or more statements.",
+  Détail: "Details",
+  "Aucun mouvement comptabilisé sur cette période.":
+    "No posted movements in this period.",
+  "Tous les comptes": "All accounts",
+  "Voir l’écriture": "View the entry",
+  "Aucune ligne de grand livre.": "No general ledger lines.",
+  "Aucun solde auxiliaire sur la période.":
+    "No subsidiary balance in this period.",
+  "Aucune écriture comptabilisée sur cette période.":
+    "No entries posted in this period.",
+  "Détail de l’écriture": "Entry details",
+  "Cette écriture est rattachée à une pièce justificative. Ouvrez l’onglet Documents du dossier pour l’aperçu.":
+    "This entry is linked to a supporting document. Open the client file’s Documents tab to preview it.",
+  "Impossible de calculer la déclaration.":
+    "Unable to calculate the declaration.",
+  "Impossible d’enregistrer les ajustements.":
+    "Unable to save the adjustments.",
+  "Déclaration mensuelle tunisienne": "Tunisian monthly declaration",
+  "Calcul serveur depuis les factures et la paie, contrôles, validation et preuve de dépôt.":
+    "Server calculation from invoices and payroll, checks, validation and filing proof.",
+  "Le calcul ne peut pas démarrer. Vérifiez que les paramètres fiscaux applicables à cette période sont configurés.":
+    "The calculation cannot start. Check that the tax parameters for this period are configured.",
+  "Déclaration non préparée": "Declaration not prepared",
+  "Le serveur utilisera uniquement les factures comptabilisées et la paie validée de cette période.":
+    "The server will use only the posted invoices and the validated payroll of this period.",
+  "Préparer automatiquement": "Prepare automatically",
+  "Ajustée manuellement": "Manually adjusted",
+  "Les factures ou la paie ont changé depuis le dernier calcul. Recalculez avant de soumettre ou valider.":
+    "The invoices or payroll changed since the last calculation. Recalculate before submitting or validating.",
+  "Motif du rejet :": "Rejection reason:",
+  "Report précédent": "Previous carry-forward",
+  "Crédit à reporter": "Credit to carry forward",
+  "Total à payer": "Total to pay",
+  "Ajustement documenté :": "Documented adjustment:",
+  "Déposée le": "Filed on",
+  "· Référence :": "· Reference:",
+  Recalculer: "Recalculate",
+  Ajuster: "Adjust",
+  "Soumettre en révision": "Submit for review",
+  "Valider et figer": "Validate and freeze",
+  "Enregistrer le dépôt": "Record the filing",
+  "Contrôles de cohérence": "Consistency checks",
+  "Sources du calcul": "Calculation sources",
+  "Traçabilité des montants utilisés pour":
+    "Traceability of the amounts used for",
+  "Factures comptabilisées": "Posted invoices",
+  "TVA par taux": "VAT by rate",
+  Taux: "Rate",
+  Collectée: "Collected",
+  Déductible: "Deductible",
+  "Retenues par nature": "Withholding by type",
+  "Les montants restent soumis à la vérification du professionnel selon le régime du client et le texte officiel applicable à la période.":
+    "The amounts remain subject to the professional’s review according to the client’s tax regime and the official text applicable to the period.",
+  "Ajuster la déclaration —": "Adjust the declaration —",
+  "Obligatoire si un montant diffère du calcul automatique.":
+    "Required if an amount differs from the automatic calculation.",
+  "Calculer et enregistrer": "Calculate and save",
+  "Rejeter la déclaration": "Reject the declaration",
+  "Enregistrer le dépôt fiscal": "Record the tax filing",
+  "Aucun justificatif": "No supporting document",
+  "Rechercher un document…": "Search for a document…",
+  "Optionnel maintenant, mais recommandé pour le dossier d’audit.":
+    "Optional now, but recommended for the audit file.",
+  "Confirmer le dépôt": "Confirm the filing",
+  "Page non localisée : comparez l’extrait avec l’original. Aucun numéro de page n’est supposé.":
+    "Page not located: compare the excerpt with the original. No page number is assumed.",
+  "L’original est indisponible ou votre accès ne permet pas de l’ouvrir. Les autorisations et le contrôle antivirus restent appliqués.":
+    "The original is unavailable or your access does not allow opening it. Permissions and the antivirus check still apply.",
+  "Consultez cette pièce dans Documents pour son aperçu complet.":
+    "Open this document in Documents for its full preview.",
+  "Arrête l’attente dans ce chat. Le traitement envoyé peut encore se terminer côté serveur.":
+    "Stops waiting in this chat. The request already sent may still finish on the server.",
+  "Ligne du relevé": "Statement line",
+  Règlement: "Settlement",
+  "Lecture IA à lancer": "AI reading to start",
+  "Extraction en attente": "Extraction pending",
+  "Extraction en cours": "Extraction in progress",
+  "Prête à vérifier": "Ready to review",
+  "Extraction échouée": "Extraction failed",
+  "Importé en banque": "Imported into bank",
+  "Extraction rejetée": "Extraction rejected",
+  "La lecture du relevé est impossible.": "The statement cannot be read.",
+  "Choisissez une image ou un PDF.": "Choose an image or a PDF.",
+  "Le fichier ne doit pas dépasser 20 Mo.": "The file must not exceed 20 MB.",
+  "Utilisez une image PNG/JPEG ou un PDF.": "Use a PNG/JPEG image or a PDF.",
+  "Cette extraction n’est plus en attente de vérification. Actualisez les imports IA.":
+    "This extraction is no longer awaiting review. Refresh the AI imports.",
+  "Le document détecté n’est pas un relevé bancaire. Vérifiez-le dans Documents.":
+    "The detected document is not a bank statement. Check it in Documents.",
+  Réessayer: "Try again",
+  "Impossible de charger les imports IA du dossier.":
+    "Unable to load the client file’s AI imports.",
+  "Imports IA de relevés": "AI statement imports",
+  "Imports IA (": "AI imports (",
+  "La lecture continue en arrière-plan. L’original reste dans Documents ; le relevé bancaire est importé uniquement après votre vérification et confirmation.":
+    "Reading continues in the background. The original stays in Documents; the bank statement is imported only after you review and confirm it.",
+  "Traitement IA": "AI processing",
+  "Original + résultats": "Original + results",
+  "Vérifier les données": "Review the data",
+  "Relancer l’extraction": "Run the extraction again",
+  "Scanner un relevé bancaire avec l’IA": "Scan a bank statement with AI",
+  "L’original sera conservé dans Documents. Vérifiez les dates, les soldes et les opérations ici avant de confirmer l’import dans le compte bancaire choisi.":
+    "The original will be kept in Documents. Check the dates, balances and transactions here before confirming the import into the selected bank account.",
+  "Choisir une image ou un PDF": "Choose an image or a PDF",
+  "L’IA lit le relevé… Vous pouvez continuer en arrière-plan.":
+    "The AI is reading the statement… You can continue in the background.",
+  "Impossible de lire l’état de l’extraction.":
+    "Unable to read the extraction status.",
+  "La lecture IA a échoué. Fermez cette fenêtre pour relancer depuis Imports IA.":
+    "AI reading failed. Close this window to restart it from AI imports.",
+  "Lecture terminée. Vérifiez les données avec la pièce originale avant de confirmer l’import.":
+    "Reading finished. Check the data against the original document before confirming the import.",
+  "Continuer en arrière-plan": "Continue in the background",
+  "Relancer la lecture": "Read again",
+  "Lire avec l’IA": "Read with AI",
+  Importé: "Imported",
+  "Partiellement rapproché": "Partially reconciled",
+  "Prêt à valider": "Ready to validate",
+  Rapproché: "Reconciled",
+  "À rapprocher": "To reconcile",
+  "Écriture à comptabiliser": "Entry to post",
+  Rapprochée: "Reconciled",
+  Écriture: "Entry",
+  "Écriture générée": "Generated entry",
+  "IBAN/RIB invalide : utilisez TN + 22 chiffres ou un RIB tunisien de 20 chiffres.":
+    "Invalid IBAN/RIB: use TN + 22 digits or a 20-digit Tunisian RIB.",
+  "Impossible de modifier ce compte bancaire.":
+    "Unable to update this bank account.",
+  "Impossible de créer ce compte bancaire.":
+    "Unable to create this bank account.",
+  "Modifier le compte bancaire": "Edit the bank account",
+  "Nouveau compte bancaire": "New bank account",
+  "Aucun compte de banque saisissable n’est configuré. Créez d’abord un compte 532 (par exemple 5321) dans le plan comptable du dossier.":
+    "No postable bank account is configured. First create a 532 account (for example 5321) in the client file’s chart of accounts.",
+  "Le compte comptable actuellement associé n’appartient pas à la classe 532. Sélectionnez un compte bancaire valide pour le corriger.":
+    "The linked ledger account is not in class 532. Select a valid bank account to correct it.",
+  "Aucun établissement enregistré — saisissez le nom.":
+    "No bank recorded — enter its name.",
+  "Choisissez un établissement existant ou saisissez-en un nouveau.":
+    "Choose an existing bank or enter a new one.",
+  "IBAN tunisien : TN + 22 chiffres, ou RIB tunisien : 20 chiffres.":
+    "Tunisian IBAN: TN + 22 digits, or Tunisian RIB: 20 digits.",
+  "Uniquement le compte 532 — Banques et ses subdivisions.":
+    "Account 532 — Banks and its subdivisions only.",
+  "Enregistrer les changements": "Save the changes",
+  "Impossible d’enregistrer cette règle.": "Unable to save this rule.",
+  "Modifier la règle bancaire": "Edit the bank rule",
+  "Nouvelle règle bancaire": "New bank rule",
+  "Nom de la règle": "Rule name",
+  "Motif recherché dans le relevé": "Pattern to find in the statement",
+  "Exemple : STEG. La règle s'applique quand ce texte est trouvé dans le libellé bancaire.":
+    "Example: STEG. The rule applies when this text is found in the bank label.",
+  "Type de recherche": "Match type",
+  Contient: "Contains",
+  "Commence par": "Starts with",
+  "Compte suggéré": "Suggested account",
+  "Impossible de désactiver cette règle.": "Unable to deactivate this rule.",
+  "Règles de rapprochement": "Reconciliation rules",
+  "Automatisez les libellés répétitifs comme STEG, CNSS, frais bancaires ou loyers.":
+    "Automate recurring labels such as STEG, CNSS, bank fees or rent.",
+  "Nouvelle règle": "New rule",
+  "Aucune règle mémorisée. Vous pouvez en créer ici ou en mémoriser une depuis une opération bancaire non rapprochée.":
+    "No saved rules. You can create one here or save one from an unreconciled bank transaction.",
+  "Motif :": "Pattern:",
+  "Importer un relevé bancaire": "Import a bank statement",
+  "Banque non renseignée": "Bank not specified",
+  "Choisir un fichier CSV, XLSX, OFX ou MT940":
+    "Choose a CSV, XLSX, OFX or MT940 file",
+  "Scanner une image avec l’IA": "Scan an image with AI",
+  "CSV/XLSX : Date, Libellé et Montant — ou Débit/Crédit. OFX/QFX et MT940 (.sta) : import automatique des opérations bancaires. Taille maximale 10 Mo.":
+    "CSV/XLSX: Date, Label and Amount — or Debit/Credit. OFX/QFX and MT940 (.sta): bank transactions imported automatically. Maximum size 10 MB.",
+  "Télécharger le modèle CSV": "Download the CSV template",
+  "Le solde final doit être égal au solde initial plus la somme des opérations du fichier.":
+    "The closing balance must equal the opening balance plus the sum of the file’s transactions.",
+  Importer: "Import",
+  "Rapprocher avec un règlement": "Match with a settlement",
+  "Rapprocher avec une écriture": "Match with an entry",
+  "Générer une écriture comptable": "Generate a journal entry",
+  "Sans référence": "No reference",
+  "Rechercher un règlement…": "Search for a settlement…",
+  "Rechercher une écriture…": "Search for an entry…",
+  "Suggestion mémorisée :": "Saved suggestion:",
+  "Mémoriser cette règle pour les prochains relevés":
+    "Save this rule for future statements",
+  "Texte à reconnaître": "Text to recognize",
+  "Exemple : STEG, SONEDE, TUNISIE TELECOM.":
+    "Example: STEG, SONEDE, TUNISIE TELECOM.",
+  "L’écriture sera créée en brouillon. Elle devra être comptabilisée avant le rapprochement définitif.":
+    "The entry will be created as a draft. It must be posted before the final reconciliation.",
+  "Aucun élément comptabilisé avec le même sens et le même montant.":
+    "No posted item with the same direction and amount.",
+  "Générer le brouillon": "Generate the draft",
+  "Impossible de désactiver ce compte bancaire.":
+    "Unable to deactivate this bank account.",
+  "Le rapprochement a échoué.": "Reconciliation failed.",
+  "Rapprochement bancaire": "Bank reconciliation",
+  "Importez les relevés, rapprochez chaque ligne et contrôlez l’écart comptable.":
+    "Import the statements, reconcile each line and check the accounting difference.",
+  "Importer un relevé": "Import a statement",
+  "IBAN non renseigné": "IBAN not specified",
+  "Créez un compte bancaire lié à un compte comptable et à un journal de banque.":
+    "Create a bank account linked to a ledger account and a bank journal.",
+  "Relevés importés": "Imported statements",
+  "Aucun relevé importé.": "No statement imported.",
+  "Sélectionnez un relevé": "Select a statement",
+  "Ses opérations et les actions de rapprochement apparaîtront ici.":
+    "Its transactions and reconciliation actions will appear here.",
+  "Rapprochement auto": "Auto reconciliation",
+  "Valider le relevé": "Validate the statement",
+  "Solde bancaire": "Bank balance",
+  "Solde comptable": "Book balance",
+  Rapprochées: "Reconciled",
+  "Opérations du relevé": "Statement transactions",
+  "Écriture brouillon": "Draft entry",
+  "Annuler le rapprochement": "Undo the reconciliation",
+  "Associer un règlement": "Match a settlement",
+  "Associer une écriture": "Match an entry",
+  "Créer écriture": "Create entry",
+  "Comptabiliser & rapprocher": "Post & reconcile",
+  "Aucune opération dans ce filtre.": "No transactions in this filter.",
+  "Annuler le rapprochement ?": "Undo the reconciliation?",
+  "Seul le lien de rapprochement sera retiré. Le règlement et l’écriture comptable restent inchangés, y compris une écriture créée depuis Banque. L’opération reviendra à « À rapprocher » : associez ensuite le bon règlement ou la bonne écriture existante, sans les créer en double.":
+    "Only the reconciliation link will be removed. The settlement and the journal entry stay unchanged, including an entry created from Bank. The transaction will return to “To reconcile”: then match the right existing settlement or entry, without creating a duplicate.",
+  "Impossible d’annuler le rapprochement.":
+    "Unable to undo the reconciliation.",
+  "Motif de l’annulation": "Reason for undoing",
+  "Le motif sera conservé dans l’historique d’audit.":
+    "The reason will be kept in the audit history.",
+  "Conserver le rapprochement": "Keep the reconciliation",
+  "Bon de réception": "Goods received note",
+  Confirmé: "Confirmed",
+  Annulé: "Cancelled",
+  "Impossible d’enregistrer le document.": "Unable to save the document.",
+  "Valable jusqu’au": "Valid until",
+  "Articles et services": "Items and services",
+  "Compte (facultatif)": "Account (optional)",
+  "Total HT": "Total excl. tax",
+  "Cycle commercial": "Sales cycle",
+  "Créez vos devis, commandes, livraisons et factures sans ressaisie. Une facture émise est envoyée automatiquement au cabinet.":
+    "Create your quotes, orders, deliveries and invoices without re-entering data. An issued invoice is sent to the firm automatically.",
+  "Nouveau document": "New document",
+  "Aucun document commercial": "No commercial documents",
+  "Commencez par un devis client ou une commande fournisseur.":
+    "Start with a customer quote or a supplier order.",
+  "Transmise au cabinet": "Sent to the firm",
+  "· issu d’un document précédent": "· from a previous document",
+  Émettre: "Issue",
+  "La consultation du plan comptable et des journaux est nécessaire pour saisir les factures et règlements.":
+    "Access to the chart of accounts and journals is required to enter invoices and settlements.",
+  "Le FODEC total a été réparti au prorata de la base HT. Vérifiez les lignes concernées et leur taux ; il ne s’agit pas d’un droit de consommation.":
+    "The total FODEC was spread pro rata to the net amount. Check the lines concerned and their rate; this is not an excise duty.",
+  "Un montant de ligne TTC ne peut pas être converti en HT sans son taux de TVA. Renseignez le PU HT.":
+    "A line amount including tax cannot be converted to net without its VAT rate. Enter the net unit price.",
+  "Un prix unitaire absent a été calculé depuis le montant de ligne ; vérifiez-le.":
+    "A missing unit price was calculated from the line amount; check it.",
+  "Un prix TTC ne peut pas être converti en HT sans son taux de TVA. Renseignez le PU HT.":
+    "A price including tax cannot be converted to net without its VAT rate. Enter the net unit price.",
+  "Les prix imprimés TTC ont été convertis en PU HT ; vérifiez les arrondis.":
+    "The printed prices including tax were converted to net unit prices; check the rounding.",
+  "Article extrait par IA": "Item extracted by AI",
+  "Facture extraite par IA": "Invoice extracted by AI",
+  "la ligne": "the line",
+  "Créée depuis une extraction IA — document source conservé.":
+    "Created from an AI extraction — source document kept.",
+  "Prête à préparer": "Ready to prepare",
+  "Imports IA": "AI imports",
+  "La lecture continue en arrière-plan. Les originaux restent dans Collecte ; aucune facture n’est créée avant votre vérification et l’enregistrement du brouillon.":
+    "Reading continues in the background. The originals stay in Collection; no invoice is created before you review it and save the draft.",
+  "Préparer la facture": "Prepare the invoice",
+  "Renseignez le client ou fournisseur.": "Enter the customer or supplier.",
+  "Extraction approuvée lors de la création de la facture métier":
+    "Extraction approved when the business invoice was created",
+  "Impossible d’enregistrer la facture.": "Unable to save the invoice.",
+  "Données préremplies par l’IA. « Enregistrer le brouillon » créera une vraie facture métier liée à la pièce originale ; vérifiez les comptes proposés et confirmez la nature (biens, services ou mixte) avant de continuer. Une proposition IA reste modifiable.":
+    "Data prefilled by AI. “Save draft” will create a real business invoice linked to the original document; check the proposed accounts and confirm the nature (goods, services or mixed) before continuing. An AI proposal can still be edited.",
+  "Le tiers «": "The third party “",
+  "» n’existe pas encore. Il sera créé et lié automatiquement à cette facture lors de l’enregistrement du brouillon.":
+    "” does not exist yet. It will be created and linked to this invoice automatically when the draft is saved.",
+  "Mention légale obligatoire sur la facture fournisseur : « Achat en suspension de TVA — attestation n°":
+    "Mandatory legal notice on the supplier invoice: “Purchase under VAT suspension — certificate no.",
+  "Choisissez la nature d’après la facture originale":
+    "Choose the nature according to the original invoice",
+  "Proposition IA — vérifiez-la ; vous pouvez la modifier":
+    "AI proposal — check it; you can change it",
+  "Détermine les contrôles fiscaux": "Determines the tax checks",
+  "Choisir la nature": "Choose the nature",
+  Biens: "Goods",
+  "Biens et services": "Goods and services",
+  "Tiers existant lié à la facture":
+    "Existing third party linked to the invoice",
+  "Optionnel : choisissez un tiers existant ou saisissez son nom":
+    "Optional: choose an existing third party or enter its name",
+  "Nom du client": "Customer name",
+  "Nom du fournisseur": "Supplier name",
+  "Matricule fiscal du tiers": "Third party’s tax ID",
+  "% (déduit de la TVA totale)": "% (deducted from the total VAT)",
+  "Droit conso.": "Excise duty",
+  "Taux, ex. 0.10": "Rate, e.g. 0.10",
+  "Taux, ex. 0.01": "Rate, e.g. 0.01",
+  "Devise de la facture": "Invoice currency",
+  "Les lignes sont saisies dans cette devise puis converties en TND":
+    "The lines are entered in this currency and then converted to TND",
+  "Taux de change appliqué à toute la facture":
+    "Exchange rate applied to the whole invoice",
+  "Compte droit de consommation": "Excise duty account",
+  "Requis si un taux est saisi sur une ligne":
+    "Required if a rate is entered on a line",
+  "Compte FODEC": "FODEC account",
+  "Requis si une ligne comporte du FODEC ; distinct du droit de consommation":
+    "Required if a line includes FODEC; separate from excise duty",
+  "Seuil de 1 000 TND TTC pour une facture isolée. Vérifiez la retenue en cas de règlement groupé.":
+    "Threshold of 1,000 TND incl. tax for a single invoice. Check the withholding in case of a grouped settlement.",
+  "Ancienne base conservée. Effacez-la pour utiliser le total TTC hors timbre.":
+    "Previous base kept. Clear it to use the total incl. tax without stamp duty.",
+  "Attestation de suspension de TVA": "VAT suspension certificate",
+  "Achat effectué sans TVA au titre d’une attestation détenue par le dossier":
+    "Purchase made without VAT under a certificate held by the client file",
+  "Droit de consommation": "Excise duty",
+  "Montants convertis en TND au taux 1": "Amounts converted to TND at rate 1",
+  "TND — les lignes ont été saisies en": "TND — the lines were entered in",
+  "Absent de la facture": "Missing from the invoice",
+  "Absent du bon de réception": "Missing from the goods received note",
+  "Le document validé n’est pas une facture.":
+    "The validated document is not an invoice.",
+  "Impossible de charger les données validées de cette facture.":
+    "Unable to load the validated data of this invoice.",
+  "Impossible de supprimer ce brouillon.": "Unable to delete this draft.",
+  "Impossible de lancer la lecture IA.": "Unable to start the AI reading.",
+  "Impossible d’ouvrir la vérification.": "Unable to open the review.",
+  "Une facture est déjà liée à ce document.":
+    "An invoice is already linked to this document.",
+  "Vérifiez et confirmez les données extraites avant de préparer la facture.":
+    "Check and confirm the extracted data before preparing the invoice.",
+  "Le document détecté n’est pas une facture.":
+    "The detected document is not an invoice.",
+  "Impossible de préparer la facture.": "Unable to prepare the invoice.",
+  "Scanner par IA": "Scan with AI",
+  "Aucune facture enregistrée": "No invoices recorded",
+  "· échéance": "· due",
+  "Crédit à rembourser": "Credit to refund",
+  "Supprimer la facture validée et son écriture brouillon":
+    "Delete the validated invoice and its draft entry",
+  "Supprimer le brouillon": "Delete the draft",
+  "Vérifier BR": "Check GRN",
+  "Impossible de générer le certificat.": "Unable to generate the certificate.",
+  "Certificat RS": "Withholding certificate",
+  "Scanner une facture avec l’IA": "Scan an invoice with AI",
+  "La pièce reste attachée au dossier. Après lecture, vous vérifiez les données comptables avant de créer le brouillon de facture.":
+    "The document stays attached to the client file. After reading, you check the accounting data before creating the draft invoice.",
+  "L’IA lit la facture… Cette étape peut prendre quelques instants.":
+    "The AI is reading the invoice… This step may take a few moments.",
+  "La lecture IA a échoué.": "AI reading failed.",
+  "Lecture terminée. Cliquez sur « Vérifier les données » pour comparer les valeurs avec la pièce originale et les confirmer. Vous pourrez ensuite préparer la facture.":
+    "Reading finished. Click “Review the data” to compare the values with the original document and confirm them. You can then prepare the invoice.",
+  "Supprimer la facture validée ?": "Delete the validated invoice?",
+  "Supprimer le brouillon ?": "Delete the draft?",
+  "La facture": "The invoice",
+  "sera supprimée. Le document source restera dans la collecte afin de pouvoir recréer la facture.":
+    "will be deleted. The source document will stay in Collection so that the invoice can be created again.",
+  "Son écriture comptable encore en brouillon sera également supprimée. Aucune écriture comptabilisée ne sera effacée.":
+    "Its journal entry still in draft will also be deleted. No posted entry will be erased.",
+  "Rapprochement bon de réception — facture":
+    "Goods received note — invoice matching",
+  "Impossible de charger le rapprochement.": "Unable to load the matching.",
+  "Des écarts ont été détectés entre le bon de réception et la facture.":
+    "Differences were found between the goods received note and the invoice.",
+  "Aucun écart : la facture correspond au bon de réception.":
+    "No difference: the invoice matches the goods received note.",
+  Article: "Item",
+  "Qté BR": "GRN qty",
+  "Qté facture": "Invoice qty",
+  "PU facture": "Invoice unit price",
+  Annulée: "Cancelled",
+  "Non réglée": "Unpaid",
+  "Partiellement réglée": "Partially paid",
+  Réglée: "Paid",
+  "À rembourser": "To refund",
+  "À comptabiliser": "To post",
+  Comptabilisé: "Posted",
+  Reçu: "Received",
+  "Déposé en banque": "Deposited at the bank",
+  Impayé: "Unpaid",
+  "Saisie annulée": "Entry cancelled",
+  Remboursé: "Refunded",
+  "Le format du calendrier dépend de votre navigateur (jour/mois ou mois/jour).":
+    "The calendar format depends on your browser (day/month or month/day).",
+  "Le règlement a été créé en brouillon.":
+    "The settlement was created as a draft.",
+  "Impossible d’enregistrer le règlement.": "Unable to save the settlement.",
+  "Nouveau règlement": "New settlement",
+  "Votre saisie précédente a été restaurée. Elle reste un brouillon local tant que vous ne créez pas le règlement.":
+    "Your previous input was restored. It stays a local draft until you create the settlement.",
+  "La saisie est enregistrée automatiquement dans ce navigateur. Vous pourrez la reprendre plus tard si une information manque.":
+    "Your input is saved automatically in this browser. You can resume it later if some information is missing.",
+  "Ce formulaire enregistre un remboursement déjà effectué ou à comptabiliser. Il ne déclenche aucun virement bancaire.":
+    "This form records a refund already made or to be posted. It does not trigger any bank transfer.",
+  "Encaissement client": "Customer receipt",
+  "Décaissement fournisseur": "Supplier payment",
+  "Remboursement au client": "Refund to the customer",
+  "Remboursement reçu du fournisseur": "Refund received from the supplier",
+  Virement: "Bank transfer",
+  Chèque: "Cheque",
+  Espèces: "Cash",
+  Traite: "Bill of exchange",
+  "Carte bancaire": "Bank card",
+  "Banque tirée": "Drawee bank",
+  "Échéance / date de dépôt prévue": "Due date / planned deposit date",
+  "Affectation aux factures": "Allocation to invoices",
+  "Sélectionnez d’abord un tiers.": "First select a third party.",
+  "Aucune facture comptabilisée avec un solde ouvert pour ce tiers.":
+    "No posted invoice with an open balance for this third party.",
+  "Solde ouvert": "Open balance",
+  "à rembourser": "to refund",
+  "Montant total du règlement": "Total settlement amount",
+  "Effacer le brouillon": "Clear the draft",
+  "Créer le règlement": "Create the settlement",
+  "La date et la référence du règlement ont été mises à jour.":
+    "The settlement date and reference were updated.",
+  "Modifier le règlement non comptabilisé": "Edit the unposted settlement",
+  "Modifiez la date ou la référence avant comptabilisation. Le montant de":
+    "Change the date or reference before posting. The amount of",
+  ", les comptes et les factures affectées restent inchangés.":
+    ", the accounts and the allocated invoices stay unchanged.",
+  "La modification du règlement est impossible.":
+    "The settlement cannot be changed.",
+  "Date du règlement": "Settlement date",
+  "Enregistrer les modifications": "Save the changes",
+  "Le règlement a été comptabilisé.": "The settlement was posted.",
+  "Le statut de l’effet a été mis à jour.":
+    "The instrument status was updated.",
+  "Action impossible sur cet effet.": "Action not possible on this instrument.",
+  "Le remboursement a été enregistré.": "The refund was recorded.",
+  "La saisie du règlement a été annulée.":
+    "The settlement entry was cancelled.",
+  "La correction du règlement est impossible.":
+    "The settlement cannot be corrected.",
+  "Déposer en banque": "Deposit at the bank",
+  "Marquer encaissé": "Mark as collected",
+  "Portefeuille chèques & traites": "Cheques & bills portfolio",
+  "Suivi Reçu → Déposé en banque → Encaissé ou Impayé.":
+    "Tracking: Received → Deposited at the bank → Collected or Unpaid.",
+  "Règlements clients et fournisseurs": "Customer and supplier settlements",
+  "Encaissements, décaissements et lettrage des factures.":
+    "Receipts, payments and invoice lettering.",
+  "Aucun règlement": "No settlements",
+  "Les règlements seront affectés aux factures comptabilisées.":
+    "Settlements will be allocated to posted invoices.",
+  Décaissement: "Payment",
+  "facture(s) affectée(s)": "invoice(s) allocated",
+  "Corriger le règlement": "Correct the settlement",
+  "Le brouillon sera annulé et restera visible pour la piste d’audit. Aucune extourne n’est nécessaire car il n’est pas comptabilisé. Pour changer uniquement sa date ou sa référence, utilisez Modifier.":
+    "The draft will be cancelled and stay visible in the audit trail. No reversal is needed because it is not posted. To change only its date or reference, use Edit.",
+  "Type de correction": "Correction type",
+  "Annulation d’une saisie erronée": "Cancellation of an incorrect entry",
+  "Remboursement au client ou par le fournisseur":
+    "Refund to the customer or by the supplier",
+  "Date de correction": "Correction date",
+  "Précisez l’erreur ou la référence du remboursement pour la piste d’audit.":
+    "Specify the error or the refund reference for the audit trail.",
+  Conserver: "Keep",
+  "Confirmer la correction": "Confirm the correction",
+  "Sélectionnez un collaborateur.": "Select a collaborator.",
+  "L’affectation a été modifiée.": "The assignment was updated.",
+  "Le collaborateur a été affecté au dossier.":
+    "The collaborator was assigned to the client file.",
+  "Impossible d’enregistrer l’affectation.": "Unable to save the assignment.",
+  "Modifier l’affectation": "Edit the assignment",
+  "Affecter un collaborateur": "Assign a collaborator",
+  Responsable: "Lead",
+  "Accès portail client": "Client portal access",
+  "Utilisé pour suivre la charge et la rentabilité du dossier.":
+    "Used to track the workload and profitability of the client file.",
+  "Ce client pourra voir ce dossier, ses pièces et ses échéances dans son espace client.":
+    "This client will be able to see this client file, its documents and its deadlines in the client space.",
+  "Enregistrer l’affectation": "Save the assignment",
+  "Le nom complet est obligatoire.": "The full name is required.",
+  "Le contact a été modifié.": "The contact was updated.",
+  "Le contact a été ajouté.": "The contact was added.",
+  "Impossible d’enregistrer le contact.": "Unable to save the contact.",
+  "Modifier le contact": "Edit the contact",
+  "Ajouter un contact": "Add a contact",
+  "Gérant, DAF…": "Manager, CFO…",
+  "Montant invalide (3 décimales maximum).":
+    "Invalid amount (3 decimals maximum).",
+  "La raison sociale est obligatoire.": "The company name is required.",
+  "Choisissez des honoraires mensuels ou annuels.":
+    "Choose monthly or annual fees.",
+  "Le dossier a été mis à jour.": "The client file was updated.",
+  "Le dossier client a été créé.": "The client file was created.",
+  "Impossible d’enregistrer le dossier.": "Unable to save the client file.",
+  "Mise à jour": "Update",
+  "Nouveau client": "New client",
+  "Créer un dossier client": "Create a client file",
+  "Identité juridique": "Legal identity",
+  "Situation fiscale": "Tax situation",
+  "Gestion du dossier": "Client file management",
+  "Période des honoraires": "Fee period",
+  "Ancienne fréquence — choisir une période":
+    "Former frequency — choose a period",
+  "Honoraires HT (TND)": "Fees excl. tax (TND)",
+  "Montant par an. Facultatif.": "Amount per year. Optional.",
+  "Montant par mois. Facultatif.": "Amount per month. Optional.",
+  "Séparez les étiquettes par une virgule.": "Separate tags with a comma.",
+  "Créer le dossier": "Create the client file",
+  "Créer l’exercice": "Create the financial year",
+  "Installer le plan": "Install the chart",
+  "Créer les journaux": "Create the journals",
+  "Exercice comptable créé.": "Financial year created.",
+  "Plan comptable NC 01 installé.": "NC 01 chart of accounts installed.",
+  "Journaux comptables créés.": "Accounting journals created.",
+  "Configuration du dossier": "Client file setup",
+  "Terminez ces étapes pour pouvoir saisir les factures et produire la comptabilité.":
+    "Complete these steps to be able to enter invoices and produce the accounts.",
+  "Aucune facture ne peut être enregistrée tant que les étapes marquées « bloquant » ne sont pas terminées.":
+    "No invoice can be recorded until the steps marked “blocking” are complete.",
+  "L’opération a échoué.": "The operation failed.",
+  "Étape terminée.": "Step completed.",
+  Autre: "Other",
+  Mensuelle: "Monthly",
+  Trimestrielle: "Quarterly",
+  Annuelle: "Annual",
+  "Par prestation": "Per service",
+  "Impossible de démarrer l’extraction.": "Unable to start the extraction.",
+  "Approbation forcée confirmée après vérification de la pièce originale.":
+    "Forced approval confirmed after checking the original document.",
+  "Impossible d’enregistrer la décision.": "Unable to save the decision.",
+  "Extraction validée": "Extraction validated",
+  "À vérifier": "To review",
+  "Aucune ligne détectée. Ajoutez les lignes visibles sur la pièce avant de confirmer.":
+    "No line detected. Add the lines visible on the document before confirming.",
+  "Messages du portail client": "Client portal messages",
+  "Conversation partagée avec les clients affectés à ce dossier.":
+    "Conversation shared with the clients assigned to this client file.",
+  "La conversation ne peut pas être chargée.":
+    "The conversation cannot be loaded.",
+  "Aucun message échangé.": "No messages exchanged.",
+  Vous: "You",
+  "Répondre au client…": "Reply to the client…",
+  "Le message n’a pas pu être envoyé.": "The message could not be sent.",
+  "Antivirus : sain": "Antivirus: clean",
+  "Fichier bloqué": "File blocked",
+  "Analyse indisponible": "Scan unavailable",
+  "Analyse requise": "Scan required",
+  Demandée: "Requested",
+  Reçue: "Received",
+  "À corriger": "To correct",
+  "Déposé via le lien sécurisé": "Uploaded through the secure link",
+  "Émise par le client": "Issued by the client",
+  "Reçu du client": "Received from the client",
+  "Ajouté par le cabinet": "Added by the firm",
+  "Reçu par e-mail": "Received by email",
+  "Origine non renseignée": "Origin not specified",
+  "Non extraite": "Not extracted",
+  "Extraction planifiée": "Extraction scheduled",
+  "Contrôle requis": "Review required",
+  "Extraction en échec": "Extraction failed",
+  "Sélectionnez au moins un fichier.": "Select at least one file.",
+  "Choisissez Factures d’achats, Factures de ventes ou Relevés bancaires pour l’extraction IA.":
+    "Choose Purchase invoices, Sales invoices or Bank statements for AI extraction.",
+  "Chaque fichier doit respecter la limite de 20 Mo.":
+    "Each file must respect the 20 MB limit.",
+  "Une demande de pièce précise ne peut être associée qu’à un seul fichier.":
+    "A specific document request can be linked to only one file.",
+  "Téléversement impossible.": "Upload failed.",
+  "Téléchargement impossible.": "Download failed.",
+  "Collecter et préparer les pièces": "Collect and prepare documents",
+  "Retrouvez ce que le client a envoyé, vérifiez les données lues par l’IA, puis classez la pièce lorsqu’elle est prête.":
+    "Find what the client sent, check the data read by the AI, then file the document when it is ready.",
+  "Client ou cabinet dépose une pièce": "Client or firm uploads a document",
+  Vérifier: "Review",
+  "Contrôler les valeurs proposées par l’IA":
+    "Check the values proposed by the AI",
+  "La pièce devient prête pour le traitement comptable":
+    "The document becomes ready for accounting",
+  "À vérifier avant comptabilisation": "To review before posting",
+  "Comparez la pièce originale avec les valeurs lues par l’IA. Rien n’est validé sans votre accord.":
+    "Compare the original document with the values read by the AI. Nothing is validated without your approval.",
+  "Impossible de charger la file de contrôle.":
+    "Unable to load the review queue.",
+  "Aucune extraction en attente. Les nouvelles propositions apparaîtront ici automatiquement.":
+    "No extraction pending. New proposals will appear here automatically.",
+  "Calculs cohérents — lecture à confirmer":
+    "Consistent calculations — reading to confirm",
+  "Documents reçus": "Received documents",
+  "Tous les fichiers déposés par le client ou ajoutés par le cabinet.":
+    "All files uploaded by the client or added by the firm.",
+  "Impossible de charger les documents.": "Unable to load the documents.",
+  "Aucun document pour cette période": "No documents for this period",
+  "· reçu le": "· received on",
+  "Classé · Importé en banque": "Filed · Imported into bank",
+  "Document classé": "Document filed",
+  "Classement à terminer": "Filing to complete",
+  "Le fichier a été contrôlé avant son ouverture.":
+    "The file was checked before opening.",
+  "Relire cette pièce remplacera ses résultats d’extraction enregistrés. Continuer ?":
+    "Reading this document again will replace its saved extraction results. Continue?",
+  "Voir dans Banque": "View in Bank",
+  "Créer la facture": "Create the invoice",
+  "Terminer le classement": "Complete the filing",
+  "Voir le document": "View the document",
+  "Documents demandés au client": "Documents requested from the client",
+  "Suivi des pièces manquantes ·": "Tracking missing documents ·",
+  "Nouvelle demande": "New request",
+  "Aucune pièce n’a été demandée au client pour cette période.":
+    "No document was requested from the client for this period.",
+  "Correction demandée :": "Correction requested:",
+  "Lien sécurisé envoyé à": "Secure link sent to",
+  "Visible dans le portail du client assigné":
+    "Visible in the assigned client’s portal",
+  "L’e-mail n’a pas été envoyé": "The email was not sent",
+  "Demander correction": "Request a correction",
+  "Renvoyer le lien": "Resend the link",
+  "Envoyer par e-mail": "Send by email",
+  "Document reçu": "Document received",
+  Lier: "Link",
+  "Aperçu du document": "Document preview",
+  "Impossible de générer l’aperçu. Vous pouvez toujours télécharger le document.":
+    "Unable to generate the preview. You can still download the document.",
+  "— Aperçu limité. Téléchargez le fichier pour voir la suite. —":
+    "— Limited preview. Download the file to see the rest. —",
+  "L’aperçu est limité aux 250 premières lignes et 50 colonnes.":
+    "The preview is limited to the first 250 rows and 50 columns.",
+  "Lire la pièce avec l’IA": "Read the document with AI",
+  "Type de pièce": "Document type",
+  "Démarrage…": "Starting…",
+  "Ajouter un document au dossier": "Add a document to the client file",
+  "Choisir un ou plusieurs fichiers": "Choose one or more files",
+  "Ce document sera conservé sans extraction IA. Pour extraire une facture ou un relevé, choisissez Factures d’achats, Factures de ventes ou Relevés bancaires.":
+    "This document will be kept without AI extraction. To extract an invoice or a statement, choose Purchase invoices, Sales invoices or Bank statements.",
+  Aucun: "None",
+  "Rechercher une demande…": "Search for a request…",
+  "Rendre ce document visible dans le portail client":
+    "Make this document visible in the client portal",
+  "La pièce sera ajoutée au dossier puis envoyée immédiatement à l’extraction IA. Les PDF sont traités page par page et une validation humaine reste obligatoire.":
+    "The document will be added to the client file and sent immediately to AI extraction. PDFs are processed page by page and human validation remains mandatory.",
+  "PDF, images, Excel, XML ou CSV · 20 Mo maximum.":
+    "PDF, images, Excel, XML or CSV · 20 MB maximum.",
+  "Envoi à l’IA…": "Sending to the AI…",
+  "Scanner avec l’IA": "Scan with AI",
+  "Ajouter au dossier": "Add to the client file",
+  "Demander une pièce au client": "Request a document from the client",
+  "Ex. Relevé bancaire BIAT": "E.g. BIAT bank statement",
+  "Échéance souhaitée": "Requested due date",
+  "Message au client": "Message to the client",
+  "Ex. Merci de déposer le relevé complet avec toutes les pages.":
+    "E.g. Please upload the complete statement with all its pages.",
+  "E-mail du destinataire": "Recipient email",
+  "client@exemple.com": "client@example.com",
+  "Sans compte Fiscora : un lien sécurisé valable 7 jours sera envoyé. Laissez vide seulement si un utilisateur du portail est déjà assigné à ce dossier.":
+    "Without a Fiscora account: a secure link valid for 7 days will be sent. Leave empty only if a portal user is already assigned to this client file.",
+  "Le client n’a pas besoin de créer un compte. Le lien ne permet de déposer qu’un seul fichier pour cette demande.":
+    "The client does not need to create an account. The link allows uploading only one file for this request.",
+  "Envoyer la demande": "Send the request",
+  "Renvoyer un nouveau lien": "Send a new link",
+  "Envoyer la demande par e-mail": "Send the request by email",
+  "L’ancien lien sera remplacé. Le nouveau lien expirera dans 7 jours et acceptera un seul fichier.":
+    "The old link will be replaced. The new link will expire in 7 days and accept only one file.",
+  "Demander une correction": "Request a correction",
+  "Le client verra la raison et pourra redéposer la bonne pièce.":
+    "The client will see the reason and can upload the right document again.",
+  "Raison de la correction": "Reason for the correction",
+  "Ex. Le relevé bancaire est incomplet, il manque la dernière page.":
+    "E.g. The bank statement is incomplete; the last page is missing.",
+  "Supprimer ce document ?": "Delete this document?",
+  "Échéances, préparation, validation, dépôt et paiement.":
+    "Deadlines, preparation, validation, filing and payment.",
+  Générer: "Generate",
+  "Impossible de charger le calendrier fiscal.":
+    "Unable to load the tax calendar.",
+  "Cette obligation n’est plus accessible.":
+    "This obligation is no longer accessible.",
+  "Calendrier non généré": "Calendar not generated",
+  "Générez les obligations applicables au profil fiscal de ce client.":
+    "Generate the obligations that apply to this client’s tax profile.",
+  "· Échéance": "· Due",
+  "Montant dû": "Amount due",
+  Démarrer: "Start",
+  Déposer: "File",
+  Paiement: "Payment",
+  "Rejeter la préparation": "Reject the preparation",
+  "Enregistrer le paiement": "Record the payment",
+  "Montant dû (TND)": "Amount due (TND)",
+  "Montant payé (TND)": "Amount paid (TND)",
+  Bientôt: "Soon",
+  Planifiée: "Scheduled",
+  "Le titre est obligatoire.": "The title is required.",
+  "Impossible d’enregistrer la tâche.": "Unable to save the task.",
+  "Modifier la tâche": "Edit the task",
+  "Créer une tâche": "Create a task",
+  "Un élément par ligne : pièce à demander, contrôle à faire, validation attendue…":
+    "One item per line: document to request, check to perform, expected validation…",
+  "Tâche fiscale": "Tax task",
+  "Tâche manuelle": "Manual task",
+  "Aucune description.": "No description.",
+  "Aucun contrôle ajouté pour cette tâche.": "No check added for this task.",
+  "Nouvel élément de contrôle…": "New check item…",
+  Commentaires: "Comments",
+  "Non affectée": "Unassigned",
+  "Prochaine action": "Next action",
+  "Soumettre pour révision": "Submit for review",
+  "Valider la tâche": "Validate the task",
+  "Renvoyer en correction": "Send back for correction",
+  "Cette tâche est clôturée.": "This task is closed.",
+  "Renvoyer la tâche": "Send the task back",
+  "Production du dossier": "Client file production",
+  "Les tâches sont organisées comme un circuit de cabinet : affectation, exécution, révision puis validation.":
+    "Tasks follow a firm workflow: assignment, execution, review, then validation.",
+  "Seules les tâches qui vous sont affectées sont affichées.":
+    "Only the tasks assigned to you are shown.",
+  "Nouvelle tâche": "New task",
+  "À réviser": "To review",
+  "À produire": "To produce",
+  Terminées: "Completed",
+  "Rechercher une tâche, un collaborateur, une priorité…":
+    "Search for a task, a collaborator, a priority…",
+  "Tous les statuts": "All statuses",
+  "Impossible de charger les tâches.": "Unable to load the tasks.",
+  "Aucune tâche pour ce dossier": "No tasks for this client file",
+  "Créez une première tâche manuelle ou générez les obligations fiscales pour cadrer le travail du mois.":
+    "Create a first manual task or generate the tax obligations to frame the month’s work.",
+  "Créer la première tâche": "Create the first task",
+  "Essayez un autre mot-clé ou retirez le filtre de statut.":
+    "Try another keyword or remove the status filter.",
+  "Cette tâche n’est plus accessible.": "This task is no longer accessible.",
+  "À faire": "To do",
+  Terminée: "Completed",
+  "Non commencée": "Not started",
+  "Boîte de réception": "Inbox",
+  "Factures d’achats": "Purchase invoices",
+  "Factures de ventes": "Sales invoices",
+  "Relevés bancaires": "Bank statements",
+  Contrats: "Contracts",
+  Juridique: "Legal",
+  Divers: "Miscellaneous",
+  "Amélioration de NuExtract — collecte": "NuExtract improvement — collection",
+  autorisée: "authorized",
+  désactivée: "disabled",
+  "Option facultative : copies privées des factures et relevés corrigés et approuvés. Aucun entraînement automatique.":
+    "Optional: private copies of corrected and approved invoices and statements. No automatic training.",
+  "Autoriser la collecte": "Authorize collection",
+  "Impossible de lire l’autorisation de collecte.":
+    "Unable to read the collection authorization.",
+  "Autoriser ce dossier pour le dataset":
+    "Authorize this client file for the dataset",
+  "Les prochains téléchargements seront bloqués et les copies de collecte seront supprimées en arrière-plan. Les téléchargements déjà effectués et modèles déjà entraînés ne peuvent pas être rappelés automatiquement.":
+    "Future downloads will be blocked and the collected copies will be deleted in the background. Downloads already made and models already trained cannot be recalled automatically.",
+  "Les documents contiennent des informations sensibles. Confirmez que vous disposez de l’autorisation du client pour leur utilisation dans l’amélioration du modèle Fiscora, y compris les pièces déjà approuvées. Cette option ne doit pas être activée sans cette autorisation.":
+    "The documents contain sensitive information. Confirm that you have the client’s authorization to use them to improve the Fiscora model, including documents already approved. This option must not be enabled without that authorization.",
+  "Motif du retrait": "Reason for withdrawal",
+  "Référence de l’autorisation du client": "Client authorization reference",
+  "Exemple : accord signé du client, date et référence. Minimum 8 caractères.":
+    "Example: client’s signed agreement, date and reference. Minimum 8 characters.",
+  "Je confirme le retrait.": "I confirm the withdrawal.",
+  "Je confirme disposer de l’autorisation nécessaire pour ce dossier.":
+    "I confirm that I have the required authorization for this client file.",
+  "Disponibilité des services et alertes de la plateforme.":
+    "Service availability and platform alerts.",
+  Cabinets: "Firms",
+  "Consultez les cabinets et gérez leur accès à la plateforme.":
+    "View the firms and manage their access to the platform.",
+  Utilisateurs: "Users",
+  "Gérez les comptes, leurs cabinets, leurs rôles et leur sécurité.":
+    "Manage the accounts, their firms, their roles and their security.",
+  Abonnements: "Subscriptions",
+  "Suivez les offres, les abonnements et leur facturation.":
+    "Track the plans, subscriptions and their billing.",
+  Traitements: "Processing",
+  "Suivez les extractions et les traitements de fond.":
+    "Track extractions and background processing.",
+  "Contrôlez la configuration et les envois transactionnels.":
+    "Check the configuration and transactional emails.",
+  "Jeux de données IA": "AI datasets",
+  "Collectez les exemples autorisés et exportez un dataset pour LoRA.":
+    "Collect authorized examples and export a dataset for LoRA.",
+  "Surveillez la santé de l’API, les performances et les erreurs.":
+    "Monitor the API’s health, performance and errors.",
+  Chargement: "Loading",
+  Configuré: "Configured",
+  "Suivi des invitations, tests SMTP et erreurs de livraison.":
+    "Invitation tracking, SMTP tests and delivery errors.",
+  Expéditeur: "Sender",
+  "Envoyés / 24h": "Sent / 24h",
+  "Échecs / 24h": "Failures / 24h",
+  "Hôte SMTP :": "SMTP host:",
+  "· dernier succès :": "· last success:",
+  "Envoyer un test": "Send a test",
+  "Utilise la configuration SMTP actuelle. Le mot de passe Brevo reste côté serveur.":
+    "Uses the current SMTP configuration. The Brevo password stays on the server.",
+  "Adresse e-mail de test": "Test email address",
+  "Envoyer le test": "Send the test",
+  "Journal des e-mails": "Email log",
+  "Les 100 derniers envois transactionnels.":
+    "The last 100 transactional emails.",
+  Destinataire: "Recipient",
+  "Cabinet / acteur": "Firm / actor",
+  Envoyé: "Sent",
+  Échec: "Failed",
+  "Accepté par le SMTP": "Accepted by SMTP",
+  "Erreur non détaillée": "Unspecified error",
+  "Aucun e-mail journalisé pour le moment.": "No email logged yet.",
+  "Supervision opérationnelle": "Operational monitoring",
+  "Santé de la réplique API active et des traitements Fiscora.":
+    "Health of the active API replica and of Fiscora’s processing.",
+  "Les métriques opérationnelles ne sont pas disponibles.":
+    "Operational metrics are not available.",
+  "Fenêtre glissante de": "Rolling window of",
+  "minutes sur la réplique API actuellement active. Les compteurs repartent de zéro après une mise à l’échelle à zéro ou un nouveau déploiement.":
+    "minutes on the currently active API replica. The counters restart from zero after scaling to zero or a new deployment.",
+  Requêtes: "Requests",
+  "Erreurs serveur": "Server errors",
+  "Latence p95": "p95 latency",
+  "Mémoire API": "API memory",
+  "Activité HTTP": "HTTP activity",
+  "Requêtes, erreurs serveur et latence moyenne par minute.":
+    "Requests, server errors and average latency per minute.",
+  "État de la réplique": "Replica status",
+  "Disponibilité courante": "Current availability",
+  "Traitements métier": "Business processing",
+  "En attente": "Pending",
+  "En cours": "In progress",
+  Échecs: "Failures",
+  "Dernier échec": "Last failure",
+  Préparation: "Preparing",
+  Prêt: "Ready",
+  Expiré: "Expired",
+  "Export demandé. Les images et le ZIP sont préparés en arrière-plan.":
+    "Export requested. The images and the ZIP are prepared in the background.",
+  "La collecte est désactivée par défaut. Le propriétaire autorise chaque dossier depuis Documents. Seules les extractions NuExtract approuvées, sans erreur bloquante et avec antivirus sain sont collectées. Aucune formation ni aucun déploiement automatique.":
+    "Collection is disabled by default. The owner authorizes each client file from Documents. Only approved NuExtract extractions, with no blocking error and a clean antivirus scan, are collected. No automatic training or deployment.",
+  "Opération indisponible.": "Operation unavailable.",
+  "Factures prêtes": "Invoices ready",
+  "Relevés bancaires prêts": "Bank statements ready",
+  "collecte(s) en échec. Vérifiez le stockage avant de réautoriser le dossier pour réessayer.":
+    "collection(s) failed. Check the storage before authorizing the client file again to retry.",
+  "Exporter pour le fine-tuning LoRA": "Export for LoRA fine-tuning",
+  "ZIP privé : images des pages, réponses corrigées, templates, métadonnées et samples.jsonl. Jusqu’à 1 000 exemples et 512 Mo par export. Les PDF sont rendus avec le service déjà utilisé pour l’extraction. Auditez les réponses et séparez entraînement / validation / test avant de lancer LoRA.":
+    "Private ZIP: page images, corrected answers, templates, metadata and samples.jsonl. Up to 1,000 examples and 512 MB per export. PDFs are rendered with the service already used for extraction. Audit the answers and split training / validation / test before running LoRA.",
+  "Factures et relevés": "Invoices and statements",
+  "Nombre maximum": "Maximum number",
+  "Commencer à l’exemple": "Start at example",
+  "Pour exporter en lots : 1, puis 1001, etc.":
+    "To export in batches: 1, then 1001, and so on.",
+  "Je confirme que cet export est destiné à un entraînement autorisé et restera confidentiel.":
+    "I confirm that this export is intended for authorized training and will remain confidential.",
+  "Export en préparation…": "Export in preparation…",
+  "Exporter le jeu de données": "Export the dataset",
+  "Exports récents": "Recent exports",
+  Exemples: "Examples",
+  Téléchargement: "Download",
+  "Réduisez le nombre d’exemples (limite 512 Mo).":
+    "Reduce the number of examples (512 MB limit).",
+  "Export interrompu ou indisponible : réessayez.":
+    "Export interrupted or unavailable: try again.",
+  "Télécharger le ZIP": "Download the ZIP",
+  "Aucun export. Les exemples autorisés sont collectés automatiquement toutes les 30 secondes.":
+    "No exports. Authorized examples are collected automatically every 30 seconds.",
+  "Les ZIP expirent après 24 heures. Un retrait d’autorisation bloque les nouveaux téléchargements. Il ne peut pas effacer une copie déjà téléchargée ni un modèle déjà entraîné.":
+    "ZIPs expire after 24 hours. Withdrawing an authorization blocks new downloads. It cannot erase a copy already downloaded or a model already trained.",
+  "Réinitialiser les filtres": "Reset the filters",
+  "Rechercher un compte": "Search for an account",
+  "Nom ou e-mail": "Name or email",
+  "Tous les cabinets": "All firms",
+  "Tous les rôles": "All roles",
+  Désactivé: "Disabled",
+  "· Vous": "· You",
+  "Aucune affectation active": "No active assignment",
+  "Détails des rôles indisponibles": "Role details unavailable",
+  "Dernière connexion :": "Last sign-in:",
+  "Aucun utilisateur trouvé.": "No user found.",
+  "Essayez de modifier ou réinitialiser les filtres.":
+    "Try changing or resetting the filters.",
+  Utilisateur: "User",
+  "Cabinet et rôle": "Firm and role",
+  "Dernière connexion": "Last sign-in",
+  "Voir les détails": "View details",
+  "Révoquer les connexions": "Revoke sessions",
+  "Votre compte": "Your account",
+  "Désactiver le compte": "Disable the account",
+  "Réactiver le compte": "Re-enable the account",
+  "Détails du compte": "Account details",
+  "Motif de désactivation :": "Reason for disabling:",
+  Sécurité: "Security",
+  Vérifié: "Verified",
+  "Non vérifié": "Not verified",
+  "Double authentification (MFA) :": "Two-factor authentication (MFA):",
+  "Cabinets et rôles": "Firms and roles",
+  "Compte créé :": "Account created:",
+  "« Révoquer les connexions » empêche le renouvellement des connexions existantes. Les accès déjà délivrés restent valides jusqu’à leur expiration.":
+    "“Revoke sessions” prevents existing sessions from being renewed. Access already granted remains valid until it expires.",
+  "Offres et abonnements des cabinets": "Firm plans and subscriptions",
+  "Fiscora facture le cabinet. Les honoraires que le cabinet facture à ses propres clients restent dans un module séparé.":
+    "Fiscora bills the firm. The fees the firm bills to its own clients stay in a separate module.",
+  Masquée: "Hidden",
+  "dossiers ·": "client files ·",
+  Go: "GB",
+  "documents OCR par mois": "OCR documents per month",
+  "Cabinets abonnés": "Subscribed firms",
+  Offre: "Plan",
+  Consommation: "Usage",
+  "Prochaine échéance": "Next due date",
+  Gérer: "Manage",
+  Facturer: "Invoice",
+  "Factures Fiscora": "Fiscora invoices",
+  "Marquer payée": "Mark as paid",
+  "Aucune facture SaaS pour le moment.": "No SaaS invoices yet.",
+  "Gérer l’abonnement": "Manage the subscription",
+  Mensuel: "Monthly",
+  Annuel: "Annual",
+  "Justification obligatoire": "Justification required",
+  "Minimum 8 caractères, conservée dans l’audit.":
+    "Minimum 8 characters, kept in the audit log.",
+  "Créer la facture SaaS": "Create the SaaS invoice",
+  "Référence du paiement": "Payment reference",
+  "Le montant est calculé automatiquement depuis l’offre et le cycle du cabinet. Échéance à 15 jours.":
+    "The amount is calculated automatically from the firm’s plan and cycle. Due in 15 days.",
+  "useFeedback doit être utilisé dans FeedbackProvider.":
+    "useFeedback must be used inside FeedbackProvider.",
+  "useUnsavedChangesGuard doit être utilisé dans UnsavedChangesProvider.":
+    "useUnsavedChangesGuard must be used inside UnsavedChangesProvider.",
+  "Connectez-vous pour rejoindre le cabinet": "Sign in to join the firm",
+  "Cette adresse possède déjà un compte Fiscora. Entrez son mot de passe pour accepter l’invitation.":
+    "This address already has a Fiscora account. Enter its password to accept the invitation.",
+  "Impossible de vérifier le code.": "Unable to verify the code.",
+  "Vérification de l’invitation…": "Checking the invitation…",
+  "Adresse invitée": "Invited address",
+  "Expire le": "Expires on",
+  "Compte Fiscora existant": "Existing Fiscora account",
+  "Nouveau compte Fiscora": "New Fiscora account",
+  "Lien personnel et utilisable une seule fois": "Personal, single-use link",
+  "Vous continuerez avec le compte existant":
+    "You will continue with the existing account",
+  "Mot de passe du compte existant": "Password of the existing account",
+  "Accepter avec mon compte existant": "Accept with my existing account",
+  "Créer mon compte et rejoindre le cabinet":
+    "Create my account and join the firm",
+  "Saisissez le code de votre application d’authentification ou un code de récupération pour terminer.":
+    "Enter the code from your authenticator app or a recovery code to finish.",
+  "Vérification…": "Checking…",
+  "Rien à traiter ici.": "Nothing to handle here.",
+  "Ouvrir la file": "Open the queue",
+  "Tout est à jour": "Everything is up to date",
+  "Aucune urgence détectée. C’est le bon moment pour préparer les prochaines demandes clients, vérifier les dossiers incomplets ou avancer les travaux du mois.":
+    "No urgent item detected. It is a good time to prepare the next client requests, check incomplete client files or move the month’s work forward.",
+  "Prochaine meilleure action": "Next best action",
+  "Traiter maintenant": "Handle now",
+  "Conseil produit : terminer une file critique avant d’ouvrir un autre module garde le cabinet lisible et évite les oublis.":
+    "Product tip: finishing a critical queue before opening another module keeps the firm’s work clear and avoids omissions.",
+  "votre cabinet": "your firm",
+  "Choisissez d’abord un dossier : son plan comptable et ses exercices sont totalement séparés des autres clients.":
+    "First choose a client file: its chart of accounts and financial years are fully separate from other clients.",
+  Plan: "Chart",
+  "installé :": "installed:",
+  "compte(s) ajouté(s),": "account(s) added,",
+  "déjà présent(s).": "already present.",
+  "Installer le plan tunisien NC 01": "Install the Tunisian NC 01 chart",
+  "Nouveau compte": "New account",
+  "Le référentiel général NC 01 est installé sans écraser vos subdivisions personnalisées. Le responsable comptable peut ajouter des sous-comptes adaptés à l’activité du client.":
+    "The general NC 01 reference chart is installed without overwriting your custom subdivisions. The chief accountant can add sub-accounts suited to the client’s activity.",
+  "Le plan du dossier est vide. Installez le plan tunisien ou créez un compte.":
+    "The client file’s chart is empty. Install the Tunisian chart or create an account.",
+  Saisie: "Posting",
+  Autorisée: "Allowed",
+  "Centres de coût du dossier": "Client file cost centers",
+  "Nouveau centre de coût": "New cost center",
+  "Taguez chaque ligne d’écriture (module Écritures comptables) avec un centre de coût pour obtenir un compte de résultat par département, projet ou site.":
+    "Tag each entry line (Journal entries module) with a cost center to get an income statement by department, project or site.",
+  "Aucun centre de coût. Créez-en un pour commencer à ventiler vos écritures.":
+    "No cost centers. Create one to start allocating your entries.",
+  "Résultat par centre de coût": "Result by cost center",
+  "Non affecté": "Unassigned",
+  "Choisissez un dossier client.": "Choose a client file.",
+  "Impossible de charger le dossier sélectionné.":
+    "Unable to load the selected client file.",
+  "Modifier le compte": "Edit the account",
+  "Nouveau compte comptable": "New ledger account",
+  "Modifier le centre de coût": "Edit the cost center",
+  "Centre de coût actif": "Active cost center",
+  "Renforcez la protection de vos données et de vos dossiers clients.":
+    "Strengthen the protection of your data and your client files.",
+  "IS annuel, régime forfaitaire, pré-liasse fiscale, annexes et acomptes provisionnels.":
+    "Annual corporate tax, flat-rate regime, draft tax return, annexes and provisional instalments.",
+  "Régime forfaitaire": "Flat-rate regime",
+  "Taux IS": "Corporate tax rate",
+  "Auto (selon secteur)": "Auto (by sector)",
+  "Laisser vide pour résoudre automatiquement selon le secteur du dossier":
+    "Leave empty to resolve it automatically from the client file’s sector",
+  "Minimum / avance": "Minimum / advance",
+  "Laisser vide pour appliquer le minimum d'impôt configuré":
+    "Leave empty to apply the configured minimum tax",
+  "Crédits imputables": "Deductible credits",
+  "Acomptes provisionnels versés": "Provisional instalments paid",
+  "Montant déjà versé au titre de cet exercice":
+    "Amount already paid for this financial year",
+  "Excédents antérieurs": "Previous surpluses",
+  "Crédit reporté d'un exercice précédent":
+    "Credit carried forward from a previous year",
+  "Réintégration fiscale": "Tax add-back",
+  "Ex : charge non déductible": "E.g.: non-deductible expense",
+  "Déduction fiscale": "Tax deduction",
+  "Ex : produit exonéré": "E.g.: exempt income",
+  Calculer: "Calculate",
+  "Clôturer l'exercice": "Close the financial year",
+  "Export pré-liasse PDF": "Export draft tax return PDF",
+  "Export pré-liasse CSV": "Export draft tax return CSV",
+  "Annexe amortissements PDF": "Depreciation annex PDF",
+  "Annexe retenues à la source PDF": "Withholding tax annex PDF",
+  "Exercice clôturé": "Financial year closed",
+  "Résultat fiscal": "Taxable income",
+  "Période du": "Period from",
+  "Tableau de détermination du résultat fiscal":
+    "Taxable income calculation table",
+  "Résultat comptable": "Accounting result",
+  Réintégrations: "Add-backs",
+  Déductions: "Deductions",
+  "Résultat fiscal avant report déficitaire":
+    "Taxable income before loss carry-forward",
+  "Report déficitaire imputé": "Loss carry-forward applied",
+  "Liquidation de l'impôt dû": "Tax due calculation",
+  "Minimum d'impôt": "Minimum tax",
+  "Impôt dû (I)": "Tax due (I)",
+  Régularisation: "Adjustment",
+  "Retenue à la source subie (auto, voir annexe)":
+    "Withholding tax suffered (auto, see annex)",
+  "Autres crédits imputables": "Other deductible credits",
+  "Report (crédit à reporter)": "Carry-forward (credit to carry forward)",
+  "Net à payer (IV)": "Net to pay (IV)",
+  "Acomptes provisionnels (exercice suivant)":
+    "Provisional instalments (next year)",
+  Tranche: "Instalment",
+  "Checklist liasse fiscale": "Tax return checklist",
+  "Déficits reportés": "Tax losses carried forward",
+  "Pertes fiscales des exercices clôturés, imputables sur les 4 exercices suivants.":
+    "Tax losses of closed financial years, deductible over the next 4 years.",
+  "Aucun déficit reporté enregistré pour ce dossier.":
+    "No tax loss carried forward recorded for this client file.",
+  "Exercice d'origine": "Year of origin",
+  "Montant initial": "Initial amount",
+  "Solde disponible": "Available balance",
+  "Expire après": "Expires after",
+  Épuisé: "Used up",
+  "Le guide Fiscora reste disponible. Choisissez un dossier uniquement pour interroger ses pièces comptables validées.":
+    "The Fiscora guide stays available. Choose a client file only to query its validated accounting documents.",
+  "Commencez par une question": "Start with a question",
+  "Posez une question sur la page ou une procédure Fiscora. Avec un dossier sélectionné, vous pouvez aussi interroger ses pièces validées et ses factures métier. L’assistant n’exécute aucune action.":
+    "Ask a question about the page or a Fiscora procedure. With a client file selected, you can also query its validated documents and business invoices. The assistant performs no action.",
+  "Consultation des guides et données du dossier…":
+    "Searching the guides and client file data…",
+  "Mise à jour automatique en cours pour": "Automatic update in progress for",
+  "document(s) n’ont pas pu être indexés automatiquement. Vous pouvez reconstruire l’index.":
+    "document(s) could not be indexed automatically. You can rebuild the index.",
+  "Saisissez le code à six chiffres de votre application d’authentification, ou utilisez un code de récupération.":
+    "Enter the six-digit code from your authenticator app, or use a recovery code.",
+  "Un code d’authentification ne peut être utilisé qu’une seule fois.":
+    "An authentication code can be used only once.",
+  Envoyée: "Sent",
+  "Honoraires comptables": "Accounting fees",
+  "La facture d’honoraires a été modifiée.": "The fee invoice was updated.",
+  "La facture d’honoraires a été créée en brouillon.":
+    "The fee invoice was created as a draft.",
+  "La facture a été émise.": "The invoice was issued.",
+  "Le règlement a été enregistré.": "The payment was recorded.",
+  "La correction du règlement a été enregistrée.":
+    "The payment correction was recorded.",
+  "La facture a été annulée sans supprimer son historique.":
+    "The invoice was cancelled without deleting its history.",
+  "Facturation du cabinet": "Firm billing",
+  "Facturez les prestations du cabinet, suivez les échéances et enregistrez chaque encaissement.":
+    "Bill the firm’s services, track due dates and record every payment received.",
+  "Aucune facture d’honoraires.": "No fee invoices.",
+  Payé: "Paid",
+  Encaisser: "Collect",
+  "Nouvelle facture d’honoraires": "New fee invoice",
+  "Créer le brouillon": "Create the draft",
+  "Annuler la facture ?": "Cancel the invoice?",
+  "restera dans l’historique avec le statut « Annulée ». Cette action ne supprime aucune trace.":
+    "will stay in the history with the status “Cancelled”. This action deletes no record.",
+  "Confirmer l’annulation": "Confirm the cancellation",
+  "Le règlement n’a pas pu être enregistré.":
+    "The payment could not be recorded.",
+  "Règlements de": "Payments for",
+  "Une correction ne supprime jamais le règlement d’origine. Elle le conserve avec sa date, son motif et son type de correction.":
+    "A correction never deletes the original payment. It keeps it with its date, reason and correction type.",
+  "Aucun règlement enregistré pour cette facture.":
+    "No payment recorded for this invoice.",
+  État: "Status",
+  "La correction n’a pas pu être enregistrée.":
+    "The correction could not be recorded.",
+  "Le montant de": "The amount of",
+  "sera retiré du total encaissé et la facture redeviendra due si nécessaire.":
+    "will be removed from the total collected and the invoice will become due again if necessary.",
+  "Indiquez la cause de l’erreur ou la référence du remboursement.":
+    "State the cause of the error or the refund reference.",
+  "À échéance le": "Due on",
+  "Espace client sécurisé": "Secure client space",
+  "Voici ce qui demande votre attention chez":
+    "Here is what needs your attention at",
+  "Mes sociétés": "My companies",
+  "Déposer des pièces": "Upload documents",
+  "Certaines données n’ont pas pu être actualisées.":
+    "Some data could not be refreshed.",
+  "Actions à traiter": "Actions to handle",
+  "Pièces demandées": "Requested documents",
+  "Échéances à surveiller": "Deadlines to watch",
+  "Mes actions": "My actions",
+  "Un seul endroit pour savoir quoi transmettre, valider ou régler.":
+    "One place to know what to send, validate or pay.",
+  Pièces: "Documents",
+  Échéances: "Deadlines",
+  Paiements: "Payments",
+  "Préparation de votre liste d’actions…": "Preparing your list of actions…",
+  "Aucune action ne vous est demandée pour le moment.":
+    "No action is requested from you at the moment.",
+  Prioritaire: "Priority",
+  "Déposer rapidement des pièces": "Quickly upload documents",
+  "Vous pouvez sélectionner plusieurs fichiers. Chaque pièce restera rattachée à la société choisie.":
+    "You can select several files. Each document stays linked to the chosen company.",
+  Société: "Company",
+  "Choisir des fichiers": "Choose files",
+  "Photographier une pièce": "Take a photo of a document",
+  "Le dépôt n’a pas pu être terminé. Réessayez ou contactez votre cabinet.":
+    "The upload could not be completed. Try again or contact your firm.",
+  "Évolution financière": "Financial trend",
+  "Produits, charges et résultat net comptabilisés sur les 12 derniers mois.":
+    "Income, expenses and net result posted over the last 12 months.",
+  "En révision": "In review",
+  Déposé: "Filed",
+  "Ce dossier n’est pas accessible avec votre compte.":
+    "This client file is not accessible with your account.",
+  "Retour à mes dossiers": "Back to my client files",
+  "Dossier actif": "Active client file",
+  "Déposer une pièce": "Upload a document",
+  "Certaines rubriques ne sont pas encore disponibles pour ce dossier.":
+    "Some sections are not yet available for this client file.",
+  "Pièces attendues": "Expected documents",
+  "Échéances en retard": "Overdue deadlines",
+  "Honoraires à régler": "Fees to pay",
+  "Ventes & facturation": "Sales & invoicing",
+  "À faire ce mois-ci": "To do this month",
+  "Correction demandée": "Correction requested",
+  "Pièce demandée": "Document requested",
+  "Correction :": "Correction:",
+  "Aucune pièce manquante signalée ce mois-ci.":
+    "No missing document reported this month.",
+  "Prochaines échéances": "Upcoming deadlines",
+  "Échéance :": "Due:",
+  "Votre interlocuteur": "Your contact",
+  "Votre demande sera transmise à l’équipe autorisée du cabinet.":
+    "Your request will be sent to the firm’s authorized team.",
+  "Écrire au cabinet": "Write to the firm",
+  "Documents partagés": "Shared documents",
+  "Consultez les pièces du dossier ou envoyez de nouveaux documents.":
+    "View the client file’s documents or send new documents.",
+  "Pièces demandées par le cabinet": "Documents requested by the firm",
+  Redéposer: "Upload again",
+  "Répondre à cette demande": "Answer this request",
+  "Aucun document partagé.": "No shared documents.",
+  "Mo · v": "MB · v",
+  "Aucune obligation générée pour cette année.":
+    "No obligation generated for this year.",
+  "Déclarations mensuelles": "Monthly declarations",
+  "Le bouton de validation atteste votre prise de connaissance. Il ne remplace ni la signature électronique qualifiée ni le dépôt officiel.":
+    "The validation button confirms that you have read the document. It replaces neither a qualified electronic signature nor the official filing.",
+  "Aucune déclaration préparée.": "No declaration prepared.",
+  Retenues: "Withholdings",
+  "Votre validation": "Your validation",
+  "Prise de connaissance confirmée": "Acknowledgement confirmed",
+  Signaler: "Flag",
+  "En préparation": "In preparation",
+  "Aucune facture comptabilisée.": "No posted invoices.",
+  "Honoraires du cabinet": "Firm fees",
+  Émission: "Issue date",
+  Justificatif: "Receipt",
+  "Téléchargez le bilan, l’état de résultat, le tableau des flux et les notes préparés par le cabinet.":
+    "Download the balance sheet, income statement, cash-flow statement and notes prepared by the firm.",
+  "La génération reste disponible lorsque les écritures de l’exercice sont prêtes.":
+    "Generation stays available once the year’s entries are ready.",
+  "Vous avez confirmé la prise de connaissance des états financiers":
+    "You confirmed that you have read the financial statements",
+  "Après lecture du PDF, vous pouvez confirmer sa réception.":
+    "After reading the PDF, you can confirm its receipt.",
+  "Confirmer la prise de connaissance": "Confirm acknowledgement",
+  "Conversation avec le cabinet": "Conversation with the firm",
+  "Ces messages sont visibles uniquement par vous et les personnes autorisées sur ce dossier.":
+    "These messages are visible only to you and the people authorized on this client file.",
+  "Aucun message. Commencez la conversation.":
+    "No messages. Start the conversation.",
+  "Écrivez votre message…": "Write your message…",
+  "Répondre à une demande du cabinet": "Answer a request from the firm",
+  "Ce fichier sera rattaché à la demande du cabinet pour":
+    "This file will be linked to the firm’s request for",
+  "PDF, image, CSV ou Excel · 20 Mo maximum.":
+    "PDF, image, CSV or Excel · 20 MB maximum.",
+  "Choisir un fichier": "Choose a file",
+  "Le document n’a pas pu être envoyé.": "The document could not be sent.",
+  "Envoyer au cabinet": "Send to the firm",
+  "Signaler une anomalie": "Report an issue",
+  "Votre remarque sera historisée avec la déclaration et visible par le cabinet.":
+    "Your remark will be recorded with the declaration and visible to the firm.",
+  "Expliquez ce qui doit être vérifié": "Explain what needs to be checked",
+  "Dossiers partagés avec moi": "Client files shared with me",
+  "Vous ne voyez que les entreprises auxquelles votre cabinet vous a explicitement donné accès.":
+    "You only see the companies your firm explicitly gave you access to.",
+  "Rechercher par nom, matricule fiscal ou activité":
+    "Search by name, tax ID or activity",
+  "Impossible de charger vos dossiers.": "Unable to load your client files.",
+  "Aucun dossier trouvé": "No client file found",
+  "Votre cabinet peut vous attribuer une société depuis son espace équipe.":
+    "Your firm can assign a company to you from its team space.",
+  "Ouvrir l’espace": "Open the space",
+  "Messages du cabinet, échéances et mises à jour importantes.":
+    "Firm messages, deadlines and important updates.",
+  "Marquer comme lu": "Mark as read",
+  "Profil, sécurité et notifications": "Profile, security and notifications",
+  "Gérez vos informations personnelles et la façon dont le cabinet vous informe.":
+    "Manage your personal information and how the firm keeps you informed.",
+  Identité: "Identity",
+  "L’adresse e-mail d’accès est protégée. Contactez le cabinet pour la modifier.":
+    "The sign-in email address is protected. Contact the firm to change it.",
+  "Votre profil a été enregistré.": "Your profile was saved.",
+  "Enregistrer le profil": "Save the profile",
+  "Après la modification, toutes les sessions — y compris celle-ci — devront se reconnecter à l’expiration de leur jeton d’accès.":
+    "After the change, every session — including this one — will have to sign in again when its access token expires.",
+  "Mot de passe actuel": "Current password",
+  "Nouveau mot de passe": "New password",
+  "10 caractères minimum, avec majuscule, minuscule et chiffre.":
+    "At least 10 characters, with an uppercase letter, a lowercase letter and a digit.",
+  "Changer le mot de passe": "Change the password",
+  "Ces préférences préparent les envois automatiques par e-mail. Les notifications importantes restent visibles dans Fiscora.":
+    "These preferences prepare automatic email notifications. Important notifications stay visible in Fiscora.",
+  "Nouveaux messages du cabinet": "New messages from the firm",
+  "Rappels d’échéances fiscales et sociales":
+    "Tax and social deadline reminders",
+  "Documents demandés ou ajoutés": "Documents requested or added",
+  "Résumé hebdomadaire de mes dossiers": "Weekly summary of my client files",
+  "Préférences enregistrées.": "Preferences saved.",
+  "Enregistrer les préférences": "Save the preferences",
+  "Vous n’avez pas l’autorisation de consulter les dossiers clients.":
+    "You are not authorized to view client files.",
+  "Impossible de charger ce dossier.": "Unable to load this client file.",
+  Synthèse: "Overview",
+  Collecte: "Collection",
+  "Échanges client": "Client exchanges",
+  "Obligations fiscales": "Tax obligations",
+  Suivi: "Follow-up",
+  "Tâches et validations": "Tasks and validations",
+  "Informations générales du client": "General client information",
+  "Identité et fiscalité": "Identity and taxation",
+  "Organisation comptable": "Accounting organization",
+  "Honoraires mensuels (ancien dossier)": "Monthly fees (former client file)",
+  "Honoraires annuels (ancien dossier)": "Annual fees (former client file)",
+  "Accès rapides": "Quick links",
+  "Documents du client": "Client documents",
+  "Factures d’achat et vente": "Purchase and sales invoices",
+  "Aucun contact principal défini.": "No main contact defined.",
+  "Contact client": "Client contact",
+  "Contacts du client": "Client contacts",
+  "Dirigeants et interlocuteurs administratifs.":
+    "Managers and administrative contacts.",
+  "Impossible de charger les contacts.": "Unable to load the contacts.",
+  "Aucun contact": "No contacts",
+  "Ajoutez le gérant ou votre interlocuteur principal.":
+    "Add the manager or your main contact.",
+  "Équipe affectée": "Assigned team",
+  "Responsabilités et budget mensuel par collaborateur.":
+    "Responsibilities and monthly budget per collaborator.",
+  Affecter: "Assign",
+  "Impossible de charger les affectations.": "Unable to load the assignments.",
+  "Aucun collaborateur affecté": "No collaborator assigned",
+  "Affectez un responsable et, si nécessaire, des personnes en support.":
+    "Assign a lead and, if needed, support members.",
+  "h / mois": "h / month",
+  "Archiver ce dossier ?": "Archive this client file?",
+  "Le dossier": "The client file",
+  "deviendra en lecture seule. Son historique restera conservé.":
+    "will become read-only. Its history will be kept.",
+  "Impossible d’archiver le dossier.": "Unable to archive the client file.",
+  "et ses données ont été supprimés. Le nettoyage des fichiers se poursuit en arrière-plan.":
+    "and its data were deleted. File cleanup continues in the background.",
+  "Impossible de charger les dossiers.": "Unable to load the client files.",
+  "Créez votre premier dossier client ou modifiez la recherche.":
+    "Create your first client file or change the search.",
+  "Supprimer définitivement ce dossier ?":
+    "Permanently delete this client file?",
+  "Cette action est irréversible. Elle supprime les factures, règlements, écritures, relevés bancaires, documents, tâches, déclarations et autres données liés à":
+    "This action cannot be undone. It deletes the invoices, settlements, entries, bank statements, documents, tasks, declarations and other data linked to",
+  "Le cabinet et les comptes utilisateurs restent. L’historique d’audit, les sauvegardes et les copies déjà téléchargées sont conservés. Les fichiers et copies des jeux de données sont nettoyés en arrière-plan.":
+    "The firm and the user accounts remain. The audit history, backups and copies already downloaded are kept. Files and dataset copies are cleaned up in the background.",
+  "Recopiez le nom exact du dossier": "Type the exact name of the client file",
+  "Je confirme la suppression définitive du dossier et de ses données.":
+    "I confirm the permanent deletion of the client file and its data.",
+  "La suppression a échoué. Réessayez.": "Deletion failed. Try again.",
+  "Supprimer définitivement": "Delete permanently",
+  "Pilotage du travail": "Work management",
+  "Planifiez, affectez et validez le travail du dossier sélectionné.":
+    "Plan, assign and validate the work of the selected client file.",
+  "Préparez, validez, déposez et suivez les échéances du client.":
+    "Prepare, validate, file and track the client’s deadlines.",
+  "Pièces comptables": "Accounting documents",
+  "Centralisez les fichiers reçus et contrôlez les pièces manquantes.":
+    "Centralize the files received and check the missing documents.",
+  "Contrôlez les factures reçues, les règlements et les écritures générées.":
+    "Check the invoices received, the settlements and the generated entries.",
+  Trésorerie: "Cash",
+  "Importez les relevés et rapprochez les mouvements avec la comptabilité.":
+    "Import the statements and reconcile the movements with the accounts.",
+  "Fiscalité périodique": "Periodic taxation",
+  "Préparez la déclaration mensuelle depuis les factures comptabilisées.":
+    "Prepare the monthly declaration from the posted invoices.",
+  Réviser: "Review",
+  Contrôler: "Check",
+  "Forme non renseignée": "Legal form not specified",
+  "Suspension TVA": "VAT suspension",
+  "Export total": "Full export",
+  "Informations administratives à compléter":
+    "Administrative information to complete",
+  "Choisissez un dossier pour démarrer": "Choose a client file to start",
+  "Toutes les actions de production sont liées à un client précis. Sélectionnez un dossier en haut de l’écran pour afficher son contexte, ses tâches et les prochaines étapes.":
+    "Every production action is linked to a specific client. Select a client file at the top of the screen to show its context, its tasks and the next steps.",
+  Rubrique: "Item",
+  "Action terminée avec succès.": "Action completed successfully.",
+  "Annexe enregistrée.": "Annex saved.",
+  "Clôture & reporting": "Closing & reporting",
+  "Bilan, état de résultat, flux de trésorerie et annexes selon le système comptable tunisien.":
+    "Balance sheet, income statement, cash flows and notes according to the Tunisian accounting system.",
+  "Appliquer le classement NC 01": "Apply the NC 01 classification",
+  "Générer les annexes": "Generate the notes",
+  "Soumettre les annexes": "Submit the notes",
+  "Valider les annexes": "Validate the notes",
+  "Figer l’exercice": "Freeze the financial year",
+  "Version définitive": "Final version",
+  "Prévisualisation temps réel": "Live preview",
+  "non générées": "not generated",
+  "Générez d’abord les annexes de cet exercice.":
+    "First generate the notes for this financial year.",
+  "TFP autres activités": "TFP other activities",
+  "CNSS salarié RSNA": "CNSS employee RSNA",
+  "Référentiel réglementaire": "Regulatory reference",
+  "Historisez les taux officiels. Chaque calcul conserve la source et la version applicables à sa date.":
+    "Keep a history of the official rates. Each calculation keeps the source and version applicable on its date.",
+  "Ajouter une version": "Add a version",
+  "Ne modifiez pas l’historique : ajoutez une nouvelle version avec sa date d’effet et la référence au texte officiel tunisien.":
+    "Do not change the history: add a new version with its effective date and the reference to the official Tunisian text.",
+  "Mise à jour réglementaire 2026": "2026 regulatory update",
+  "Les articles utiles sont reliés aux modules concernés. Une règle “action requise” doit être qualifiée dossier par dossier.":
+    "The relevant articles are linked to the modules concerned. An “action required” rule must be assessed client file by client file.",
+  "Aucune mise à jour réglementaire applicable.":
+    "No applicable regulatory update.",
+  "À qualifier par dossier": "To assess per client file",
+  "Lire le texte officiel": "Read the official text",
+  Validité: "Validity",
+  "Source officielle": "Official source",
+  "Impôt sur le revenu": "Income tax",
+  Depuis: "Since",
+  "À documenter": "To document",
+  "Nouveau paramètre": "New parameter",
+  "Nouveau barème IRPP": "New income tax scale",
+  "Valeur décimale (ex. 0.02)": "Decimal value (e.g. 0.02)",
+  "Taux décimal (ex. 0.19)": "Decimal rate (e.g. 0.19)",
+  De: "From",
+  "À (vide = infini)": "To (empty = no limit)",
+  "Ajouter une tranche": "Add a bracket",
+  "Enregistrer la version": "Save the version",
+  "Registre des biens, plans d’amortissement comptable et fiscal, dotations et clôture annuelle.":
+    "Asset register, accounting and tax depreciation schedules, depreciation charges and annual closing.",
+  "Nouvelle immobilisation": "New fixed asset",
+  "Aucune immobilisation.": "No fixed assets.",
+  "Créez d’abord une catégorie.": "First create a category.",
+  Bien: "Asset",
+  "Modifier l’immobilisation": "Edit the fixed asset",
+  "Échéancier —": "Schedule —",
+  Comptable: "Accounting",
+  Fiscal: "Tax",
+  Différence: "Difference",
+  "Nouvelle catégorie": "New category",
+  Durée: "Useful life",
+  Comptes: "Accounts",
+  "Modifier la catégorie": "Edit the category",
+  "Valider l’exercice": "Validate the financial year",
+  "Comptable :": "Accounting:",
+  "Fiscal :": "Tax:",
+  Immobilisation: "Fixed asset",
+  "Différence temporaire": "Temporary difference",
+  "Compte immobilisation": "Fixed asset account",
+  "Compte amortissements cumulés": "Accumulated depreciation account",
+  "Compte dotation": "Depreciation expense account",
+  "Enregistrer et refaire le plan": "Save and rebuild the schedule",
+  "Créer et générer le plan": "Create and generate the schedule",
+  "Saisie cabinet": "Firm entry",
+  "Le taux de change a été enregistré.": "The exchange rate was saved.",
+  "L’attestation de suspension a été enregistrée.":
+    "The suspension certificate was saved.",
+  "L’opération internationale a été modifiée.":
+    "The international operation was updated.",
+  "L’opération internationale a été créée en brouillon.":
+    "The international operation was created as a draft.",
+  "L’opération internationale a été comptabilisée.":
+    "The international operation was posted.",
+  "Le règlement et l’écart de change ont été comptabilisés.":
+    "The settlement and the exchange difference were posted.",
+  "Historisez les taux, comptabilisez les imports/exports en TND et constatez les écarts de change.":
+    "Keep a history of rates, post imports/exports in TND and record exchange differences.",
+  "Le taux exprime 1 unité de devise en TND. Chaque écriture conserve le montant d’origine et le taux utilisé.":
+    "The rate expresses 1 unit of currency in TND. Each entry keeps the original amount and the rate used.",
+  "Nouvelle opération": "New operation",
+  "Tiers / pays": "Third party / country",
+  "Valeur TND": "TND value",
+  "Coût rendu": "Landed cost",
+  "Rapatriement :": "Repatriation:",
+  Régler: "Settle",
+  "Ajouter un cours": "Add a rate",
+  "Enregistrer le taux": "Save the rate",
+  "Cours TND": "TND rate",
+  "Nouvelle attestation": "New certificate",
+  "Créer l’attestation": "Create the certificate",
+  Attestation: "Certificate",
+  Plafond: "Ceiling",
+  Utilisé: "Used",
+  Restant: "Remaining",
+  "Modifier l’opération internationale": "Edit the international operation",
+  "Nouvelle opération internationale": "New international operation",
+  Importation: "Import",
+  Exportation: "Export",
+  Aucune: "None",
+  "Compte d’achat / stock": "Purchase / stock account",
+  "Compte de vente": "Sales account",
+  "Compte TVA import": "Import VAT account",
+  "Régler l’opération et constater l’écart":
+    "Settle the operation and record the difference",
+  "Cette action crée, si nécessaire, une écriture d’écart de change.":
+    "This action creates an exchange difference entry if needed.",
+  "Compte gains de change": "Exchange gains account",
+  "Compte pertes de change": "Exchange losses account",
+  "Article 74 LF 2026 : conservez la référence bancaire ou le relevé prouvant le rapatriement.":
+    "Article 74 of the 2026 Finance Law: keep the bank reference or the statement proving the repatriation.",
+  "Date de rapatriement": "Repatriation date",
+  "Référence du relevé / avis bancaire": "Statement / bank notice reference",
+  "Le lien vers une pièce GED sera ajouté dans une étape dédiée.":
+    "The link to a document in the document library will be added in a dedicated step.",
+  "Comptabiliser le règlement": "Post the settlement",
+  "1. Données traitées": "1. Data processed",
+  "Fiscora traite les informations nécessaires à la gestion d’un cabinet et de ses dossiers : identité et coordonnées des utilisateurs, données du cabinet, dossiers clients, documents comptables, écritures, actions réalisées dans l’application et journaux de sécurité.":
+    "Fiscora processes the information needed to manage a firm and its client files: users’ identity and contact details, firm data, client files, accounting documents, entries, actions performed in the application and security logs.",
+  "Lors d’une connexion avec Google, Fiscora reçoit uniquement les informations d’identité nécessaires à l’authentification : identifiant Google stable, adresse e-mail vérifiée, nom affiché et, le cas échéant, domaine Google Workspace. Fiscora ne reçoit jamais votre mot de passe Google et ne demande aucun accès à Gmail, Google Drive ou Google Calendar.":
+    "When signing in with Google, Fiscora receives only the identity information needed for authentication: stable Google identifier, verified email address, display name and, where applicable, the Google Workspace domain. Fiscora never receives your Google password and requests no access to Gmail, Google Drive or Google Calendar.",
+  "2. Finalités": "2. Purposes",
+  "Ces données sont utilisées pour authentifier les utilisateurs, isoler les données de chaque cabinet, fournir les fonctions comptables et fiscales, sécuriser les accès, conserver une piste d’audit, traiter les documents déposés et assurer le support du service.":
+    "This data is used to authenticate users, isolate each firm’s data, provide the accounting and tax features, secure access, keep an audit trail, process uploaded documents and support the service.",
+  "3. Hébergement et prestataires": "3. Hosting and providers",
+  "L’application et les données métier sont hébergées sur Microsoft Azure. Certains traitements d’intelligence artificielle, notamment l’extraction documentaire et l’assistant, peuvent être exécutés sur Google Cloud. Brevo est utilisé pour les e-mails transactionnels et l’ingestion d’e-mails lorsqu’elle est activée.":
+    "The application and business data are hosted on Microsoft Azure. Some artificial intelligence processing, in particular document extraction and the assistant, may run on Google Cloud. Brevo is used for transactional emails and for email ingestion when it is enabled.",
+  "Les prestataires reçoivent uniquement les données nécessaires au service concerné. Les accès techniques sont protégés par des identités gérées, des secrets sécurisés et des contrôles d’autorisation.":
+    "Providers receive only the data needed for the service concerned. Technical access is protected by managed identities, secured secrets and authorization checks.",
+  "4. Conservation et sécurité": "4. Retention and security",
+  "Les données sont conservées pendant la durée nécessaire à la fourniture du service et aux obligations comptables, fiscales, contractuelles et de sécurité applicables. Les durées exactes peuvent varier selon la nature du document et les obligations du cabinet.":
+    "Data is kept for as long as needed to provide the service and to meet the applicable accounting, tax, contractual and security obligations. Exact periods may vary with the type of document and the firm’s obligations.",
+  "Fiscora applique notamment le chiffrement des communications, l’isolation par organisation, le contrôle des rôles, la journalisation, l’analyse antivirus des fichiers et des sauvegardes de service. Aucun système ne peut toutefois garantir un risque nul.":
+    "Fiscora applies in particular encrypted communications, isolation per organization, role control, logging, antivirus scanning of files and service backups. No system can, however, guarantee zero risk.",
+  "5. Vos droits": "5. Your rights",
+  "Vous pouvez demander l’accès, la rectification ou, lorsque la loi le permet, la suppression de vos données. Certaines informations doivent être conservées pour respecter les obligations légales du cabinet ou protéger la sécurité du service.":
+    "You can request access to, correction of or, where the law allows, deletion of your data. Some information must be kept to meet the firm’s legal obligations or protect the security of the service.",
+  "Pour toute question relative aux données personnelles ou à la connexion Google, contactez samimahjoub090@gmail.com.":
+    "For any question about personal data or Google sign-in, contact samimahjoub090@gmail.com.",
+  "6. Évolutions": "6. Changes",
+  "Cette politique peut être mise à jour lorsque les fonctionnalités, les prestataires ou les exigences légales évoluent. La date de mise à jour affichée en tête de page permet d’identifier la version applicable.":
+    "This policy may be updated when the features, providers or legal requirements change. The update date shown at the top of the page identifies the applicable version.",
+  "1. Objet du service": "1. Purpose of the service",
+  "Fiscora est une plateforme professionnelle de gestion comptable, fiscale et collaborative destinée aux cabinets, à leurs collaborateurs et à leurs clients. Chaque utilisateur doit employer le service dans le cadre de ses droits et responsabilités professionnels.":
+    "Fiscora is a professional accounting, tax and collaboration platform for firms, their collaborators and their clients. Each user must use the service within their professional rights and responsibilities.",
+  "2. Comptes et accès": "2. Accounts and access",
+  "L’utilisateur est responsable de l’exactitude de ses informations, de la confidentialité de ses moyens d’accès et des actions réalisées depuis son compte. Les rôles et permissions doivent être attribués selon le principe du moindre privilège.":
+    "The user is responsible for the accuracy of their information, the confidentiality of their access credentials and the actions performed from their account. Roles and permissions must be granted according to the principle of least privilege.",
+  "La connexion Google est un moyen d’authentification supplémentaire. Elle ne crée pas automatiquement un accès à un cabinet : l’adresse Google vérifiée doit déjà correspondre à un compte Fiscora autorisé.":
+    "Google sign-in is an additional authentication method. It does not automatically grant access to a firm: the verified Google address must already match an authorized Fiscora account.",
+  "3. Données comptables et intelligence artificielle":
+    "3. Accounting data and artificial intelligence",
+  "Les extractions, classements, rapprochements et réponses produits par l’intelligence artificielle constituent des propositions de travail. Ils ne remplacent ni le jugement professionnel ni les contrôles comptables et fiscaux.":
+    "Extractions, classifications, reconciliations and answers produced by artificial intelligence are work proposals. They replace neither professional judgement nor accounting and tax checks.",
+  "Une validation humaine reste obligatoire avant toute comptabilisation, déclaration, transmission ou décision ayant un effet financier ou juridique.":
+    "Human validation remains mandatory before any posting, declaration, transmission or decision with a financial or legal effect.",
+  "4. Utilisation autorisée": "4. Authorized use",
+  "Il est interdit d’utiliser Fiscora pour accéder aux données d’un tiers sans autorisation, contourner les contrôles de sécurité, introduire un contenu malveillant, perturber le service ou réaliser une activité contraire à la loi.":
+    "Using Fiscora to access a third party’s data without authorization, bypass security controls, introduce malicious content, disrupt the service or carry out unlawful activity is prohibited.",
+  "5. Disponibilité et responsabilité": "5. Availability and liability",
+  "Fiscora met en œuvre des moyens raisonnables pour assurer la disponibilité, la sécurité et l’intégrité du service. Des interruptions peuvent néanmoins être nécessaires pour la maintenance, les mises à jour, un incident ou la défaillance d’un prestataire.":
+    "Fiscora uses reasonable means to ensure the availability, security and integrity of the service. Interruptions may nevertheless be needed for maintenance, updates, an incident or a provider failure.",
+  "Le cabinet demeure responsable de ses obligations professionnelles, de la vérification des résultats, de ses déclarations et de la conservation des justificatifs requis par la réglementation.":
+    "The firm remains responsible for its professional obligations, for checking the results, for its declarations and for keeping the supporting documents required by regulations.",
+  "6. Suspension et fin d’accès": "6. Suspension and end of access",
+  "Un accès peut être suspendu en cas de risque de sécurité, d’utilisation abusive, de violation de ces conditions ou à la demande d’un administrateur autorisé du cabinet. Les modalités de restitution et de conservation des données dépendent du contrat et des obligations légales applicables.":
+    "Access may be suspended in case of a security risk, misuse, breach of these terms or at the request of an authorized administrator of the firm. The terms for returning and retaining data depend on the contract and the applicable legal obligations.",
+  "7. Contact et droit applicable": "7. Contact and governing law",
+  "Pour toute question sur le service ou ces conditions, contactez samimahjoub090@gmail.com. Sauf disposition impérative contraire, le service est régi par le droit tunisien.":
+    "For any question about the service or these terms, contact samimahjoub090@gmail.com. Unless a mandatory provision states otherwise, the service is governed by Tunisian law.",
+  "Comment Fiscora collecte, utilise et protège les données nécessaires au service.":
+    "How Fiscora collects, uses and protects the data needed for the service.",
+  "Les règles essentielles pour utiliser Fiscora dans un cadre professionnel.":
+    "The essential rules for using Fiscora in a professional context.",
+  "Retour à la connexion": "Back to sign-in",
+  "Fiscora · Informations légales": "Fiscora · Legal information",
+  "Dernière mise à jour : 16 septembre 2026": "Last updated: 16 September 2026",
+  "Consultez également la": "See also the",
+  "page des conditions d’utilisation": "terms of use page",
+  "Codes, libellés et types de comptes exportés depuis Sage/Ciel.":
+    "Account codes, labels and types exported from Sage/Ciel.",
+  Journaux: "Journals",
+  "Journaux achats, ventes, banque, caisse, OD, paie.":
+    "Purchase, sales, bank, cash, miscellaneous and payroll journals.",
+  "Clients, fournisseurs, matricules fiscaux, RNE et contacts.":
+    "Customers, suppliers, tax IDs, RNE and contacts.",
+  "Balance d’ouverture": "Opening balance",
+  "Débit/crédit par compte. Le total doit être équilibré.":
+    "Debit/credit per account. The total must balance.",
+  "Prévisualisation impossible.": "Preview failed.",
+  "Assistant Sage / Ciel": "Sage / Ciel assistant",
+  "Prévisualisez les exports de l’ancien logiciel, corrigez si besoin, puis importez les comptes, journaux, tiers et soldes d’ouverture.":
+    "Preview the exports from the previous software, correct them if needed, then import the accounts, journals, third parties and opening balances.",
+  "Choisissez le dossier client avant d’importer. Chaque migration reste isolée dans son dossier.":
+    "Choose the client file before importing. Each migration stays isolated in its client file.",
+  "Import terminé :": "Import finished:",
+  "créé(s),": "created,",
+  "mis à jour,": "updated,",
+  "ignoré(s)": "ignored",
+  "Données à importer": "Data to import",
+  "Date d’ouverture": "Opening date",
+  "Choisir un CSV/XLSX": "Choose a CSV/XLSX",
+  "Export Sage/Ciel ou fichier préparé avec les colonnes du modèle.":
+    "Sage/Ciel export or a file prepared with the template’s columns.",
+  Prévisualiser: "Preview",
+  "Importer dans le dossier": "Import into the client file",
+  Prévisualisation: "Preview",
+  "Vérifiez les premières lignes avant de confirmer l’import.":
+    "Check the first rows before confirming the import.",
+  "Importez un fichier puis cliquez sur “Prévisualiser”. Aucune donnée n’est écrite avant confirmation.":
+    "Import a file, then click “Preview”. No data is written before confirmation.",
+  "Réinitialiser le mot de passe": "Reset the password",
+  "Entrez votre adresse e-mail. Si le compte existe, nous vous envoyons un lien sécurisé.":
+    "Enter your email address. If the account exists, we will send you a secure link.",
+  "Envoyer le lien": "Send the link",
+  "Choisir un nouveau mot de passe": "Choose a new password",
+  "Utilisez un mot de passe fort. Toutes les sessions ouvertes seront déconnectées.":
+    "Use a strong password. All open sessions will be signed out.",
+  "Le lien de réinitialisation est incomplet.": "The reset link is incomplete.",
+  Réinitialiser: "Reset",
+  "Sécurité Fiscora": "Fiscora security",
+  "Un accès propre, sans stress.": "Clean, stress-free access.",
+  "Le lien envoyé par e-mail est personnel, limité dans le temps et utilisable une seule fois.":
+    "The link sent by email is personal, time-limited and single-use.",
+  "Jeton stocké sous forme hachée": "Token stored in hashed form",
+  "Déconnexion des anciennes sessions": "Old sessions signed out",
+  "Salariés, bulletins mensuels calculés avec les paramètres applicables et état CNSS trimestriel.":
+    "Employees, monthly payslips calculated with the applicable parameters and quarterly CNSS statement.",
+  "Déclaration annuelle (DUE)": "Annual declaration (DUE)",
+  "Nouveau salarié": "New employee",
+  Salarié: "Employee",
+  "Salaire brut": "Gross salary",
+  "Embauche :": "Hired:",
+  "Aide patronale art. 13 activée": "Employer aid art. 13 enabled",
+  "Modifier le salarié": "Edit the employee",
+  "Calculer une paie": "Calculate a payslip",
+  "Brut :": "Gross:",
+  "Net :": "Net:",
+  "Coût employeur :": "Employer cost:",
+  Brut: "Gross",
+  "CNSS salarié": "Employee CNSS",
+  "Prise en charge État": "State coverage",
+  Bulletin: "Payslip",
+  "Assiette brute": "Gross base",
+  "Part salarié": "Employee share",
+  "Part employeur": "Employer share",
+  "Aucune paie validée pour cet exercice.":
+    "No validated payroll for this financial year.",
+  "Brut annuel": "Annual gross",
+  "Base imposable": "Taxable base",
+  "Net annuel": "Annual net",
+  "Diplômé de l’enseignement supérieur": "Higher-education graduate",
+  "Éligibilité à la prise en charge patronale vérifiée (LF 2026, art. 13)":
+    "Eligibility for employer coverage checked (2026 Finance Law, art. 13)",
+  "Début de la prise en charge": "Start of coverage",
+  "Activez cette aide uniquement après vérification des conditions et conservation du justificatif.":
+    "Enable this aid only after checking the conditions and keeping the supporting document.",
+  "Les taux CNSS et le barème IRPP applicables seront pris automatiquement dans les paramètres fiscaux.":
+    "The applicable CNSS rates and income tax scale will be taken automatically from the tax parameters.",
+  "Confirmer la révocation": "Confirm the revocation",
+  "Confirmer la suspension": "Confirm the suspension",
+  "Confirmer la réactivation": "Confirm the reactivation",
+  "Action terminée.": "Action completed.",
+  "Actualiser les données": "Refresh the data",
+  "Les informations de cette section ne sont pas disponibles.":
+    "The information in this section is not available.",
+  "Administration de la plateforme": "Platform administration",
+  "Centre de contrôle Fiscora": "Fiscora control center",
+  "Suivez la disponibilité, la sécurité et l’activité globale sans accéder aux données comptables des cabinets.":
+    "Track availability, security and overall activity without accessing the firms’ accounting data.",
+  "Dernière mise à jour ·": "Last updated ·",
+  "Stockage documentaire": "Document storage",
+  "Services et intégrations": "Services and integrations",
+  "Configuration et disponibilité des briques essentielles.":
+    "Configuration and availability of the core components.",
+  "À surveiller": "To watch",
+  "Anomalies nécessitant une action.": "Anomalies requiring action.",
+  "Tout est sous contrôle": "Everything is under control",
+  "Aucune alerte opérationnelle active.": "No active operational alert.",
+  élément: "item",
+  concerné: "affected",
+  "Chargement de la section": "Loading the section",
+  "cabinet(s)": "firm(s)",
+  "Rechercher un cabinet": "Search for a firm",
+  Dossiers: "Client files",
+  "Dernière activité": "Last activity",
+  Réactiver: "Re-enable",
+  "Aucun cabinet trouvé.": "No firm found.",
+  "Traitements de fond": "Background processing",
+  "Suivi technique des extractions, invitations et transmissions.":
+    "Technical tracking of extractions, invitations and transmissions.",
+  "Dernier échec :": "Last failure:",
+  "Les relances automatiques seront activées après branchement des files de production. Cette vue ne permet pas de modifier les données métier.":
+    "Automatic retries will be enabled once the production queues are connected. This view cannot change business data.",
+  "Minimum 8 caractères. Cette justification sera auditée.":
+    "Minimum 8 characters. This justification will be audited.",
+  "Pilotage économique": "Business performance",
+  "Honoraires convenus dans le dossier − coût du travail approuvé = marge estimée.":
+    "Fees agreed in the client file − cost of approved work = estimated margin.",
+  "Base de calcul": "Calculation basis",
+  "Honoraires du dossier (estimés)": "Client file fees (estimated)",
+  "Honoraires facturés": "Invoiced fees",
+  "Coût collaborateur": "Collaborator cost",
+  "Estimation selon les honoraires HT enregistrés dans le dossier. Aucune facture à créer pour ce calcul. Les mois partiels sont proratisés ; les honoraires annuels sont répartis sur 12 mois.":
+    "Estimate based on the fees excl. tax recorded in the client file. No invoice needs to be created for this calculation. Partial months are prorated; annual fees are spread over 12 months.",
+  "dossier(s) sans honoraires mensuels/annuels configurés : renseignez-les dans Dossiers clients → Modifier.":
+    "client file(s) without monthly/annual fees configured: enter them in Client files → Edit.",
+  "Honoraires convenus HT (estimés)": "Agreed fees excl. tax (estimated)",
+  "Honoraires facturés HT": "Invoiced fees excl. tax",
+  "Marge estimée": "Estimated margin",
+  "Honoraires encaissés HT :": "Fees collected excl. tax:",
+  ". Les honoraires convenus du dossier ne sont pas ajoutés aux factures.":
+    ". The client file’s agreed fees are not added to the invoices.",
+  "Par dossier client": "By client file",
+  Dossier: "Client file",
+  Heures: "Hours",
+  Facturable: "Billable",
+  "Honoraires estimés": "Estimated fees",
+  "Coût affecté": "Allocated cost",
+  "Taux de marge": "Margin rate",
+  "Honoraires à renseigner": "Fees to enter",
+  "coût(s) manquant(s)": "missing cost(s)",
+  "Par collaborateur": "By collaborator",
+  "Coût employeur": "Employer cost",
+  "Honoraires estimés affectés": "Allocated estimated fees",
+  "CA facturé affecté": "Allocated invoiced revenue",
+  "Contribution estimée": "Estimated contribution",
+  "Contribution sur facturé": "Contribution on invoiced revenue",
+  "Coût à configurer": "Cost to configure",
+  "Les honoraires estimés sont répartis entre collaborateurs selon leurs heures approuvées. Ce montant n’est ni une facture ni un encaissement.":
+    "Estimated fees are spread between collaborators according to their approved hours. This amount is neither an invoice nor a payment received.",
+  "version(s) de coûts configurée(s).": "cost version(s) configured.",
+  "Nouveau coût collaborateur": "New collaborator cost",
+  Horaire: "Hourly",
+  "Coût employeur mensuel": "Monthly employer cost",
+  "Coût calculé = taux horaire × heures approuvées.":
+    "Calculated cost = hourly rate × approved hours.",
+  "Sélectionnez un fichier.": "Select a file.",
+  "Le fichier dépasse la limite de 20 Mo.": "The file exceeds the 20 MB limit.",
+  "Le dépôt est temporairement indisponible.":
+    "Uploading is temporarily unavailable.",
+  "Dépôt sécurisé": "Secure upload",
+  "Envoyer une pièce au cabinet": "Send a document to the firm",
+  "Aucun compte Fiscora n’est nécessaire. Ce lien est personnel et ne répond qu’à la demande indiquée.":
+    "No Fiscora account is needed. This link is personal and answers only the request shown.",
+  "Vérification du lien…": "Checking the link…",
+  "a bien été transmis au cabinet. Vous pouvez fermer cette page.":
+    "was sent to the firm. You can close this page.",
+  "Dossier · période": "Client file · period",
+  "Une pièce a déjà été transmise avec ce lien.":
+    "A document has already been sent with this link.",
+  "Ce lien a expiré. Demandez un nouveau lien au cabinet.":
+    "This link has expired. Ask the firm for a new link.",
+  "Choisir le document": "Choose the document",
+  "PDF, image, Excel, XML ou CSV · 20 Mo maximum · analyse antivirus avant enregistrement.":
+    "PDF, image, Excel, XML or CSV · 20 MB maximum · antivirus scan before saving.",
+  "Analyse et envoi…": "Scanning and sending…",
+  "Vous n’avez pas l’autorisation de consulter l’assurance qualité.":
+    "You are not authorized to view quality assurance.",
+  "Contrôlez les dossiers avant validation : pièces, échéances, écritures, banque, fiscalité et paie.":
+    "Check the client files before validation: documents, deadlines, entries, bank, taxes and payroll.",
+  "Tous les dossiers actifs": "All active client files",
+  "Score qualité": "Quality score",
+  "Synthèse des contrôles": "Checks summary",
+  "Bloquant(s)": "Blocking",
+  "Alerte(s)": "Warning(s)",
+  "Information(s)": "Information",
+  "Tout est propre pour le périmètre sélectionné. Aucun point qualité ouvert.":
+    "Everything is clean for the selected scope. No open quality issue.",
+  "Points à corriger": "Issues to fix",
+  "Les points bloquants doivent être traités avant dépôt, clôture ou reporting client.":
+    "Blocking issues must be handled before filing, closing or client reporting.",
+  "Aucun point qualité ouvert.": "No open quality issue.",
+  Contrôle: "Check",
+  "élément(s)": "item(s)",
+  "Mon abonnement Fiscora": "My Fiscora subscription",
+  "Offre, limites d’utilisation et factures dues par votre cabinet à Fiscora.":
+    "Plan, usage limits and invoices owed by your firm to Fiscora.",
+  "L’abonnement n’est pas disponible ou votre rôle ne permet pas de le consulter.":
+    "The subscription is not available or your role does not allow viewing it.",
+  "Offre actuelle": "Current plan",
+  "Fin de la période d’essai": "End of the trial period",
+  Collaborateurs: "Collaborators",
+  Stockage: "Storage",
+  "Documents OCR": "OCR documents",
+  "Factures d’abonnement": "Subscription invoices",
+  "Aucune facture d’abonnement.": "No subscription invoices.",
+  "Offres disponibles": "Available plans",
+  "Vos clients ne paient pas Fiscora. Ils règlent leurs honoraires à votre cabinet dans le module « Honoraires ». Cet abonnement concerne uniquement votre accès professionnel à la plateforme.":
+    "Your clients do not pay Fiscora. They pay their fees to your firm in the “Fees” module. This subscription only covers your professional access to the platform.",
+  "Invitez les collaborateurs, contrôlez leurs rôles et consultez la piste d’audit du cabinet.":
+    "Invite collaborators, control their roles and view the firm’s audit trail.",
+  "Suivi des e-mails envoyés et des invitations encore actives.":
+    "Tracking of the emails sent and the invitations still active.",
+  Expiration: "Expiry",
+  Objet: "Subject",
+  Détails: "Details",
+  "Ouvrir le lien d’invitation": "Open the invitation link",
+  "Ouvrir la boîte Mailpit": "Open the Mailpit inbox",
+  "Envoyer l’invitation": "Send the invitation",
+  "Créer le rôle": "Create the role",
+  "Durée corrigée": "Corrected duration",
+  "Sans tâche liée": "No linked task",
+  "Mesurez le travail actif dans Fiscora, rattachez-le aux tâches et ne retenez que les temps validés dans la rentabilité.":
+    "Measure active work in Fiscora, link it to tasks and count only validated time in profitability.",
+  "Saisie manuelle": "Manual entry",
+  "Seules les tâches qui vous sont affectées sont proposées. Vos heures doivent être approuvées avant d’être prises en compte dans les coûts.":
+    "Only the tasks assigned to you are offered. Your hours must be approved before they count in costs.",
+  "Suivi automatique dans Fiscora": "Automatic tracking in Fiscora",
+  "Pause après 2 minutes d’inactivité. Aucun texte saisi, écran ou autre application n’est enregistré.":
+    "Pauses after 2 minutes of inactivity. No typed text, screen or other application is recorded.",
+  Tâche: "Task",
+  "Travail hors tâche": "Work outside a task",
+  "Activité Fiscora": "Fiscora activity",
+  Cohérent: "Consistent",
+  Approuver: "Approve",
+  "Modifier le temps": "Edit the time",
+  "Saisir un temps exceptionnel": "Enter exceptional time",
+  "La correction repasse le temps en brouillon et conserve la trace de modification.":
+    "The correction sets the time back to draft and keeps a record of the change.",
+  "Cette saisie sera identifiée comme manuelle et devra être validée par un responsable avant d’entrer dans la rentabilité.":
+    "This entry will be flagged as manual and must be validated by a manager before it counts in profitability.",
+  "Tâche liée": "Linked task",
+  "Travail effectué et raison de la saisie manuelle":
+    "Work done and reason for the manual entry",
+  "Motif de correction de la durée": "Reason for the duration correction",
+  "Obligatoire si vous changez la durée enregistrée.":
+    "Required if you change the recorded duration.",
+  "Enregistrer la correction": "Save the correction",
+  "Impossible de mettre à jour le suivi du temps.":
+    "Unable to update the time tracking.",
+  "Choisissez un cabinet.": "Choose a firm.",
+  Reprendre: "Resume",
+  Arrêter: "Stop",
+  "useWorkSession doit être utilisé dans WorkSessionProvider.":
+    "useWorkSession must be used inside WorkSessionProvider.",
+  Bloquée: "Blocked",
+  "Non rapprochée": "Unreconciled",
+  Ignorée: "Ignored",
+  Prête: "Ready",
+  "À traiter": "To handle",
+  Traité: "Processed",
+  Classé: "Filed",
+  Réussie: "Succeeded",
+  Infecté: "Infected",
+  "Impossible de modifier cette écriture.": "Unable to update this entry.",
+  "Impossible de créer cette écriture.": "Unable to create this entry.",
+  "Suspendre ce cabinet": "Suspend this firm",
+  "Suspendre ce compte": "Suspend this account",
+  "Réactiver ce cabinet": "Re-enable this firm",
+  "Réactiver ce compte": "Re-enable this account",
 };
 
 /** Arabic for the texts added with the English interface. */

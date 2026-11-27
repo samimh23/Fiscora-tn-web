@@ -83,6 +83,233 @@ const PATTERNS: Array<{
   ar: string;
   en: string;
 }> = [
+  { fr: /^Modifier ([A-Z0-9][\w\-/]*)$/, ar: "Modifier $1", en: "Edit $1" },
+  {
+    fr: /^Aperçu PDF de (.+?)$/,
+    ar: "Aperçu PDF de $1",
+    en: "PDF preview of $1",
+  },
+  { fr: /^(.+?) pièce\(s\)$/, ar: "$1 pièce(s)", en: "$1 document(s)" },
+  { fr: /^Débit (.+?)$/, ar: "Débit $1", en: "Debit $1" },
+  { fr: /^Crédit (.+?)$/, ar: "Crédit $1", en: "Credit $1" },
+  { fr: /^(.+?)–(.+?) sur (.+?)$/, ar: "$1–$2 sur $3", en: "$1–$2 of $3" },
+  {
+    fr: /^(.+?) contrôle\(s\) restant\(s\)$/,
+    ar: "$1 contrôle(s) restant(s)",
+    en: "$1 check(s) remaining",
+  },
+  {
+    fr: /^Clôturé · résultat (.+?)$/,
+    ar: "Clôturé · résultat $1",
+    en: "Closed · result $1",
+  },
+  {
+    fr: /^Page localisée : (.+?)$/,
+    ar: "Page localisée : $1",
+    en: "Located page: $1",
+  },
+  {
+    fr: /^L’extrait couvre les pages (.+?)\.$/,
+    ar: "L’extrait couvre les pages $1.",
+    en: "The excerpt covers pages $1.",
+  },
+  { fr: /^Clients \((.+?)\)$/, ar: "Clients ($1)", en: "Customers ($1)" },
+  {
+    fr: /^La somme des lignes HT \((.+?)\) diffère du total HT imprimé \((.+?)\)\. Les prix ont été conservés : vérifiez l’écart, sans modifier automatiquement les lignes\.$/,
+    ar: "La somme des lignes HT ($1) diffère du total HT imprimé ($2). Les prix ont été conservés : vérifiez l’écart, sans modifier automatiquement les lignes.",
+    en: "The sum of the net line amounts ($1) differs from the printed net total ($2). The prices were kept: check the difference; the lines are not changed automatically.",
+  },
+  {
+    fr: /^Le taux de TVA absent de (.+?) a été déduit du montant total de TVA \((.+?) %\)\. Vérifiez ce taux avant d’enregistrer\.$/,
+    ar: "Le taux de TVA absent de $1 a été déduit du montant total de TVA ($2 %). Vérifiez ce taux avant d’enregistrer.",
+    en: "The VAT rate missing from $1 was derived from the total VAT amount ($2 %). Check this rate before saving.",
+  },
+  {
+    fr: /^(.+?) — (.+?) — montant créditable (.+?)$/,
+    ar: "$1 — $2 — montant créditable $3",
+    en: "$1 — $2 — creditable amount $3",
+  },
+  {
+    fr: /^La facture (.+?) est déjà liée à ce document\.$/,
+    ar: "La facture $1 est déjà liée à ce document.",
+    en: "Invoice $1 is already linked to this document.",
+  },
+  { fr: /^Numéro (.+?)$/, ar: "Numéro $1", en: "Number $1" },
+  {
+    fr: /^Le règlement original de (.+?) restera visible\. Ses affectations seront retirées des factures et son écriture sera extournée\. Tout rapprochement bancaire associé sera rouvert\.$/,
+    ar: "Le règlement original de $1 restera visible. Ses affectations seront retirées des factures et son écriture sera extournée. Tout rapprochement bancaire associé sera rouvert.",
+    en: "The original settlement of $1 will stay visible. Its allocations will be removed from the invoices and its entry will be reversed. Any linked bank reconciliation will be reopened.",
+  },
+  { fr: /^(.+?)\/(.+?) terminé$/, ar: "$1/$2 terminé", en: "$1/$2 completed" },
+  {
+    fr: /^Statut : (.+?)\. Les valeurs affichées sont les résultats sauvegardés après les éventuelles corrections\.$/,
+    ar: "Statut : $1. Les valeurs affichées sont les résultats sauvegardés après les éventuelles corrections.",
+    en: "Status: $1. The values shown are the results saved after any corrections.",
+  },
+  {
+    fr: /^(.+?) reçu\(s\) du client$/,
+    ar: "$1 reçu(s) du client",
+    en: "$1 received from the client",
+  },
+  { fr: /^(.+?) à vérifier$/, ar: "$1 à vérifier", en: "$1 to review" },
+  { fr: /^(.+?) à contrôler$/, ar: "$1 à contrôler", en: "$1 to check" },
+  {
+    fr: /^(.+?) point\(s\) à examiner$/,
+    ar: "$1 point(s) à examiner",
+    en: "$1 point(s) to examine",
+  },
+  {
+    fr: /^Menace détectée : (.+?)$/,
+    ar: "Menace détectée : $1",
+    en: "Threat detected: $1",
+  },
+  { fr: /^· Échéance (.+?)$/, ar: "· Échéance $1", en: "· Due $1" },
+  { fr: /^· expire le (.+?)$/, ar: "· expire le $1", en: "· expires on $1" },
+  {
+    fr: /^(.+?) fichier\(s\) sélectionné\(s\)$/,
+    ar: "$1 fichier(s) sélectionné(s)",
+    en: "$1 file(s) selected",
+  },
+  {
+    fr: /^E-mail de test envoyé à (.+?)\.$/,
+    ar: "E-mail de test envoyé à $1.",
+    en: "Test email sent to $1.",
+  },
+  {
+    fr: /^(.+?) réponse\(s\) 5xx$/,
+    ar: "$1 réponse(s) 5xx",
+    en: "$1 5xx response(s)",
+  },
+  { fr: /^sur (.+?)$/, ar: "sur $1", en: "of $1" },
+  { fr: /^Actions pour (.+?)$/, ar: "Actions pour $1", en: "Actions for $1" },
+  { fr: /^Échéance (.+?)$/, ar: "Échéance $1", en: "Due $1" },
+  {
+    fr: /^(.+?) action\(s\) à traiter dans cette file\.$/,
+    ar: "$1 action(s) à traiter dans cette file.",
+    en: "$1 action(s) to handle in this queue.",
+  },
+  {
+    fr: /^Quel est le résumé financier pour (.+?) \?$/,
+    ar: "Quel est le résumé financier pour $1 ?",
+    en: "What is the financial summary for $1?",
+  },
+  {
+    fr: /^(.+?) document\(s\) validé\(s\), (.+?) source\(s\) prête\(s\)\.$/,
+    ar: "$1 document(s) validé(s), $2 source(s) prête(s).",
+    en: "$1 validated document(s), $2 source(s) ready.",
+  },
+  {
+    fr: /^Pièce demandée pour (.+?)\/(.+?)$/,
+    ar: "Pièce demandée pour $1/$2",
+    en: "Document requested for $1/$2",
+  },
+  { fr: /^(.+?) à régler$/, ar: "$1 à régler", en: "$1 to pay" },
+  {
+    fr: /^Déclaration (.+?)\/(.+?)$/,
+    ar: "Déclaration $1/$2",
+    en: "Declaration $1/$2",
+  },
+  {
+    fr: /^Disponible pour votre prise de connaissance · Total (.+?)$/,
+    ar: "Disponible pour votre prise de connaissance · Total $1",
+    en: "Available for your acknowledgement · Total $1",
+  },
+  {
+    fr: /^(.+?) fichier(.+?) sélectionné(.+?)$/,
+    ar: "$1 fichier$2 sélectionné$3",
+    en: "$1 file(s) selected",
+  },
+  { fr: /^· avant le (.+?)$/, ar: "· avant le $1", en: "· before $1" },
+  {
+    fr: /^États financiers (.+?)$/,
+    ar: "États financiers $1",
+    en: "Financial statements $1",
+  },
+  { fr: /^Équipe \((.+?)\)$/, ar: "Équipe ($1)", en: "Team ($1)" },
+  { fr: /^Supprimer (.+?)$/, ar: "Supprimer $1", en: "Delete $1" },
+  {
+    fr: /^· (.+?) compte\(s\) à classer\.$/,
+    ar: "· $1 compte(s) à classer.",
+    en: "· $1 account(s) to classify.",
+  },
+  { fr: /^jusqu’au (.+?)$/, ar: "jusqu’au $1", en: "until $1" },
+  {
+    fr: /^Opérations \((.+?)\)$/,
+    ar: "Opérations ($1)",
+    en: "Operations ($1)",
+  },
+  {
+    fr: /^(.+?) expire dans (.+?) jour\(s\)$/,
+    ar: "$1 expire dans $2 jour(s)",
+    en: "$1 expires in $2 day(s)",
+  },
+  {
+    fr: /^Aide estimée : (.+?) TND$/,
+    ar: "Aide estimée : $1 TND",
+    en: "Estimated aid: $1 TND",
+  },
+  {
+    fr: /^(.+?) devra se reconnecter sur tous ses appareils\. La session d’accès actuelle expirera normalement, mais aucun jeton ne pourra être renouvelé\.$/,
+    ar: "$1 devra se reconnecter sur tous ses appareils. La session d’accès actuelle expirera normalement, mais aucun jeton ne pourra être renouvelé.",
+    en: "$1 will have to sign in again on every device. The current access session will expire normally, but no token can be renewed.",
+  },
+  {
+    fr: /^Les connexions de (.+?) ont été révoquées\.$/,
+    ar: "Les connexions de $1 ont été révoquées.",
+    en: "The sessions of $1 were revoked.",
+  },
+  {
+    fr: /^(.+?) ne pourra plus accéder à ses dossiers\. Les données restent conservées\.$/,
+    ar: "$1 ne pourra plus accéder à ses dossiers. Les données restent conservées.",
+    en: "$1 will no longer be able to access its client files. The data is kept.",
+  },
+  {
+    fr: /^(.+?) ne pourra plus se connecter et ses sessions seront révoquées\.$/,
+    ar: "$1 ne pourra plus se connecter et ses sessions seront révoquées.",
+    en: "$1 will no longer be able to sign in and their sessions will be revoked.",
+  },
+  {
+    fr: /^(.+?) a été suspendu\.$/,
+    ar: "$1 a été suspendu.",
+    en: "$1 was suspended.",
+  },
+  {
+    fr: /^(.+?) retrouvera son accès\. La raison de cette décision sera conservée dans le journal d’audit\.$/,
+    ar: "$1 retrouvera son accès. La raison de cette décision sera conservée dans le journal d’audit.",
+    en: "$1 will regain access. The reason for this decision will be kept in the audit log.",
+  },
+  {
+    fr: /^(.+?) a été réactivé\.$/,
+    ar: "$1 a été réactivé.",
+    en: "$1 was re-enabled.",
+  },
+  {
+    fr: /^(.+?) service\(s\) à vérifier$/,
+    ar: "$1 service(s) à vérifier",
+    en: "$1 service(s) to check",
+  },
+  { fr: /^Mis à jour (.+?)$/, ar: "Mis à jour $1", en: "Updated $1" },
+  {
+    fr: /^Lien valable jusqu’au (.+?)$/,
+    ar: "Lien valable jusqu’au $1",
+    en: "Link valid until $1",
+  },
+  {
+    fr: /^Demandé avant le (.+?)$/,
+    ar: "Demandé avant le $1",
+    en: "Requested before $1",
+  },
+  {
+    fr: /^(.+?) dossier\(s\) contrôlé\(s\)$/,
+    ar: "$1 dossier(s) contrôlé(s)",
+    en: "$1 client file(s) checked",
+  },
+  { fr: /^(.+?) \/ mois$/, ar: "$1 / mois", en: "$1 / month" },
+  {
+    fr: /^Invitation créée, mais l’e-mail n’a pas été envoyé : (.+?)$/,
+    ar: "Invitation créée, mais l’e-mail n’a pas été envoyé : $1",
+    en: "Invitation created, but the email was not sent: $1",
+  },
   {
     fr: /^Saisie & validation \((\d+)\)$/,
     ar: "الإدخال والمصادقة ($1)",
