@@ -842,6 +842,36 @@ export const englishTranslations: Record<string, string> = {
     "The gross amount excl. tax differs from the net amount excl. tax without an explicit overall discount. Check the labels and fees; no discount was deducted.",
   "Le fournisseur est absent ou illisible.":
     "The supplier is missing or unreadable.",
+  // Accounting tabs, lettering and sidebar
+  "Ma journée": "My day",
+  "Priorité du jour": "Today’s priority",
+  "Traiter la file de travail": "Work through the queue",
+  "Retards, pièces, validation, banque — dans le bon ordre.":
+    "Delays, documents, validation, bank — in the right order.",
+  "Factures & règlements": "Invoices & settlements",
+  "Consultez le journal, saisissez et validez les écritures, puis produisez les états du dossier.":
+    "Review the journal, enter and validate entries, then produce the dossier’s statements.",
+  "Tenue comptable": "Bookkeeping",
+  "Plan comptable du dossier": "Dossier chart of accounts",
+  "Centres de coût": "Cost centers",
+  "Importer Excel / CSV": "Import Excel / CSV",
+  "Journal comptable": "Accounting journal",
+  Lettrage: "Lettering",
+  "Lettrage des comptes": "Account lettering",
+  "Les règlements comptabilisés qui soldent une facture sont lettrés automatiquement lorsque les lignes sont compatibles. Utilisez cet écran pour les cas manuels ; les débits et crédits sélectionnés doivent être exactement équilibrés. Le lettrage ne crée aucun paiement et ne remplace pas le rapprochement bancaire.":
+    "Posted payments that settle an invoice are lettered automatically when the lines are compatible. Use this screen for manual cases; the selected debits and credits must balance exactly. Lettering creates no payment and does not replace bank reconciliation.",
+  "Compte à lettrer": "Account to letter",
+  "Rechercher un compte…": "Search for an account…",
+  Pièce: "Document",
+  "Aucune ligne non lettrée pour ce compte.":
+    "No unlettered line for this account.",
+  Équilibré: "Balanced",
+  Lettrer: "Letter",
+  "Lettrages réalisés": "Completed lettering",
+  Délettrer: "Unletter",
+  "Aucun lettrage enregistré.": "No lettering recorded.",
+  "Lettrage impossible.": "Lettering failed.",
+  "Délettrage impossible.": "Unlettering failed.",
 };
 
 /** Arabic for the texts added with the English interface. */
@@ -988,4 +1018,34 @@ export const arabicAdditions: Record<string, string> = {
     "حدّد AZURE_COST_SCOPE وامنح هوية الواجهة البرمجية دور Cost Management Reader.",
   "Console Google Cloud › Facturation › Export de la facturation › BigQuery : activez les données de coût d’utilisation standard vers le projet fiscora-ai, jeu de données billing_export.":
     "وحدة تحكم Google Cloud › الفوترة › تصدير الفوترة › BigQuery: فعّل بيانات تكلفة الاستخدام القياسية إلى المشروع fiscora-ai ومجموعة البيانات billing_export.",
+  // Accounting tabs, lettering and sidebar
+  "Ma journée": "يومي",
+  "Priorité du jour": "أولوية اليوم",
+  "Traiter la file de travail": "معالجة قائمة العمل",
+  "Retards, pièces, validation, banque — dans le bon ordre.":
+    "التأخيرات، المستندات، المصادقة، البنك — بالترتيب الصحيح.",
+  "Factures & règlements": "الفواتير والتسويات",
+  "Consultez le journal, saisissez et validez les écritures, puis produisez les états du dossier.":
+    "راجع اليومية، وأدخل القيود وصادق عليها، ثم أصدر قوائم الملف.",
+  "Tenue comptable": "مسك الحسابات",
+  "Plan comptable du dossier": "دليل حسابات الملف",
+  "Centres de coût": "مراكز التكلفة",
+  "Importer Excel / CSV": "استيراد Excel / CSV",
+  "Journal comptable": "دفتر اليومية",
+  Lettrage: "المطابقة",
+  "Lettrage des comptes": "مطابقة الحسابات",
+  "Les règlements comptabilisés qui soldent une facture sont lettrés automatiquement lorsque les lignes sont compatibles. Utilisez cet écran pour les cas manuels ; les débits et crédits sélectionnés doivent être exactement équilibrés. Le lettrage ne crée aucun paiement et ne remplace pas le rapprochement bancaire.":
+    "تُطابَق التسويات المرحّلة التي تسدد فاتورة تلقائيًا عندما تكون السطور متوافقة. استخدم هذه الشاشة للحالات اليدوية؛ يجب أن تتوازن المبالغ المدينة والدائنة المختارة تمامًا. لا تنشئ المطابقة أي دفعة ولا تعوّض التسوية البنكية.",
+  "Compte à lettrer": "الحساب المراد مطابقته",
+  "Rechercher un compte…": "ابحث عن حساب…",
+  Pièce: "المستند",
+  "Aucune ligne non lettrée pour ce compte.":
+    "لا توجد سطور غير مطابقة لهذا الحساب.",
+  Équilibré: "متوازن",
+  Lettrer: "مطابقة",
+  "Lettrages réalisés": "المطابقات المنجزة",
+  Délettrer: "إلغاء المطابقة",
+  "Aucun lettrage enregistré.": "لا توجد مطابقات مسجلة.",
+  "Lettrage impossible.": "تعذّرت المطابقة.",
+  "Délettrage impossible.": "تعذّر إلغاء المطابقة.",
 };

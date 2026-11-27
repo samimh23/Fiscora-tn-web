@@ -84,6 +84,13 @@ const PATTERNS: Array<{
   en: string;
 }> = [
   {
+    fr: /^Saisie & validation \((\d+)\)$/,
+    ar: "الإدخال والمصادقة ($1)",
+    en: "Entry & validation ($1)",
+  },
+  { fr: /^Paramétrage \((\d+)\)$/, ar: "الإعدادات ($1)", en: "Settings ($1)" },
+  { fr: /^Écart (.+)$/, ar: "فارق $1", en: "Difference $1" },
+  {
     fr: /^\+ (\d+) autre\(s\) source\(s\) consultée\(s\)$/,
     ar: "+ $1 مصادر أخرى تمت مراجعتها",
     en: "+ $1 more source(s) consulted",
