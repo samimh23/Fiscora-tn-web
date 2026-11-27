@@ -3015,6 +3015,12 @@ export const englishTranslations: Record<string, string> = {
   "Total passif": "Total liabilities",
   "Compte d’actif": "Asset",
   "Compte de passif": "Liability",
+  // Supervision leftovers
+  "Erreurs 5xx": "5xx errors",
+  OPERATIONNEL: "Operational",
+  INDISPONIBLE: "Unavailable",
+  "Extraction OCR et IA": "OCR and AI extraction",
+  "Invitations par e-mail": "Email invitations",
 };
 
 /** Arabic for the texts added with the English interface. */

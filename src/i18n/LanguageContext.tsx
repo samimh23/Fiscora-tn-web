@@ -83,6 +83,22 @@ const PATTERNS: Array<{
   ar: string;
   en: string;
 }> = [
+  { fr: /^Moyenne (\d+) ms$/, ar: "Moyenne $1 ms", en: "Average $1 ms" },
+  { fr: /^([\d.]+) Ko$/, ar: "$1 Ko", en: "$1 KB" },
+  { fr: /^([\d.]+) Mo$/, ar: "$1 Mo", en: "$1 MB" },
+  { fr: /^([\d.]+) Go$/, ar: "$1 Go", en: "$1 GB" },
+  { fr: /^Heap ([\d.]+) Mo$/, ar: "Heap $1 Mo", en: "Heap $1 MB" },
+  { fr: /^(\d+) j (\d+) h$/, ar: "$1 j $2 h", en: "$1 d $2 h" },
+  {
+    fr: /^OPERATIONNEL · (.+)$/,
+    ar: "OPERATIONNEL · $1",
+    en: "Operational · $1",
+  },
+  {
+    fr: /^INDISPONIBLE · (.+)$/,
+    ar: "INDISPONIBLE · $1",
+    en: "Unavailable · $1",
+  },
   {
     fr: /^(\d+) facture\(s\) de la période ne sont pas comptabilisées\.$/,
     ar: "$1 facture(s) de la période ne sont pas comptabilisées.",
