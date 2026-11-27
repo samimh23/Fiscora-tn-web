@@ -326,8 +326,8 @@ export function ReportsPanel({
             gap: 1.5,
           }}
         >
-          <SummaryCard label="Actif" value={summary.data?.assets} />
-          <SummaryCard label="Passif" value={summary.data?.liabilities} />
+          <SummaryCard label="Total actif" value={summary.data?.assets} />
+          <SummaryCard label="Total passif" value={summary.data?.liabilities} />
           <SummaryCard label="Capitaux propres" value={summary.data?.equity} />
           <SummaryCard
             label="Produits"

@@ -85,8 +85,8 @@ const firstOfYear = () => `${new Date().getFullYear()}-01-01`;
 const today = () => new Date().toISOString().slice(0, 10);
 
 const accountTypeLabels: Record<string, string> = {
-  Asset: "Actif",
-  Liability: "Passif",
+  Asset: "Compte d’actif",
+  Liability: "Compte de passif",
   Equity: "Capitaux propres",
   Revenue: "Produit",
   Expense: "Charge",
@@ -629,9 +629,7 @@ export function AccountingPage() {
               Impossible de charger le dossier sélectionné.
             </Alert>
           )}
-          {dossier.isLoading && (
-            <QueryState loading error={false} />
-          )}
+          {dossier.isLoading && <QueryState loading error={false} />}
           {dossier.data?.id === dossierId && (
             <DossierAccountingPanel
               key={dossierId}

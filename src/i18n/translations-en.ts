@@ -2991,6 +2991,30 @@ export const englishTranslations: Record<string, string> = {
   ESSAI: "Trial",
   IMPAYE: "Unpaid",
   ANNULE: "Cancelled",
+  // Declaration checks and labels seen in the live app
+  "Le matricule fiscal du dossier doit être renseigné.":
+    "The client file’s tax ID must be entered.",
+  "Le dossier déclare des salariés mais aucune paie validée n’existe pour ce mois.":
+    "The client file declares employees but no validated payroll exists for this month.",
+  "Le traitement de paie du mois est encore en brouillon.":
+    "This month’s payroll is still a draft.",
+  "Des montants de TVA existent alors que le dossier est déclaré non assujetti.":
+    "VAT amounts exist although the client file is declared not subject to VAT.",
+  "Aucune facture comptabilisée pour ce mois. Confirmez qu’il s’agit d’une déclaration néant.":
+    "No invoice posted for this month. Confirm that this is a nil declaration.",
+  "Régime TVA spécial détecté : contrôlez manuellement les opérations en suspension ou à l’export.":
+    "Special VAT regime detected: manually check the suspended or export operations.",
+  "Le crédit TVA repris provient d’une déclaration précédente non validée.":
+    "The VAT credit carried over comes from a previous declaration that is not validated.",
+  "Aucune déclaration du mois précédent : vérifiez manuellement le report TVA.":
+    "No declaration for the previous month: check the VAT carry-forward manually.",
+  "bloquant(s) ·": "blocking ·",
+  "avertissement(s)": "warning(s)",
+  "Assujetti TVA": "Subject to VAT",
+  "Total actif": "Total assets",
+  "Total passif": "Total liabilities",
+  "Compte d’actif": "Asset",
+  "Compte de passif": "Liability",
 };
 
 /** Arabic for the texts added with the English interface. */
@@ -3167,4 +3191,9 @@ export const arabicAdditions: Record<string, string> = {
   "Aucun lettrage enregistré.": "لا توجد مطابقات مسجلة.",
   "Lettrage impossible.": "تعذّرت المطابقة.",
   "Délettrage impossible.": "تعذّر إلغاء المطابقة.",
+  // Renamed asset and liability labels
+  "Compte d’actif": "أصول",
+  "Compte de passif": "خصوم",
+  "Total actif": "مجموع الأصول",
+  "Total passif": "مجموع الخصوم",
 };

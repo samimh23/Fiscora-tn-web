@@ -83,6 +83,32 @@ const PATTERNS: Array<{
   ar: string;
   en: string;
 }> = [
+  {
+    fr: /^(\d+) facture\(s\) de la période ne sont pas comptabilisées\.$/,
+    ar: "$1 facture(s) de la période ne sont pas comptabilisées.",
+    en: "The period has $1 unposted invoice(s).",
+  },
+  {
+    fr: /^(\d+) facture\(s\) comptabilisée\(s\) et une paie validée prises en compte\.$/,
+    ar: "$1 facture(s) comptabilisée(s) et une paie validée prises en compte.",
+    en: "$1 posted invoice(s) and a validated payroll taken into account.",
+  },
+  {
+    fr: /^(\d+) facture\(s\) comptabilisée\(s\) et aucune paie validée prises en compte\.$/,
+    ar: "$1 facture(s) comptabilisée(s) et aucune paie validée prises en compte.",
+    en: "$1 posted invoice(s) and no validated payroll taken into account.",
+  },
+  {
+    fr: /^Le paramètre fiscal (.+?) doit être configuré pour le (.+?)\.$/,
+    ar: "Le paramètre fiscal $1 doit être configuré pour le $2.",
+    en: "The tax parameter $1 must be configured for $2.",
+  },
+  { fr: /^(\d+) mouvement\(s\)$/, ar: "$1 mouvement(s)", en: "$1 movement(s)" },
+  {
+    fr: /^(\d+) mesures suivies$/,
+    ar: "$1 mesures suivies",
+    en: "$1 measures tracked",
+  },
   { fr: /^(.+?) en cours$/, ar: "$1 en cours", en: "$1 in progress" },
   {
     fr: /^Taux de change \((.+?)\)$/,
