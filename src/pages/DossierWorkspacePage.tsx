@@ -82,8 +82,10 @@ const moduleSteps: Partial<Record<WorkspaceModule, string[]>> = {
   banking: ["Importer", "Rapprocher", "Valider"],
 };
 
+// Client file statuses as the API sends them (DossierStatus).
 function statusLabel(status: string) {
-  if (status === "ACTIVE") return "Actif";
+  if (status === "ACTIF") return "Actif";
+  if (status === "SUSPENDU") return "Suspendu";
   if (status === "ARCHIVE") return "Archivé";
   return status;
 }
@@ -121,7 +123,7 @@ function DossierContextCard({
             <Stack direction="row" spacing={1} sx={{ mb: 1, flexWrap: "wrap" }}>
               <Chip
                 label={statusLabel(dossier.status)}
-                color={dossier.status === "ACTIVE" ? "success" : "default"}
+                color={dossier.status === "ACTIF" ? "success" : "default"}
                 size="small"
               />
               <Chip

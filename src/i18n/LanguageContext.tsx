@@ -83,6 +83,23 @@ const PATTERNS: Array<{
   ar: string;
   en: string;
 }> = [
+  { fr: /^(.+?) en cours$/, ar: "$1 en cours", en: "$1 in progress" },
+  {
+    fr: /^Taux de change \((.+?)\)$/,
+    ar: "Taux de change ($1)",
+    en: "Exchange rates ($1)",
+  },
+  {
+    fr: /^Suspension de TVA \((.+?)\)$/,
+    ar: "Suspension de TVA ($1)",
+    en: "VAT suspension ($1)",
+  },
+  {
+    fr: /^, (.+?) ligne\(s\) de balance$/,
+    ar: ", $1 ligne(s) de balance",
+    en: ", $1 trial balance line(s)",
+  },
+  { fr: /^(\d+) actifs$/, ar: "$1 actifs", en: "$1 active" },
   { fr: /^Modifier ([A-Z0-9][\w\-/]*)$/, ar: "Modifier $1", en: "Edit $1" },
   {
     fr: /^Aperçu PDF de (.+?)$/,

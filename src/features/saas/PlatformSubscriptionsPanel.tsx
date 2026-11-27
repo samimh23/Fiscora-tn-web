@@ -54,6 +54,17 @@ const date = (value: string | null) =>
       )
     : "—";
 
+const subscriptionStatusLabels: Record<
+  OrganizationSubscription["status"],
+  string
+> = {
+  ESSAI: "Essai",
+  ACTIF: "Actif",
+  IMPAYE: "Impayé",
+  SUSPENDU: "Suspendu",
+  ANNULE: "Annulé",
+};
+
 const statusColor = (status: OrganizationSubscription["status"]) => {
   if (status === "ACTIF") return "success";
   if (status === "IMPAYE" || status === "SUSPENDU") return "error";
@@ -251,7 +262,7 @@ export function PlatformSubscriptionsPanel() {
                     <Chip
                       size="small"
                       color={statusColor(subscription.status)}
-                      label={subscription.status.replace("_", " ")}
+                      label={subscriptionStatusLabels[subscription.status]}
                     />
                   </TableCell>
                   <TableCell sx={{ minWidth: 150 }}>
@@ -425,13 +436,15 @@ export function PlatformSubscriptionsPanel() {
                         })
                       }
                     >
-                      {["ESSAI", "ACTIF", "IMPAYE", "SUSPENDU", "ANNULE"].map(
-                        (status) => (
-                          <MenuItem key={status} value={status}>
-                            {status}
-                          </MenuItem>
-                        ),
-                      )}
+                      {(
+                        Object.keys(subscriptionStatusLabels) as Array<
+                          OrganizationSubscription["status"]
+                        >
+                      ).map((status) => (
+                        <MenuItem key={status} value={status}>
+                          {subscriptionStatusLabels[status]}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                   <FormControl fullWidth>
