@@ -412,7 +412,7 @@ export function ProfitabilityPage() {
             </Typography>
           )}
           {rates.data && (
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
               {rates.data.length} version(s) de coûts configurée(s).
             </Typography>
           )}

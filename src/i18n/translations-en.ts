@@ -3021,6 +3021,9 @@ export const englishTranslations: Record<string, string> = {
   INDISPONIBLE: "Unavailable",
   "Extraction OCR et IA": "OCR and AI extraction",
   "Invitations par e-mail": "Email invitations",
+  // Profitability notices sent by the API
+  "Honoraires HT actuellement convenus dans le dossier, proratisés par mois. Estimation distincte des factures et encaissements ; sans historique des changements de tarif.": "Fees excl. tax currently agreed in the client file, prorated per month. An estimate separate from invoices and payments received, with no history of fee changes.",
+  "Ces indicateurs aident au pilotage et ne doivent pas être utilisés seuls pour évaluer une personne.": "These indicators support management and must not be used on their own to assess a person.",
 };
 
 /** Arabic for the texts added with the English interface. */
